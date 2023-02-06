@@ -44,21 +44,17 @@ There are multiple examples in [the /examples directory](https://github.com/ngro
 A minimal use-case looks like the following:
 
 ```jsx
-require('http').createServer(
+const server = require('http').createServer(
   function(req,res){res.writeHead(200);
   res.write('Hello');
   res.end();
-} ).listen(8081);
+} );
 
-var t;
 var ngrok = require('@ngrok/ngrok');
-new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect().then((session) => {
-  session.httpEndpoint().listen().then((tun) => {
-    t = tun;
-    console.log('tunnel at: ' + tun.url());
-    tun.forwardTcp('localhost:8081');
-  })
-}).await;
+
+ngrok.listen(server).then(() => {
+  console.log("url: " + server.tunnel.url());
+});
 ```
 
 ### Async Programming
