@@ -1,0 +1,95 @@
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        required: true
+        type: string
+      build:
+        required: true
+        type: string
+      docker:
+        required: false
+        type: string
+      host:
+        required: true
+        type: string
+      if:
+        description: 'Whether to run this job'
+        required: false
+        default: true
+        type: boolean
+      setup:
+        required: false
+        type: string
+      target:
+        required: true
+        type: string
+jobs:
+  reusable-build:
+    if: ${{ inputs.if }}
+    name: stable - ${{ inputs.target }} - node@18
+    runs-on: ${{ inputs.host }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup node
+        uses: actions/setup-node@v3
+        if: ${{ !inputs.docker }}
+        with:
+          node-version: 18
+          check-latest: true
+          cache: yarn
+      - name: Install
+        uses: dtolnay/rust-toolchain@stable
+        if: ${{ !inputs.docker }}
+        with:
+          toolchain: stable
+          targets: ${{ inputs.target }}
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            .cargo-cache
+            target/
+          key: ${{ inputs.target }}-cargo-${{ inputs.host }}
+      - uses: goto-bus-stop/setup-zig@v2
+        if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
+        with:
+          version: 0.10.0
+      - name: Setup toolchain
+        run: ${{ inputs.setup }}
+        if: ${{ inputs.setup }}
+        shell: bash
+      - name: Setup node x86
+        if: inputs.target == 'i686-pc-windows-msvc'
+        run: yarn config set supportedArchitectures.cpu "ia32"
+        shell: bash
+      - name: Install dependencies
+        run: yarn install
+      - name: Setup node x86
+        uses: actions/setup-node@v3
+        if: inputs.target == 'i686-pc-windows-msvc'
+        with:
+          node-version: 18
+          check-latest: true
+          cache: yarn
+          architecture: x86
+      - name: Build in docker
+        uses: addnab/docker-run-action@v3
+        if: ${{ inputs.docker }}
+        with:
+          image: ${{ inputs.docker }}
+          options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
+          run: ${{ inputs.build }}
+      - name: Build
+        run: ${{ inputs.build }}
+        if: ${{ !inputs.docker }}
+        shell: bash
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bindings-${{ inputs.target }}
+          path: ${{ inputs.app-name }}.*.node
+          if-no-files-found: error

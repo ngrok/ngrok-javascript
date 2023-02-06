@@ -1,0 +1,23 @@
+{
+  "name": "@ngrok/ngrok-linux-arm64-musl",
+  "version": "0.0.6",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "main": "ngrok.linux-arm64-musl.node",
+  "files": [
+    "ngrok.linux-arm64-musl.node"
+  ],
+  "description": "The ngrok agent in library form, suitable for integrating directly into your NodeJS application.",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  },
+  "repository": "https://github.com/ngrok/ngrok-js",
+  "libc": [
+    "musl"
+  ]
+}
