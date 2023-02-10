@@ -8,6 +8,5 @@ const ngrok = require('@ngrok/ngrok')
 ngrok.getSocket().then((socket) => {
   console.log("tunnel url: " + socket.tunnel.url());
   server.listen(socket);
-  server.tunnel = socket.tunnel; // prevent garbage collection
 });
 

@@ -12,11 +12,15 @@ use tracing_subscriber::{
     fmt::format::FmtSpan,
 };
 
-use crate::tunnel_builder::{
-    NgrokHttpTunnelBuilder,
-    NgrokLabeledTunnelBuilder,
-    NgrokTcpTunnelBuilder,
-    NgrokTlsTunnelBuilder,
+use crate::{
+    napi_err,
+    tunnel::remove_global_tunnel,
+    tunnel_builder::{
+        NgrokHttpTunnelBuilder,
+        NgrokLabeledTunnelBuilder,
+        NgrokTcpTunnelBuilder,
+        NgrokTlsTunnelBuilder,
+    },
 };
 
 /// The builder for an ngrok session.
@@ -119,12 +123,7 @@ impl NgrokSessionBuilder {
             .connect()
             .await
             .map(|s| NgrokSession { raw_session: s })
-            .map_err(|e| {
-                Error::new(
-                    Status::GenericFailure,
-                    format!("failed to connect session, {e:?}"),
-                )
-            })
+            .map_err(|e| napi_err(format!("failed to connect session, {e:?}")))
     }
 }
 
@@ -141,25 +140,41 @@ impl NgrokSession {
     /// Start building a tunnel backing an HTTP endpoint.
     #[napi]
     pub fn http_endpoint(&self) -> NgrokHttpTunnelBuilder {
-        NgrokHttpTunnelBuilder::new(self.raw_session.http_endpoint())
+        NgrokHttpTunnelBuilder::new(self.raw_session.clone(), self.raw_session.http_endpoint())
     }
 
     /// Start building a tunnel backing a TCP endpoint.
     #[napi]
     pub fn tcp_endpoint(&self) -> NgrokTcpTunnelBuilder {
-        NgrokTcpTunnelBuilder::new(self.raw_session.tcp_endpoint())
+        NgrokTcpTunnelBuilder::new(self.raw_session.clone(), self.raw_session.tcp_endpoint())
     }
 
     /// Start building a tunnel backing a TLS endpoint.
     #[napi]
     pub fn tls_endpoint(&self) -> NgrokTlsTunnelBuilder {
-        NgrokTlsTunnelBuilder::new(self.raw_session.tls_endpoint())
+        NgrokTlsTunnelBuilder::new(self.raw_session.clone(), self.raw_session.tls_endpoint())
     }
 
     /// Start building a labeled tunnel.
     #[napi]
     pub fn labeled_tunnel(&self) -> NgrokLabeledTunnelBuilder {
-        NgrokLabeledTunnelBuilder::new(self.raw_session.labeled_tunnel())
+        NgrokLabeledTunnelBuilder::new(self.raw_session.clone(), self.raw_session.labeled_tunnel())
+    }
+
+    #[napi]
+    pub async fn close_tunnel(&self, id: String) -> Result<()> {
+        // close tunnel
+        let res = self
+            .raw_session
+            .close_tunnel(id.clone())
+            .await
+            .map_err(|e| napi_err(format!("failed to close tunnel, {e:?}")));
+
+        if res.is_ok() {
+            // remove our reference to allow it to drop
+            remove_global_tunnel(&id).await;
+        }
+        res
     }
 }
 

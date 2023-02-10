@@ -11,14 +11,18 @@ use ngrok::{
         TlsTunnelBuilder,
     },
     prelude::*,
+    Session,
 };
 use tracing::debug;
 
-use crate::tunnel::{
-    NgrokHttpTunnel,
-    NgrokLabeledTunnel,
-    NgrokTcpTunnel,
-    NgrokTlsTunnel,
+use crate::{
+    napi_err,
+    tunnel::{
+        NgrokHttpTunnel,
+        NgrokLabeledTunnel,
+        NgrokTcpTunnel,
+        NgrokTlsTunnel,
+    },
 };
 
 macro_rules! make_tunnel_builder {
@@ -27,14 +31,16 @@ macro_rules! make_tunnel_builder {
         #[napi(custom_finalize)]
         #[allow(dead_code)]
         pub(crate) struct $wrapper {
+            session: Session,
             pub(crate) tunnel_builder: $builder,
         }
 
         #[napi]
         #[allow(dead_code)]
         impl $wrapper {
-            pub(crate) fn new(raw_tunnel_builder: $builder) -> Self {
+            pub(crate) fn new(session: Session, raw_tunnel_builder: $builder) -> Self {
                 $wrapper {
+                    session,
                     tunnel_builder: raw_tunnel_builder,
                 }
             }
@@ -49,22 +55,22 @@ macro_rules! make_tunnel_builder {
             /// Begin listening for new connections on this tunnel.
             #[napi]
             pub async fn listen(&self) -> Result<$tunnel> {
-                self.tunnel_builder
+                let result = self.tunnel_builder
                     .listen()
                     .await
-                    .map($tunnel::new)
-                    .map_err(|e| {
-                        Error::new(
-                            Status::GenericFailure,
-                            format!("failed to start tunnel: {e:?}")
-                        )
-                    })
+                    .map_err(|e| napi_err(format!("failed to start tunnel: {e:?}")));
+
+                // create the wrapping tunnel object via its async new()
+                match result {
+                    Ok(raw_tun) => Ok($tunnel::new(self.session.clone(), raw_tun).await),
+                    Err(val) => Err(val),
+                }
             }
         }
 
         impl ObjectFinalize for $wrapper {
             fn finalize(self, mut _env: Env) -> Result<()> {
-                debug!("$wrapper finalize");
+                debug!("{} finalize", stringify!($wrapper));
                 Ok(())
             }
         }
@@ -79,15 +85,15 @@ macro_rules! make_tunnel_builder {
             /// Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
             /// Call multiple times to add additional CIDR ranges.
             #[napi]
-            pub fn allow_cidr_string(&mut self, cidr: String) -> &Self {
-                self.tunnel_builder = self.tunnel_builder.clone().allow_cidr_string(cidr);
+            pub fn allow_cidr(&mut self, cidr: String) -> &Self {
+                self.tunnel_builder = self.tunnel_builder.clone().allow_cidr(cidr);
                 self
             }
             /// Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
             /// Call multiple times to add additional CIDR ranges.
             #[napi]
-            pub fn deny_cidr_string(&mut self, cidr: String) -> &Self {
-                self.tunnel_builder = self.tunnel_builder.clone().deny_cidr_string(cidr);
+            pub fn deny_cidr(&mut self, cidr: String) -> &Self {
+                self.tunnel_builder = self.tunnel_builder.clone().deny_cidr(cidr);
                 self
             }
             /// The version of PROXY protocol to use with this tunnel, None if not using.

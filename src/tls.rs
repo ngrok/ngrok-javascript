@@ -24,21 +24,11 @@ impl NgrokTlsTunnelBuilder {
     }
     /// The key to use for TLS termination at the ngrok edge in PEM format.
     #[napi]
-    pub fn key_pem(&mut self, key_pem: Uint8Array) -> &Self {
-        self.tunnel_builder = self
-            .tunnel_builder
-            .clone()
-            .key_pem(Bytes::from(key_pem.to_vec()));
-        self
-    }
-    /// The certificate to use for TLS termination at the ngrok edge in PEM
-    /// format.
-    #[napi]
-    pub fn cert_pem(&mut self, cert_pem: Uint8Array) -> &Self {
-        self.tunnel_builder = self
-            .tunnel_builder
-            .clone()
-            .cert_pem(Bytes::from(cert_pem.to_vec()));
+    pub fn termination(&mut self, cert_pem: Uint8Array, key_pem: Uint8Array) -> &Self {
+        self.tunnel_builder = self.tunnel_builder.clone().termination(
+            Bytes::from(cert_pem.to_vec()),
+            Bytes::from(key_pem.to_vec()),
+        );
         self
     }
 }

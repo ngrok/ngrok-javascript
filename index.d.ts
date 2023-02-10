@@ -52,6 +52,7 @@ export class NgrokSession {
   tlsEndpoint(): NgrokTlsTunnelBuilder
   /** Start building a labeled tunnel. */
   labeledTunnel(): NgrokLabeledTunnelBuilder
+  closeTunnel(id: string): Promise<void>
 }
 /**r" An ngrok tunnel backing an HTTP endpoint. */
 export class NgrokHttpTunnel {
@@ -65,6 +66,8 @@ export class NgrokHttpTunnel {
   forwardTcp(addr: string): Promise<void>
   /** Forward incoming tunnel connections to the provided Unix socket path. */
   forwardUnix(addr: string): Promise<void>
+  /** Close the tunnel. */
+  close(): Promise<void>
 }
 /**r" An ngrok tunnel backing a TCP endpoint. */
 export class NgrokTcpTunnel {
@@ -78,6 +81,8 @@ export class NgrokTcpTunnel {
   forwardTcp(addr: string): Promise<void>
   /** Forward incoming tunnel connections to the provided Unix socket path. */
   forwardUnix(addr: string): Promise<void>
+  /** Close the tunnel. */
+  close(): Promise<void>
 }
 /**r" An ngrok tunnel bcking a TLS endpoint. */
 export class NgrokTlsTunnel {
@@ -91,6 +96,8 @@ export class NgrokTlsTunnel {
   forwardTcp(addr: string): Promise<void>
   /** Forward incoming tunnel connections to the provided Unix socket path. */
   forwardUnix(addr: string): Promise<void>
+  /** Close the tunnel. */
+  close(): Promise<void>
 }
 /**r" A labeled ngrok tunnel. */
 export class NgrokLabeledTunnel {
@@ -102,6 +109,8 @@ export class NgrokLabeledTunnel {
   forwardTcp(addr: string): Promise<void>
   /** Forward incoming tunnel connections to the provided Unix socket path. */
   forwardUnix(addr: string): Promise<void>
+  /** Close the tunnel. */
+  close(): Promise<void>
 }
 /**r" An ngrok tunnel backing an HTTP endpoint. */
 export class NgrokHttpTunnelBuilder {
@@ -159,12 +168,12 @@ export class NgrokHttpTunnelBuilder {
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
    */
-  allowCidrString(cidr: string): this
+  allowCidr(cidr: string): this
   /**
    * Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
    */
-  denyCidrString(cidr: string): this
+  denyCidr(cidr: string): this
   /** The version of PROXY protocol to use with this tunnel, None if not using. */
   proxyProto(proxyProto: string): this
   /**
@@ -185,12 +194,12 @@ export class NgrokTcpTunnelBuilder {
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
    */
-  allowCidrString(cidr: string): this
+  allowCidr(cidr: string): this
   /**
    * Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
    */
-  denyCidrString(cidr: string): this
+  denyCidr(cidr: string): this
   /** The version of PROXY protocol to use with this tunnel, None if not using. */
   proxyProto(proxyProto: string): this
   /**
@@ -206,12 +215,7 @@ export class NgrokTlsTunnelBuilder {
   /** Certificates to use for client authentication at the ngrok edge. */
   mutualTlsca(mutualTlsca: Uint8Array): this
   /** The key to use for TLS termination at the ngrok edge in PEM format. */
-  keyPem(keyPem: Uint8Array): this
-  /**
-   * The certificate to use for TLS termination at the ngrok edge in PEM
-   * format.
-   */
-  certPem(certPem: Uint8Array): this
+  termination(certPem: Uint8Array, keyPem: Uint8Array): this
   /** Tunnel-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
@@ -220,12 +224,12 @@ export class NgrokTlsTunnelBuilder {
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
    */
-  allowCidrString(cidr: string): this
+  allowCidr(cidr: string): this
   /**
    * Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
    */
-  denyCidrString(cidr: string): this
+  denyCidr(cidr: string): this
   /** The version of PROXY protocol to use with this tunnel, None if not using. */
   proxyProto(proxyProto: string): this
   /**

@@ -25,7 +25,8 @@
   "devDependencies": {
     "@napi-rs/cli": "^2.14.1",
     "ava": "^4.3.3",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "segfault-handler": "^1.3.0"
   },
   "ava": {
     "timeout": "3m"
