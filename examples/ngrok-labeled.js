@@ -26,4 +26,4 @@ builder.connect().then((session) => {
       console.log("established tunnel at: " + JSON.stringify(tunnel.labels()))
       tunnel.forwardUnix(UNIX_SOCKET);
   })
-}).await;
+});

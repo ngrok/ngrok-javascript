@@ -45,4 +45,4 @@ builder.connect().then((session) => {
       console.log("established tunnel at: " + tunnel.url())
       tunnel.forwardUnix(UNIX_SOCKET);
   })
-}).await;
+});

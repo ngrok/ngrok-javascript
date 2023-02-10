@@ -11,4 +11,4 @@ new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect().then((session) => {
     console.log('tunnel at: ' + tunnel.url());
     tunnel.forwardTcp('localhost:8081');
   })
-}).await;
+});
