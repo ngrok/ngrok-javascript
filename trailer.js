@@ -23,7 +23,7 @@ async function getSocket(tunnel) {
   }
   // use tcp socket with random local port
   const server = new net.Server();
-  server.listen(0);
+  await server.listen(0);
   // forward to this socket
   tunnel.forwardTcp('localhost:' + server.address().port);
   // surface to caller
@@ -40,20 +40,21 @@ async function ngrokListen(server, tunnel) {
   // todo: named pipe on windows: https://nodejs.org/api/net.html#ipc-support
 
   // attempt unix socket
-  ngrokLinkUnix(tunnel, server)
-    .then(() => {})
-    .catch(function(err) {
-      console.debug("Using TCP socket. " + err);
-      // fallback to tcp socket
-      ngrokLinkTcp(tunnel, server);
-    });
+  try {
+    await ngrokLinkUnix(tunnel, server);
+  } catch (err) {
+    console.debug("Using TCP socket. " + err);
+    // fallback to tcp socket
+    await ngrokLinkTcp(tunnel, server);
+  }
 
   server.tunnel = tunnel; // surface to caller
+  return tunnel;
 }
 
 async function ngrokLinkTcp(tunnel, server) {
   // random local port
-  server.listen(0);
+  await server.listen(0);
   // forward to socket
   tunnel.forwardTcp('localhost:' + server.address().port);
 }
@@ -76,7 +77,7 @@ async function ngrokLinkUnix(tunnel, server) {
   }
 
   // begin listening
-  server.listen({path: filename});
+  await server.listen({path: filename});
   // tighten permissions
   try {
     fs.chmodSync(filename, fs.constants.S_IRWXU);
