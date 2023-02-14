@@ -134,11 +134,11 @@ jobs:
               rustup target add aarch64-unknown-linux-musl &&
               yarn build --target aarch64-unknown-linux-musl &&
               /aarch64-linux-musl-cross/bin/aarch64-linux-musl-strip *.node
-          - host: windows-latest
-            target: aarch64-pc-windows-msvc
-            # target not supported by the 'ring' rust dependency (ssl library partially built by gcc)
-            if: false
-            build: yarn build --target aarch64-pc-windows-msvc
+          #- host: windows-latest
+          #  target: aarch64-pc-windows-msvc
+          #  # target not supported by the 'ring' rust dependency (ssl library partially built by gcc)
+          #  if: false
+          #  build: yarn build --target aarch64-pc-windows-msvc
   build-freebsd:
     if: github.ref == 'refs/heads/main'
     runs-on: macos-12
