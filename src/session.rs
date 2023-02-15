@@ -1,11 +1,26 @@
-use std::time::Duration;
+use std::{
+    sync::Arc,
+    time::Duration,
+};
 
-use napi::bindgen_prelude::*;
+use napi::{
+    bindgen_prelude::*,
+    threadsafe_function::{
+        ErrorStrategy,
+        ThreadSafeCallContext,
+        ThreadsafeFunction,
+        ThreadsafeFunctionCallMode,
+    },
+};
 use napi_derive::napi;
 use ngrok::{
-    session::SessionBuilder,
+    session::{
+        SessionBuilder,
+        Update,
+    },
     Session,
 };
+use tokio::sync::Mutex;
 use tracing::debug;
 use tracing_subscriber::{
     self,
@@ -54,7 +69,15 @@ impl NgrokSessionBuilder {
         }
     }
 
-    /// Authenticate the ngrok session with the given authtoken.
+    /// Configures the session to authenticate with the provided authtoken. You
+    /// can [find your existing authtoken] or [create a new one] in the ngrok
+    /// dashboard.
+    ///
+    /// See the [authtoken parameter in the ngrok docs] for additional details.
+    ///
+    /// [find your existing authtoken]: https://dashboard.ngrok.com/get-started/your-authtoken
+    /// [create a new one]: https://dashboard.ngrok.com/tunnels/authtokens
+    /// [authtoken parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#authtoken
     #[napi]
     pub fn authtoken(&mut self, authtoken: String) -> &Self {
         // can't put lifetimes or generics on napi structs, which limits our options.
@@ -65,17 +88,21 @@ impl NgrokSessionBuilder {
         self
     }
 
-    /// Authenticate using the authtoken in the `NGROK_AUTHTOKEN` environment
-    /// variable.
+    /// Shortcut for calling [SessionBuilder::authtoken] with the value of the
+    /// NGROK_AUTHTOKEN environment variable.
     #[napi]
     pub fn authtoken_from_env(&mut self) -> &Self {
         self.raw_builder = self.raw_builder.clone().authtoken_from_env();
         self
     }
 
-    /// Set the heartbeat interval for the session.
-    /// This value determines how often we send application level
-    /// heartbeats to the server go check connection liveness.
+    /// Configures how often the session will send heartbeat messages to the ngrok
+    /// service to check session liveness.
+    ///
+    /// See the [heartbeat_interval parameter in the ngrok docs] for additional
+    /// details.
+    ///
+    /// [heartbeat_interval parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#heartbeat_interval
     #[napi]
     pub fn heartbeat_interval(&mut self, heartbeat_interval: u32) -> &Self {
         self.raw_builder = self
@@ -85,9 +112,13 @@ impl NgrokSessionBuilder {
         self
     }
 
-    /// Set the heartbeat tolerance for the session.
-    /// If the session's heartbeats are outside of their interval by this duration,
-    /// the server will assume the session is dead and close it.
+    /// Configures the duration to wait for a response to a heartbeat before
+    /// assuming the session connection is dead and attempting to reconnect.
+    ///
+    /// See the [heartbeat_tolerance parameter in the ngrok docs] for additional
+    /// details.
+    ///
+    /// [heartbeat_tolerance parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#heartbeat_tolerance
     #[napi]
     pub fn heartbeat_tolerance(&mut self, heartbeat_tolerance: u32) -> &Self {
         self.raw_builder = self
@@ -97,24 +128,145 @@ impl NgrokSessionBuilder {
         self
     }
 
-    /// Use the provided opaque metadata string for this session.
-    /// Viewable from the ngrok dashboard or API.
+    /// Configures the opaque, machine-readable metadata string for this session.
+    /// Metadata is made available to you in the ngrok dashboard and the Agents API
+    /// resource. It is a useful way to allow you to uniquely identify sessions. We
+    /// suggest encoding the value in a structured format like JSON.
+    ///
+    /// See the [metdata parameter in the ngrok docs] for additional details.
+    ///
+    /// [metdata parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#metadata
     #[napi]
     pub fn metadata(&mut self, metadata: String) -> &Self {
         self.raw_builder = self.raw_builder.clone().metadata(metadata);
         self
     }
 
-    /// Connect to the provided ngrok server address.
+    /// Configures the network address to dial to connect to the ngrok service.
+    /// Use this option only if you are connecting to a custom agent ingress.
+    ///
+    /// See the [server_addr parameter in the ngrok docs] for additional details.
+    ///
+    /// [server_addr parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#server_addr
     #[napi]
     pub fn server_addr(&mut self, addr: String) -> &Self {
         self.raw_builder = self.raw_builder.clone().server_addr(addr).clone();
         self
     }
 
+    /// Configures a function which is called when the ngrok service requests that
+    /// this [Session] stops. Your application may choose to interpret this callback
+    /// as a request to terminate the [Session] or the entire process.
+    ///
+    /// Errors returned by this function will be visible to the ngrok dashboard or
+    /// API as the response to the Stop operation.
+    ///
+    /// Do not block inside this callback. It will cause the Dashboard or API
+    /// stop operation to time out. Do not call [std::process::exit] inside this
+    /// callback, it will also cause the operation to time out.
+    #[napi(ts_args_type = "handler: () => void")]
+    pub fn handle_stop_command(&mut self, handler: JsFunction) -> &Self {
+        // create threadsafe function
+        let tsfn = create_no_io_tsfn(handler);
+        // register stop handler
+        self.raw_builder = self
+            .raw_builder
+            .clone()
+            .handle_stop_command(move |_req| {
+                let tsfn = tsfn.clone();
+                async move {
+                    tsfn.clone()
+                        .lock()
+                        .await
+                        .call((), ThreadsafeFunctionCallMode::NonBlocking);
+                    Ok(())
+                }
+            })
+            .clone();
+        self
+    }
+
+    /// Configures a function which is called when the ngrok service requests
+    /// that this [Session] updates. Your application may choose to interpret
+    /// this callback as a request to restart the [Session] or the entire
+    /// process.
+    ///
+    /// Errors returned by this function will be visible to the ngrok dashboard or
+    /// API as the response to the Restart operation.
+    ///
+    /// Do not block inside this callback. It will cause the Dashboard or API
+    /// stop operation to time out. Do not call [std::process::exit] inside this
+    /// callback, it will also cause the operation to time out.
+    #[napi(ts_args_type = "handler: () => void")]
+    pub fn handle_restart_command(&mut self, handler: JsFunction) -> &Self {
+        // create threadsafe function
+        let tsfn = create_no_io_tsfn(handler);
+        // register restart handler
+        self.raw_builder = self
+            .raw_builder
+            .clone()
+            .handle_restart_command(move |_req| {
+                let tsfn = tsfn.clone();
+                async move {
+                    tsfn.clone()
+                        .lock()
+                        .await
+                        .call((), ThreadsafeFunctionCallMode::NonBlocking);
+                    Ok(())
+                }
+            })
+            .clone();
+        self
+    }
+
+    /// Configures a function which is called when the ngrok service requests
+    /// that this [Session] updates. Your application may choose to interpret
+    /// this callback as a request to update its configuration, itself, or to
+    /// invoke some other application-specific behavior.
+    ///
+    /// Errors returned by this function will be visible to the ngrok dashboard or
+    /// API as the response to the Restart operation.
+    ///
+    /// Do not block inside this callback. It will cause the Dashboard or API
+    /// stop operation to time out. Do not call [std::process::exit] inside this
+    /// callback, it will also cause the operation to time out.
+    #[napi(ts_args_type = "handler: (update: UpdateRequest) => void")]
+    pub fn handle_update_command(&mut self, handler: JsFunction) -> &Self {
+        // create threadsafe function
+        let tsfn: Arc<Mutex<ThreadsafeFunction<UpdateRequest, ErrorStrategy::Fatal>>> =
+            Arc::new(Mutex::new(
+                handler
+                    .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<UpdateRequest>| {
+                        Ok(vec![ctx.value])
+                    })
+                    .expect("Failed to create update callback function"),
+            ));
+        // register update handler
+        self.raw_builder = self
+            .raw_builder
+            .clone()
+            .handle_update_command(move |req: Update| {
+                let tsfn = tsfn.clone();
+                let update = UpdateRequest {
+                    version: req.version,
+                    permit_major_version: req.permit_major_version,
+                };
+
+                async move {
+                    tsfn.clone()
+                        .lock()
+                        .await
+                        .call(update, ThreadsafeFunctionCallMode::NonBlocking);
+                    Ok(())
+                }
+            })
+            .clone();
+        self
+    }
+
     // Omitting these configurations:
     // tls_config(&mut self, config: rustls::ClientConfig)
-    // with_connect_callback(&mut self, callback: ConnectCallback)
+    // connector(&mut self, connect: ConnectFn)
 
     /// Attempt to establish an ngrok session using the current configuration.
     #[napi]
@@ -183,4 +335,23 @@ impl ObjectFinalize for NgrokSession {
         debug!("NgrokSession finalize");
         Ok(())
     }
+}
+
+#[derive(Clone)]
+#[napi]
+pub struct UpdateRequest {
+    /// The version that the agent is requested to update to.
+    pub version: String,
+    /// Whether or not updating to the same major version is sufficient.
+    pub permit_major_version: bool,
+}
+
+pub(crate) fn create_no_io_tsfn(
+    js_function: JsFunction,
+) -> Arc<Mutex<ThreadsafeFunction<(), ErrorStrategy::Fatal>>> {
+    Arc::new(Mutex::new(
+        js_function
+            .create_threadsafe_function(0, |_ctx: ThreadSafeCallContext<()>| Ok(vec![()]))
+            .expect("Failed to create callback function"),
+    ))
 }

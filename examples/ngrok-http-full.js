@@ -1,6 +1,6 @@
 var UNIX_SOCKET = "/tmp/http.socket";
 const fs = require('fs');
-fs.unlinkSync(UNIX_SOCKET);
+try{fs.unlinkSync(UNIX_SOCKET)} catch {}
 
 // make webserver
 var http = require('http'); 
@@ -19,7 +19,17 @@ builder = new ngrok.NgrokSessionBuilder();
 builder
   // .authtoken("<authtoken>")
   .authtokenFromEnv()
-  .metadata("Online in One Line");
+  .metadata("Online in One Line")
+  .handleStopCommand(() => {
+    console.log("stop command");
+  })
+  .handleRestartCommand(() => {
+    console.log("restart command");
+  })
+  .handleUpdateCommand((update) => {
+    console.log("update command, version: " + update.version
+      + " permitMajorVersion: " + update.permitMajorVersion);
+  });
 
 builder.connect().then((session) => {
   session.httpEndpoint()

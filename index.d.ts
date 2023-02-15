@@ -13,32 +13,104 @@ export function tracingSubscriber(): void
 export class NgrokSessionBuilder {
   /** Create a new session builder */
   constructor()
-  /** Authenticate the ngrok session with the given authtoken. */
+  /**
+   * Configures the session to authenticate with the provided authtoken. You
+   * can [find your existing authtoken] or [create a new one] in the ngrok
+   * dashboard.
+   *
+   * See the [authtoken parameter in the ngrok docs] for additional details.
+   *
+   * [find your existing authtoken]: https://dashboard.ngrok.com/get-started/your-authtoken
+   * [create a new one]: https://dashboard.ngrok.com/tunnels/authtokens
+   * [authtoken parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#authtoken
+   */
   authtoken(authtoken: string): this
   /**
-   * Authenticate using the authtoken in the `NGROK_AUTHTOKEN` environment
-   * variable.
+   * Shortcut for calling [SessionBuilder::authtoken] with the value of the
+   * NGROK_AUTHTOKEN environment variable.
    */
   authtokenFromEnv(): this
   /**
-   * Set the heartbeat interval for the session.
-   * This value determines how often we send application level
-   * heartbeats to the server go check connection liveness.
+   * Configures how often the session will send heartbeat messages to the ngrok
+   * service to check session liveness.
+   *
+   * See the [heartbeat_interval parameter in the ngrok docs] for additional
+   * details.
+   *
+   * [heartbeat_interval parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#heartbeat_interval
    */
   heartbeatInterval(heartbeatInterval: number): this
   /**
-   * Set the heartbeat tolerance for the session.
-   * If the session's heartbeats are outside of their interval by this duration,
-   * the server will assume the session is dead and close it.
+   * Configures the duration to wait for a response to a heartbeat before
+   * assuming the session connection is dead and attempting to reconnect.
+   *
+   * See the [heartbeat_tolerance parameter in the ngrok docs] for additional
+   * details.
+   *
+   * [heartbeat_tolerance parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#heartbeat_tolerance
    */
   heartbeatTolerance(heartbeatTolerance: number): this
   /**
-   * Use the provided opaque metadata string for this session.
-   * Viewable from the ngrok dashboard or API.
+   * Configures the opaque, machine-readable metadata string for this session.
+   * Metadata is made available to you in the ngrok dashboard and the Agents API
+   * resource. It is a useful way to allow you to uniquely identify sessions. We
+   * suggest encoding the value in a structured format like JSON.
+   *
+   * See the [metdata parameter in the ngrok docs] for additional details.
+   *
+   * [metdata parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#metadata
    */
   metadata(metadata: string): this
-  /** Connect to the provided ngrok server address. */
+  /**
+   * Configures the network address to dial to connect to the ngrok service.
+   * Use this option only if you are connecting to a custom agent ingress.
+   *
+   * See the [server_addr parameter in the ngrok docs] for additional details.
+   *
+   * [server_addr parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#server_addr
+   */
   serverAddr(addr: string): this
+  /**
+   * Configures a function which is called when the ngrok service requests that
+   * this [Session] stops. Your application may choose to interpret this callback
+   * as a request to terminate the [Session] or the entire process.
+   *
+   * Errors returned by this function will be visible to the ngrok dashboard or
+   * API as the response to the Stop operation.
+   *
+   * Do not block inside this callback. It will cause the Dashboard or API
+   * stop operation to time out. Do not call [std::process::exit] inside this
+   * callback, it will also cause the operation to time out.
+   */
+  handleStopCommand(handler: () => void): this
+  /**
+   * Configures a function which is called when the ngrok service requests
+   * that this [Session] updates. Your application may choose to interpret
+   * this callback as a request to restart the [Session] or the entire
+   * process.
+   *
+   * Errors returned by this function will be visible to the ngrok dashboard or
+   * API as the response to the Restart operation.
+   *
+   * Do not block inside this callback. It will cause the Dashboard or API
+   * stop operation to time out. Do not call [std::process::exit] inside this
+   * callback, it will also cause the operation to time out.
+   */
+  handleRestartCommand(handler: () => void): this
+  /**
+   * Configures a function which is called when the ngrok service requests
+   * that this [Session] updates. Your application may choose to interpret
+   * this callback as a request to update its configuration, itself, or to
+   * invoke some other application-specific behavior.
+   *
+   * Errors returned by this function will be visible to the ngrok dashboard or
+   * API as the response to the Restart operation.
+   *
+   * Do not block inside this callback. It will cause the Dashboard or API
+   * stop operation to time out. Do not call [std::process::exit] inside this
+   * callback, it will also cause the operation to time out.
+   */
+  handleUpdateCommand(handler: (update: UpdateRequest) => void): this
   /** Attempt to establish an ngrok session using the current configuration. */
   connect(): Promise<NgrokSession>
 }
@@ -53,6 +125,12 @@ export class NgrokSession {
   /** Start building a labeled tunnel. */
   labeledTunnel(): NgrokLabeledTunnelBuilder
   closeTunnel(id: string): Promise<void>
+}
+export class UpdateRequest {
+  /** The version that the agent is requested to update to. */
+  version: string
+  /** Whether or not updating to the same major version is sufficient. */
+  permitMajorVersion: boolean
 }
 /**r" An ngrok tunnel backing an HTTP endpoint. */
 export class NgrokHttpTunnel {
