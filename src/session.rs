@@ -178,7 +178,7 @@ impl NgrokSessionBuilder {
                     tsfn.clone()
                         .lock()
                         .await
-                        .call(Ok(()), ThreadsafeFunctionCallMode::NonBlocking);
+                        .call((), ThreadsafeFunctionCallMode::NonBlocking);
                     Ok(())
                 }
             })
@@ -211,7 +211,7 @@ impl NgrokSessionBuilder {
                     tsfn.clone()
                         .lock()
                         .await
-                        .call(Ok(()), ThreadsafeFunctionCallMode::NonBlocking);
+                        .call((), ThreadsafeFunctionCallMode::NonBlocking);
                     Ok(())
                 }
             })
@@ -230,10 +230,10 @@ impl NgrokSessionBuilder {
     /// Do not block inside this callback. It will cause the Dashboard or API
     /// stop operation to time out. Do not call [std::process::exit] inside this
     /// callback, it will also cause the operation to time out.
-    #[napi(ts_args_type = "handler: (err: null|Error, update: UpdateRequest) => void")]
+    #[napi(ts_args_type = "handler: (update: UpdateRequest) => void")]
     pub fn handle_update_command(&mut self, handler: JsFunction) -> &Self {
         // create threadsafe function
-        let tsfn: Arc<Mutex<ThreadsafeFunction<UpdateRequest, ErrorStrategy::CalleeHandled>>> =
+        let tsfn: Arc<Mutex<ThreadsafeFunction<UpdateRequest, ErrorStrategy::Fatal>>> =
             Arc::new(Mutex::new(
                 handler
                     .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<UpdateRequest>| {
@@ -256,7 +256,7 @@ impl NgrokSessionBuilder {
                     tsfn.clone()
                         .lock()
                         .await
-                        .call(Ok(update), ThreadsafeFunctionCallMode::NonBlocking);
+                        .call(update, ThreadsafeFunctionCallMode::NonBlocking);
                     Ok(())
                 }
             })
@@ -348,7 +348,7 @@ pub struct UpdateRequest {
 
 pub(crate) fn create_no_io_tsfn(
     js_function: JsFunction,
-) -> Arc<Mutex<ThreadsafeFunction<(), ErrorStrategy::CalleeHandled>>> {
+) -> Arc<Mutex<ThreadsafeFunction<(), ErrorStrategy::Fatal>>> {
     Arc::new(Mutex::new(
         js_function
             .create_threadsafe_function(0, |_ctx: ThreadSafeCallContext<()>| Ok(vec![()]))

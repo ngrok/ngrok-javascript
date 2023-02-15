@@ -110,7 +110,7 @@ export class NgrokSessionBuilder {
    * stop operation to time out. Do not call [std::process::exit] inside this
    * callback, it will also cause the operation to time out.
    */
-  handleUpdateCommand(handler: (err: null|Error, update: UpdateRequest) => void): this
+  handleUpdateCommand(handler: (update: UpdateRequest) => void): this
   /** Attempt to establish an ngrok session using the current configuration. */
   connect(): Promise<NgrokSession>
 }

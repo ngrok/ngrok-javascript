@@ -1,6 +1,6 @@
 var UNIX_SOCKET = "/tmp/http.socket";
 const fs = require('fs');
-fs.unlinkSync(UNIX_SOCKET);
+try{fs.unlinkSync(UNIX_SOCKET)} catch {}
 
 // make webserver
 var http = require('http'); 
@@ -26,7 +26,7 @@ builder
   .handleRestartCommand(() => {
     console.log("restart command");
   })
-  .handleUpdateCommand((err, update) => {
+  .handleUpdateCommand((update) => {
     console.log("update command, version: " + update.version
       + " permitMajorVersion: " + update.permitMajorVersion);
   });
