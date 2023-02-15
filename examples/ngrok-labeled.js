@@ -19,13 +19,11 @@ builder.authtokenFromEnv()
   .metadata("Online in One Line");
 
 builder.connect().then((session) => {
-  http.ngrok_session = session; // prevent garbage collection
   session.labeledTunnel()
     .label("edge", "edghts_<edge_id>")
     .metadata("example tunnel metadata from nodejs")
     .listen().then((tunnel) => {
-      http.tunnel = tunnel; // prevent garbage collection
       console.log("established tunnel at: " + JSON.stringify(tunnel.labels()))
       tunnel.forwardUnix(UNIX_SOCKET);
   })
-}).await;
+});

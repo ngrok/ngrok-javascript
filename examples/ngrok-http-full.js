@@ -14,6 +14,7 @@ console.log('Node.js web server at ' + UNIX_SOCKET + ' is running..');
 
 // setup ngrok
 var ngrok = require('@ngrok/ngrok');
+// import ngrok from '@ngrok/ngrok' // if inside a module
 builder = new ngrok.NgrokSessionBuilder();
 builder
   // .authtoken("<authtoken>")
@@ -21,13 +22,12 @@ builder
   .metadata("Online in One Line");
 
 builder.connect().then((session) => {
-  http.ngrok_session = session; // prevent garbage collection
   session.httpEndpoint()
-    // .allowCidrString("0.0.0.0/0")
+    // .allowCidr("0.0.0.0/0")
     // .basicAuth("ngrok", "online1line")
     // .circuitBreaker(0.5)
     // .compression()
-    // .denyCidrString("10.1.1.1/32")
+    // .denyCidr("10.1.1.1/32")
     // .domain("<somedomain>.ngrok.io")
     // .mutualTlsca(fs.readFileSync('domain.crt'))
     // .oauth("google", ["<user>@<domain>"], ["<domain>"], ["<scope>"])
@@ -42,8 +42,7 @@ builder.connect().then((session) => {
     // .webhookVerification("twilio", "asdf"),
     .metadata("example tunnel metadata from nodejs")
     .listen().then((tunnel) => {
-      http.tunnel = tunnel; // prevent garbage collection
       console.log("established tunnel at: " + tunnel.url())
       tunnel.forwardUnix(UNIX_SOCKET);
   })
-}).await;
+});
