@@ -30,7 +30,7 @@ const run = async (): Promise<void> => {
   .handleRestartCommand(() => {
     console.log("restart command");
   })
-  .handleUpdateCommand((err, update) => {
+  .handleUpdateCommand((update) => {
     console.log("update command, version: " + update.version
       + " permitMajorVersion: " + update.permitMajorVersion);
   });
