@@ -198,3 +198,4 @@ Cargo.lock
 .direnv
 *.swp
 gen.js
+gen.d.ts

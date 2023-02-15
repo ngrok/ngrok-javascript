@@ -24,9 +24,12 @@
   "license": "MIT",
   "devDependencies": {
     "@napi-rs/cli": "^2.14.1",
+    "@types/node": "^18.13.0",
     "ava": "^4.3.3",
     "express": "^4.18.2",
-    "segfault-handler": "^1.3.0"
+    "segfault-handler": "^1.3.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5"
   },
   "ava": {
     "timeout": "3m"
@@ -36,7 +39,7 @@
   },
   "scripts": {
     "artifacts": "napi artifacts",
-    "build": "napi build --platform --release --js gen.js --pipe 'node post-build.js trailer index'",
+    "build": "napi build --platform --release --js gen.js --dts gen.d.ts --pipe 'node post-build.js trailer index'",
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "ava",
