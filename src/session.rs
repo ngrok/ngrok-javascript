@@ -22,10 +22,6 @@ use ngrok::{
 };
 use tokio::sync::Mutex;
 use tracing::debug;
-use tracing_subscriber::{
-    self,
-    fmt::format::FmtSpan,
-};
 
 use crate::{
     napi_err,
@@ -43,18 +39,6 @@ use crate::{
 #[allow(dead_code)]
 struct NgrokSessionBuilder {
     raw_builder: SessionBuilder,
-}
-
-/// turn on tracing subscriber which obeys NGROK_LOG env variable, e.g.:
-/// process.env.NGROK_LOG = 'ngrok=debug';
-/// ngrok.tracingSubscriber();
-#[napi()]
-pub fn tracing_subscriber() {
-    tracing_subscriber::fmt()
-        .pretty()
-        .with_span_events(FmtSpan::ENTER)
-        .with_env_filter(std::env::var("NGROK_LOG").unwrap_or_default())
-        .init();
 }
 
 #[napi]
@@ -150,7 +134,7 @@ impl NgrokSessionBuilder {
     /// [server_addr parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#server_addr
     #[napi]
     pub fn server_addr(&mut self, addr: String) -> &Self {
-        self.raw_builder = self.raw_builder.clone().server_addr(addr).clone();
+        self.raw_builder = self.raw_builder.clone().server_addr(addr);
         self
     }
 
@@ -169,20 +153,16 @@ impl NgrokSessionBuilder {
         // create threadsafe function
         let tsfn = create_no_io_tsfn(handler);
         // register stop handler
-        self.raw_builder = self
-            .raw_builder
-            .clone()
-            .handle_stop_command(move |_req| {
-                let tsfn = tsfn.clone();
-                async move {
-                    tsfn.clone()
-                        .lock()
-                        .await
-                        .call((), ThreadsafeFunctionCallMode::NonBlocking);
-                    Ok(())
-                }
-            })
-            .clone();
+        self.raw_builder = self.raw_builder.clone().handle_stop_command(move |_req| {
+            let tsfn = tsfn.clone();
+            async move {
+                tsfn.clone()
+                    .lock()
+                    .await
+                    .call((), ThreadsafeFunctionCallMode::NonBlocking);
+                Ok(())
+            }
+        });
         self
     }
 
@@ -214,8 +194,7 @@ impl NgrokSessionBuilder {
                         .call((), ThreadsafeFunctionCallMode::NonBlocking);
                     Ok(())
                 }
-            })
-            .clone();
+            });
         self
     }
 
@@ -259,8 +238,7 @@ impl NgrokSessionBuilder {
                         .call(update, ThreadsafeFunctionCallMode::NonBlocking);
                     Ok(())
                 }
-            })
-            .clone();
+            });
         self
     }
 

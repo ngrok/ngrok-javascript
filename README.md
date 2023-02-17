@@ -1,4 +1,4 @@
-# ngrok-js
+# The ngrok Agent SDK for NodeJS
 
 [![npm.rs][npm-badge]][npm-url]
 [![MIT licensed][mit-badge]][mit-url]
@@ -78,6 +78,10 @@ new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect()
     .catch(err => console.log('session setup error: ' + err))
     .await;
 ```
+
+# Dependencies
+
+This project relies on [NAPI-RS](https://napi.rs/), an excellent system to ease development and building of Rust plugins for NodeJS.
 
 # License
 

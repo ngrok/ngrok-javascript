@@ -88,5 +88,12 @@ async function ngrokLinkUnix(tunnel, server) {
   tunnel.forwardUnix(filename);
 }
 
+function consoleLog(level) {
+  loggingCallback((level, target, message) => {
+    console.log(`${level} ${target} - ${message}`);
+  }, level||"DEBUG");
+}
+
 module.exports.getSocket = getSocket;
 module.exports.listen = ngrokListen;
+module.exports.consoleLog = consoleLog;

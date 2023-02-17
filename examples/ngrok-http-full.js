@@ -15,6 +15,7 @@ console.log('Node.js web server at ' + UNIX_SOCKET + ' is running..');
 // setup ngrok
 var ngrok = require('@ngrok/ngrok');
 // import ngrok from '@ngrok/ngrok' // if inside a module
+ngrok.consoleLog(); // turn on debug logging
 builder = new ngrok.NgrokSessionBuilder();
 builder
   // .authtoken("<authtoken>")

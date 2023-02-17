@@ -4,6 +4,7 @@ use napi::{
 };
 
 pub mod http;
+pub mod logging;
 pub mod session;
 pub mod tcp;
 pub mod tls;

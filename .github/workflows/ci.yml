@@ -48,7 +48,7 @@ jobs:
           command: clippy
           args: '--all-targets --all-features --workspace -- -D warnings'
   build:
-    uses: ./.github/workflows/reusable-workflow.yml
+    uses: ./.github/workflows/build.yml
     with:
       app-name: ngrok
       build: ${{ matrix.settings.build }}
