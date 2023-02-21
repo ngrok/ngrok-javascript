@@ -20,6 +20,7 @@ use ngrok::{
     },
     Session,
 };
+use parking_lot::Mutex as SyncMutex;
 use tokio::sync::Mutex;
 use tracing::debug;
 
@@ -38,7 +39,7 @@ use crate::{
 #[napi]
 #[allow(dead_code)]
 struct NgrokSessionBuilder {
-    raw_builder: SessionBuilder,
+    raw_builder: Arc<SyncMutex<SessionBuilder>>,
 }
 
 #[napi]
@@ -49,7 +50,7 @@ impl NgrokSessionBuilder {
     #[napi(constructor)]
     pub fn new() -> Self {
         NgrokSessionBuilder {
-            raw_builder: Session::builder(),
+            raw_builder: Arc::new(SyncMutex::new(Session::builder())),
         }
     }
 
@@ -64,11 +65,8 @@ impl NgrokSessionBuilder {
     /// [authtoken parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#authtoken
     #[napi]
     pub fn authtoken(&mut self, authtoken: String) -> &Self {
-        // can't put lifetimes or generics on napi structs, which limits our options.
-        // there is a Reference which can force static lifetime, but haven't figured
-        // out a way to make this actually helpful. so send in the clones.
-        // https://napi.rs/docs/concepts/reference
-        self.raw_builder = self.raw_builder.clone().authtoken(authtoken);
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().authtoken(authtoken);
         self
     }
 
@@ -76,7 +74,8 @@ impl NgrokSessionBuilder {
     /// NGROK_AUTHTOKEN environment variable.
     #[napi]
     pub fn authtoken_from_env(&mut self) -> &Self {
-        self.raw_builder = self.raw_builder.clone().authtoken_from_env();
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().authtoken_from_env();
         self
     }
 
@@ -89,8 +88,8 @@ impl NgrokSessionBuilder {
     /// [heartbeat_interval parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#heartbeat_interval
     #[napi]
     pub fn heartbeat_interval(&mut self, heartbeat_interval: u32) -> &Self {
-        self.raw_builder = self
-            .raw_builder
+        let mut builder = self.raw_builder.lock();
+        *builder = builder
             .clone()
             .heartbeat_interval(Duration::new(heartbeat_interval.into(), 0));
         self
@@ -105,8 +104,8 @@ impl NgrokSessionBuilder {
     /// [heartbeat_tolerance parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#heartbeat_tolerance
     #[napi]
     pub fn heartbeat_tolerance(&mut self, heartbeat_tolerance: u32) -> &Self {
-        self.raw_builder = self
-            .raw_builder
+        let mut builder = self.raw_builder.lock();
+        *builder = builder
             .clone()
             .heartbeat_tolerance(Duration::new(heartbeat_tolerance.into(), 0));
         self
@@ -122,7 +121,8 @@ impl NgrokSessionBuilder {
     /// [metdata parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#metadata
     #[napi]
     pub fn metadata(&mut self, metadata: String) -> &Self {
-        self.raw_builder = self.raw_builder.clone().metadata(metadata);
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().metadata(metadata);
         self
     }
 
@@ -134,7 +134,8 @@ impl NgrokSessionBuilder {
     /// [server_addr parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#server_addr
     #[napi]
     pub fn server_addr(&mut self, addr: String) -> &Self {
-        self.raw_builder = self.raw_builder.clone().server_addr(addr);
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().server_addr(addr);
         self
     }
 
@@ -153,7 +154,8 @@ impl NgrokSessionBuilder {
         // create threadsafe function
         let tsfn = create_no_io_tsfn(handler);
         // register stop handler
-        self.raw_builder = self.raw_builder.clone().handle_stop_command(move |_req| {
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().handle_stop_command(move |_req| {
             let tsfn = tsfn.clone();
             async move {
                 tsfn.clone()
@@ -182,19 +184,17 @@ impl NgrokSessionBuilder {
         // create threadsafe function
         let tsfn = create_no_io_tsfn(handler);
         // register restart handler
-        self.raw_builder = self
-            .raw_builder
-            .clone()
-            .handle_restart_command(move |_req| {
-                let tsfn = tsfn.clone();
-                async move {
-                    tsfn.clone()
-                        .lock()
-                        .await
-                        .call((), ThreadsafeFunctionCallMode::NonBlocking);
-                    Ok(())
-                }
-            });
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().handle_restart_command(move |_req| {
+            let tsfn = tsfn.clone();
+            async move {
+                tsfn.clone()
+                    .lock()
+                    .await
+                    .call((), ThreadsafeFunctionCallMode::NonBlocking);
+                Ok(())
+            }
+        });
         self
     }
 
@@ -221,24 +221,22 @@ impl NgrokSessionBuilder {
                     .expect("Failed to create update callback function"),
             ));
         // register update handler
-        self.raw_builder = self
-            .raw_builder
-            .clone()
-            .handle_update_command(move |req: Update| {
-                let tsfn = tsfn.clone();
-                let update = UpdateRequest {
-                    version: req.version,
-                    permit_major_version: req.permit_major_version,
-                };
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().handle_update_command(move |req: Update| {
+            let tsfn = tsfn.clone();
+            let update = UpdateRequest {
+                version: req.version,
+                permit_major_version: req.permit_major_version,
+            };
 
-                async move {
-                    tsfn.clone()
-                        .lock()
-                        .await
-                        .call(update, ThreadsafeFunctionCallMode::NonBlocking);
-                    Ok(())
-                }
-            });
+            async move {
+                tsfn.clone()
+                    .lock()
+                    .await
+                    .call(update, ThreadsafeFunctionCallMode::NonBlocking);
+                Ok(())
+            }
+        });
         self
     }
 
@@ -249,10 +247,13 @@ impl NgrokSessionBuilder {
     /// Attempt to establish an ngrok session using the current configuration.
     #[napi]
     pub async fn connect(&self) -> Result<NgrokSession> {
-        self.raw_builder
+        let builder = self.raw_builder.lock().clone();
+        builder
             .connect()
             .await
-            .map(|s| NgrokSession { raw_session: s })
+            .map(|s| NgrokSession {
+                raw_session: Arc::new(SyncMutex::new(s)),
+            })
             .map_err(|e| napi_err(format!("failed to connect session, {e:?}")))
     }
 }
@@ -261,7 +262,7 @@ impl NgrokSessionBuilder {
 #[napi(custom_finalize)]
 struct NgrokSession {
     #[allow(dead_code)]
-    raw_session: Session,
+    raw_session: Arc<SyncMutex<Session>>,
 }
 
 #[napi]
@@ -270,32 +271,36 @@ impl NgrokSession {
     /// Start building a tunnel backing an HTTP endpoint.
     #[napi]
     pub fn http_endpoint(&self) -> NgrokHttpTunnelBuilder {
-        NgrokHttpTunnelBuilder::new(self.raw_session.clone(), self.raw_session.http_endpoint())
+        let session = self.raw_session.lock().clone();
+        NgrokHttpTunnelBuilder::new(session.clone(), session.http_endpoint())
     }
 
     /// Start building a tunnel backing a TCP endpoint.
     #[napi]
     pub fn tcp_endpoint(&self) -> NgrokTcpTunnelBuilder {
-        NgrokTcpTunnelBuilder::new(self.raw_session.clone(), self.raw_session.tcp_endpoint())
+        let session = self.raw_session.lock().clone();
+        NgrokTcpTunnelBuilder::new(session.clone(), session.tcp_endpoint())
     }
 
     /// Start building a tunnel backing a TLS endpoint.
     #[napi]
     pub fn tls_endpoint(&self) -> NgrokTlsTunnelBuilder {
-        NgrokTlsTunnelBuilder::new(self.raw_session.clone(), self.raw_session.tls_endpoint())
+        let session = self.raw_session.lock().clone();
+        NgrokTlsTunnelBuilder::new(session.clone(), session.tls_endpoint())
     }
 
     /// Start building a labeled tunnel.
     #[napi]
     pub fn labeled_tunnel(&self) -> NgrokLabeledTunnelBuilder {
-        NgrokLabeledTunnelBuilder::new(self.raw_session.clone(), self.raw_session.labeled_tunnel())
+        let session = self.raw_session.lock().clone();
+        NgrokLabeledTunnelBuilder::new(session.clone(), session.labeled_tunnel())
     }
 
     #[napi]
     pub async fn close_tunnel(&self, id: String) -> Result<()> {
+        let session = self.raw_session.lock().clone();
         // close tunnel
-        let res = self
-            .raw_session
+        let res = session
             .close_tunnel(id.clone())
             .await
             .map_err(|e| napi_err(format!("failed to close tunnel, {e:?}")));

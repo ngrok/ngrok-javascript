@@ -50,7 +50,7 @@ builder.connect().then((session) => {
     // .responseHeader("X-Res-Yup", "true")
     // .scheme("HTTPS")
     // .websocketTcpConversion()
-    // .webhookVerification("twilio", "asdf"),
+    // .webhookVerification("twilio", "asdf")
     .metadata("example tunnel metadata from nodejs")
     .listen().then((tunnel) => {
       console.log("established tunnel at: " + tunnel.url())

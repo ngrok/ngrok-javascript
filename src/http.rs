@@ -18,7 +18,8 @@ impl NgrokHttpTunnelBuilder {
     /// Defaults to [Scheme::HTTPS].
     #[napi]
     pub fn scheme(&mut self, scheme: String) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().scheme(
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().scheme(
             Scheme::from_str(scheme.as_str())
                 .unwrap_or_else(|_| panic!("Unknown scheme: {scheme:?}")),
         );
@@ -27,14 +28,15 @@ impl NgrokHttpTunnelBuilder {
     /// The domain to request for this edge.
     #[napi]
     pub fn domain(&mut self, domain: String) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().domain(domain);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().domain(domain);
         self
     }
     /// Certificates to use for client authentication at the ngrok edge.
     #[napi]
     pub fn mutual_tlsca(&mut self, mutual_tlsca: Uint8Array) -> &Self {
-        self.tunnel_builder = self
-            .tunnel_builder
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder
             .clone()
             .mutual_tlsca(Bytes::from(mutual_tlsca.to_vec()));
         self
@@ -42,45 +44,52 @@ impl NgrokHttpTunnelBuilder {
     /// Enable gzip compression for HTTP responses.
     #[napi]
     pub fn compression(&mut self) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().compression();
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().compression();
         self
     }
     /// Convert incoming websocket connections to TCP-like streams.
     #[napi]
     pub fn websocket_tcp_conversion(&mut self) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().websocket_tcp_conversion();
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().websocket_tcp_conversion();
         self
     }
     /// Reject requests when 5XX responses exceed this ratio.
     /// Disabled when 0.
     #[napi]
     pub fn circuit_breaker(&mut self, circuit_breaker: f64) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().circuit_breaker(circuit_breaker);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().circuit_breaker(circuit_breaker);
         self
     }
 
     /// with_request_header adds a header to all requests to this edge.
     #[napi]
     pub fn request_header(&mut self, name: String, value: String) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().request_header(name, value);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().request_header(name, value);
         self
     }
     /// with_response_header adds a header to all responses coming from this edge.
     #[napi]
     pub fn response_header(&mut self, name: String, value: String) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().response_header(name, value);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().response_header(name, value);
         self
     }
     /// with_remove_request_header removes a header from requests to this edge.
     #[napi]
     pub fn remove_request_header(&mut self, name: String) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().remove_request_header(name);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().remove_request_header(name);
         self
     }
     /// with_remove_response_header removes a header from responses from this edge.
     #[napi]
     pub fn remove_response_header(&mut self, name: String) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().remove_response_header(name);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().remove_response_header(name);
         self
     }
 
@@ -88,7 +97,8 @@ impl NgrokHttpTunnelBuilder {
     /// If not called, basic authentication is disabled.
     #[napi]
     pub fn basic_auth(&mut self, username: String, password: String) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().basic_auth(username, password);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().basic_auth(username, password);
         self
     }
 
@@ -113,7 +123,8 @@ impl NgrokHttpTunnelBuilder {
             oauth = oauth.clone().scope(v);
         });
 
-        self.tunnel_builder = self.tunnel_builder.clone().oauth(oauth);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().oauth(oauth);
         self
     }
 
@@ -140,7 +151,8 @@ impl NgrokHttpTunnelBuilder {
             oidc = oidc.clone().scope(v);
         });
 
-        self.tunnel_builder = self.tunnel_builder.clone().oidc(oidc);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().oidc(oidc);
         self
     }
 
@@ -148,10 +160,8 @@ impl NgrokHttpTunnelBuilder {
     /// If not called, WebhookVerification is disabled.
     #[napi]
     pub fn webhook_verification(&mut self, provider: String, secret: String) -> &Self {
-        self.tunnel_builder = self
-            .tunnel_builder
-            .clone()
-            .webhook_verification(provider, secret);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().webhook_verification(provider, secret);
         self
     }
 }

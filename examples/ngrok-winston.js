@@ -19,4 +19,6 @@ const server = require('http').createServer(
   res.write('Hello');
   res.end();
 });
-ngrok.listen(server);
+ngrok.listen(server).then((tunnel) => {
+  console.log("url: " + tunnel.url());
+});
