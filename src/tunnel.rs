@@ -186,19 +186,19 @@ macro_rules! make_tunnel_type {
         }
 
         impl ObjectFinalize for $wrapper {
-            fn finalize(mut self, env: Env) -> Result<()> {
-                debug!("{} finalize, id: {}", stringify!($wrapper), self.id);
+            fn finalize(mut self, _env: Env) -> Result<()> {
+                let id = self.id.clone();
+                debug!("{} finalize, id: {}", stringify!($wrapper), id);
                 // take control of inner Tunnel, removing the reference from this evaporating object
                 let inner = self.inner.take();
 
-                // send inner Tunnel into a tokio spawn to be dropped, as dropping spawns a tokio task but
+                // send inner Tunnel into a tokio runtime to be dropped, as dropping spawns a tokio task but
                 // there is no tokio context here.
-                env.spawn_future(
-                    async move {
-                        debug!("{} dropping tunnel reference, id: {}", stringify!($wrapper), self.id);
-                        drop(inner);
-                        Ok(())
-                    })
+                within_runtime_if_available(|| {
+                    debug!("{} dropping tunnel reference, id: {}", stringify!($wrapper), self.id);
+                    drop(inner);
+                    Ok(())
+                })
                 .map(|_| ())
             }
         }

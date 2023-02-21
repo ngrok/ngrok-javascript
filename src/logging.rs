@@ -12,7 +12,6 @@ use napi_derive::napi;
 use parking_lot::Mutex;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{
-    filter,
     prelude::*,
     Layer,
 };
@@ -81,13 +80,21 @@ pub fn log_to_callback(level: String, target: String, message: String) -> Result
     Ok(())
 }
 
-/// Register a callback function that will receive logging event information
+/// Register a callback function that will receive logging event information.
+/// An absent callback will unregister an existing callback function.
 #[napi(
-    ts_args_type = "callback: (level: string, target: string, message: string) => void, level?: string"
+    ts_args_type = "callback?: (level: string, target: string, message: string) => void, level?: string"
 )]
-pub fn logging_callback(callback: JsFunction, level: Option<String>) -> Result<()> {
+pub fn logging_callback(callback: Option<JsFunction>, level: Option<String>) -> Result<()> {
+    if callback.is_none() {
+        // clear out any registered callback
+        GLOBAL_DATA.lock().take();
+        return Ok(());
+    }
+
     // create the threadsafe function wrapper
     let tsfn: ThreadsafeFunction<Vec<String>, ErrorStrategy::Fatal> = callback
+        .unwrap()
         .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<Vec<String>>| {
             Ok(ctx
                 .value
@@ -112,16 +119,10 @@ pub fn logging_callback(callback: JsFunction, level: Option<String>) -> Result<(
         LevelFilter::DEBUG
     };
 
-    let filter = filter::Targets::new()
-        // make sure not to try and log from tokio_util::codec::framed_impl
-        .with_target("tokio", LevelFilter::OFF)
-        .with_target("tokio_util", LevelFilter::OFF)
-        .with_default(tracing_level);
-
     // register the subscriber layer with tracing
     tracing_subscriber::registry()
         .with(CustomLayer)
-        .with(filter)
+        .with(tracing_level)
         .init();
 
     Ok(())
