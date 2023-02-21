@@ -77,13 +77,27 @@ async function ngrokLinkUnix(tunnel, server) {
   }
 
   // begin listening
-  await server.listen({path: filename});
+  const socket = await server.listen({path: filename});
   // tighten permissions
   try {
     fs.chmodSync(filename, fs.constants.S_IRWXU);
   } catch (err) {
     console.debug("Cannot change permissions of file: " + filename);
   }
+  // register cleanup
+  process.on('SIGINT', function() {
+    // close tunnel
+    if (tunnel.session) {
+      console.debug('ngrok closing tunnel: ' + tunnel.id());
+      tunnel.session.closeTunnel(tunnel.id()).then(()=>{});
+    }
+    // close webserver's socket
+    socket.close(function () {
+      console.debug('ngrok closed socket');
+    });
+    // unregister any logging callback
+    loggingCallback();
+  });
   // forward tunnel
   tunnel.forwardUnix(filename);
 }
