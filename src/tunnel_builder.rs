@@ -105,7 +105,7 @@ macro_rules! make_tunnel_builder {
                 *builder = builder.clone().deny_cidr(cidr);
                 self
             }
-            /// The version of PROXY protocol to use with this tunnel, None if not using.
+            /// The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using.
             #[napi]
             pub fn proxy_proto(&mut self, proxy_proto: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();

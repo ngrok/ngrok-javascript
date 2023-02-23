@@ -108,20 +108,26 @@ impl NgrokHttpTunnelBuilder {
     pub fn oauth(
         &mut self,
         provider: String,
-        allow_emails: Vec<String>,
-        allow_domains: Vec<String>,
-        scopes: Vec<String>,
+        allow_emails: Option<Vec<String>>,
+        allow_domains: Option<Vec<String>>,
+        scopes: Option<Vec<String>>,
     ) -> &Self {
         let mut oauth = OauthOptions::new(provider);
-        allow_emails.iter().for_each(|v| {
-            oauth = oauth.clone().allow_email(v);
-        });
-        allow_domains.iter().for_each(|v| {
-            oauth = oauth.clone().allow_domain(v);
-        });
-        scopes.iter().for_each(|v| {
-            oauth = oauth.clone().scope(v);
-        });
+        if let Some(allow_emails) = allow_emails {
+            allow_emails.iter().for_each(|v| {
+                oauth = oauth.clone().allow_email(v);
+            });
+        }
+        if let Some(allow_domains) = allow_domains {
+            allow_domains.iter().for_each(|v| {
+                oauth = oauth.clone().allow_domain(v);
+            });
+        }
+        if let Some(scopes) = scopes {
+            scopes.iter().for_each(|v| {
+                oauth = oauth.clone().scope(v);
+            });
+        }
 
         let mut builder = self.tunnel_builder.lock();
         *builder = builder.clone().oauth(oauth);
@@ -136,20 +142,26 @@ impl NgrokHttpTunnelBuilder {
         issuer_url: String,
         client_id: String,
         client_secret: String,
-        allow_emails: Vec<String>,
-        allow_domains: Vec<String>,
-        scopes: Vec<String>,
+        allow_emails: Option<Vec<String>>,
+        allow_domains: Option<Vec<String>>,
+        scopes: Option<Vec<String>>,
     ) -> &Self {
         let mut oidc = OidcOptions::new(issuer_url, client_id, client_secret);
-        allow_emails.iter().for_each(|v| {
-            oidc = oidc.clone().allow_email(v);
-        });
-        allow_domains.iter().for_each(|v| {
-            oidc = oidc.clone().allow_domain(v);
-        });
-        scopes.iter().for_each(|v| {
-            oidc = oidc.clone().scope(v);
-        });
+        if let Some(allow_emails) = allow_emails {
+            allow_emails.iter().for_each(|v| {
+                oidc = oidc.clone().allow_email(v);
+            });
+        }
+        if let Some(allow_domains) = allow_domains {
+            allow_domains.iter().for_each(|v| {
+                oidc = oidc.clone().allow_domain(v);
+            });
+        }
+        if let Some(scopes) = scopes {
+            scopes.iter().for_each(|v| {
+                oidc = oidc.clone().scope(v);
+            });
+        }
 
         let mut builder = self.tunnel_builder.lock();
         *builder = builder.clone().oidc(oidc);

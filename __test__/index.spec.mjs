@@ -2,7 +2,7 @@ import test from 'ava'
 
 import { NgrokSessionBuilder } from '../index.js'
 
-test('make sessionbuilder', (t) => {
+test('smoke', (t) => {
   var builder = new NgrokSessionBuilder();
   t.truthy(builder);
 })

@@ -26,6 +26,7 @@
     "@napi-rs/cli": "^2.14.1",
     "@types/node": "^18.13.0",
     "ava": "^4.3.3",
+    "axios": "^1.3.3",
     "express": "^4.18.2",
     "segfault-handler": "^1.3.0",
     "ts-node": "^10.9.1",
