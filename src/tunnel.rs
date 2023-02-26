@@ -1,8 +1,10 @@
 use std::{
     collections::HashMap,
+    io,
     sync::Arc,
 };
 
+use async_trait::async_trait;
 use lazy_static::lazy_static;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -27,7 +29,16 @@ lazy_static! {
     // tunnel references to be kept until explicit close to prevent nodejs gc from dropping them.
     // the tunnel wrapper object, and the underlying tunnel, both have references to the Session
     // so the Session is safe from premature dropping.
-    static ref GLOBAL_TUNNELS: Mutex<HashMap<String,Arc<Mutex<dyn Tunnel>>>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_TUNNELS: Mutex<HashMap<String,Arc<Mutex<dyn ExtendedTunnel>>>> = Mutex::new(HashMap::new());
+}
+
+/// The TunnelExt cannot be turned into an object since it contains generics, so implementing
+/// a proxy trait without generics which can be the dyn type stored in the global map.
+#[async_trait]
+pub trait ExtendedTunnel: Tunnel {
+    async fn fwd_tcp(&mut self, addr: String) -> core::result::Result<(), io::Error>;
+    #[cfg(not(target_os = "windows"))]
+    async fn fwd_unix(&mut self, addr: String) -> core::result::Result<(), io::Error>;
 }
 
 macro_rules! make_tunnel_type {
@@ -44,7 +55,6 @@ macro_rules! make_tunnel_type {
             url: String,
             proto: String,
             session: Session,
-            inner: Option<Arc<Mutex<$tunnel>>>,
         }
 
         #[napi]
@@ -56,9 +66,8 @@ macro_rules! make_tunnel_type {
                 let metadata = raw_tunnel.metadata().to_string();
                 let url = raw_tunnel.url().to_string();
                 let proto = raw_tunnel.proto().to_string();
-                let arc = Arc::new(Mutex::new(raw_tunnel));
                 // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
-                GLOBAL_TUNNELS.lock().await.insert(id.clone(), arc.clone());
+                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Mutex::new(raw_tunnel)));
                 $wrapper {
                     id,
                     forwards_to,
@@ -66,7 +75,6 @@ macro_rules! make_tunnel_type {
                     url,
                     proto,
                     session,
-                    inner: Some(arc),
                 }
             }
 
@@ -97,7 +105,6 @@ macro_rules! make_tunnel_type {
             metadata: String,
             labels: HashMap<String,String>,
             session: Session,
-            inner: Option<Arc<Mutex<$tunnel>>>,
         }
 
         #[napi]
@@ -108,16 +115,14 @@ macro_rules! make_tunnel_type {
                 let forwards_to = raw_tunnel.forwards_to().to_string();
                 let metadata = raw_tunnel.metadata().to_string();
                 let labels = raw_tunnel.labels().clone();
-                let arc = Arc::new(Mutex::new(raw_tunnel));
                 // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
-                GLOBAL_TUNNELS.lock().await.insert(id.clone(), arc.clone());
+                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Mutex::new(raw_tunnel)));
                 $wrapper {
                     id,
                     forwards_to,
                     metadata,
                     labels,
                     session,
-                    inner: Some(arc),
                 }
             }
 
@@ -133,6 +138,17 @@ macro_rules! make_tunnel_type {
 
     // all tunnels get these
     ($wrapper:ident, $tunnel:tt) => {
+        #[async_trait]
+        impl ExtendedTunnel for $tunnel {
+            async fn fwd_tcp(&mut self, addr: String) -> core::result::Result<(), io::Error> {
+                self.forward_tcp(addr).await
+            }
+            #[cfg(not(target_os = "windows"))]
+            async fn fwd_unix(&mut self, addr: String) -> core::result::Result<(), io::Error> {
+                self.forward_unix(addr).await
+            }
+        }
+
         #[napi]
         #[allow(dead_code)]
         impl $wrapper {
@@ -162,12 +178,13 @@ macro_rules! make_tunnel_type {
             pub async fn forward_tcp(&self, addr: String) -> Result<()> {
                 // we must clone the Arc before locking so we have a local reference
                 // to the mutex to unlock if this struct is dropped.
-                let res = self.inner.as_ref()
+                let res = GLOBAL_TUNNELS.lock().await
+                    .get(&self.id)
                     .ok_or(napi_err("Tunnel is no longer running"))?
                     .clone() // required clone
                     .lock()
                     .await
-                    .forward_tcp(addr)
+                    .fwd_tcp(addr)
                     .await
                     .map_err(|e| napi_err(format!("cannot forward tcp: {e:?}")));
                 debug!("forward_tcp returning");
@@ -181,12 +198,13 @@ macro_rules! make_tunnel_type {
                 {
                     // we must clone the Arc before locking so we have a local reference
                     // to the mutex to unlock if this struct is dropped.
-                    let res = self.inner.as_ref()
+                    let res = GLOBAL_TUNNELS.lock().await
+                        .get(&self.id)
                         .ok_or(napi_err("Tunnel is no longer running"))?
                         .clone() // required clone
                         .lock()
                         .await
-                        .forward_unix(addr)
+                        .fwd_unix(addr)
                         .await
                         .map_err(|e| napi_err(format!("cannot forward unix: {e:?}")));
                     debug!("forward_unix returning");
@@ -205,32 +223,25 @@ macro_rules! make_tunnel_type {
             #[napi]
             pub async fn close(&self) -> Result<()> {
                 debug!("{} closing, id: {}", stringify!($wrapper), self.id);
-                // drop our internal reference to the tunnel, giving drop control of the tunnel back to the nodejs.
-                GLOBAL_TUNNELS.lock().await.remove(&self.id);
 
                 // we may not be able to lock our reference to the tunnel due to the forward_* calls which
                 // continuously accept-loop while the tunnel is active, so calling close on the Session.
-                self.session.close_tunnel(self.id.clone())
+                let res = self.session.close_tunnel(self.id.clone())
                     .await
-                    .map_err(|e| napi_err(format!("error closing tunnel: {e:?}")))
+                    .map_err(|e| napi_err(format!("error closing tunnel: {e:?}")));
+
+                // drop our internal reference to the tunnel after awaiting close
+                GLOBAL_TUNNELS.lock().await.remove(&self.id);
+
+                res
             }
         }
 
+        #[allow(unused_mut)]
         impl ObjectFinalize for $wrapper {
             fn finalize(mut self, _env: Env) -> Result<()> {
-                let id = self.id.clone();
-                debug!("{} finalize, id: {}", stringify!($wrapper), id);
-                // take control of inner Tunnel, removing the reference from this evaporating object
-                let inner = self.inner.take();
-
-                // send inner Tunnel into a tokio runtime to be dropped, as dropping spawns a tokio task but
-                // there is no tokio context here.
-                within_runtime_if_available(|| {
-                    debug!("{} dropping tunnel reference, id: {}", stringify!($wrapper), self.id);
-                    drop(inner);
-                    Ok(())
-                })
-                .map(|_| ())
+                debug!("{} finalize, id: {}", stringify!($wrapper), self.id);
+                Ok(())
             }
         }
     };
