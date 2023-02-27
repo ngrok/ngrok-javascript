@@ -1,4 +1,9 @@
 // run with: node --trace-gc --expose-gc
+if (typeof global.gc !== 'function') {
+  console.log("must run with '--expose-gc'");
+  process.exit();
+};
+
 const SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler('crash.log');
 
@@ -11,8 +16,7 @@ http.createServer(
 
 var ngrok = require('/Users/bob/projects/ngrok-js/index.js');
 // turn on debug
-process.env.NGROK_LOG = 'ngrok_js=debug';
-ngrok.tracingSubscriber();
+ngrok.consoleLog();
 
 new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect().then((session) => {
   session.httpEndpoint().listen().then((tunnel) => {

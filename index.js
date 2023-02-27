@@ -246,10 +246,10 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { NgrokSessionBuilder, tracingSubscriber, NgrokSession, UpdateRequest, NgrokHttpTunnel, NgrokTcpTunnel, NgrokTlsTunnel, NgrokLabeledTunnel, NgrokHttpTunnelBuilder, NgrokTcpTunnelBuilder, NgrokTlsTunnelBuilder, NgrokLabeledTunnelBuilder } = nativeBinding
+const { loggingCallback, NgrokSessionBuilder, NgrokSession, UpdateRequest, NgrokHttpTunnel, NgrokTcpTunnel, NgrokTlsTunnel, NgrokLabeledTunnel, NgrokHttpTunnelBuilder, NgrokTcpTunnelBuilder, NgrokTlsTunnelBuilder, NgrokLabeledTunnelBuilder } = nativeBinding
 
+module.exports.loggingCallback = loggingCallback
 module.exports.NgrokSessionBuilder = NgrokSessionBuilder
-module.exports.tracingSubscriber = tracingSubscriber
 module.exports.NgrokSession = NgrokSession
 module.exports.UpdateRequest = UpdateRequest
 module.exports.NgrokHttpTunnel = NgrokHttpTunnel
@@ -350,5 +350,12 @@ async function ngrokLinkUnix(tunnel, server) {
   tunnel.forwardUnix(filename);
 }
 
+function consoleLog(level) {
+  loggingCallback((level, target, message) => {
+    console.log(`${level} ${target} - ${message}`);
+  }, level||"DEBUG");
+}
+
 module.exports.getSocket = getSocket;
 module.exports.listen = ngrokListen;
+module.exports.consoleLog = consoleLog;

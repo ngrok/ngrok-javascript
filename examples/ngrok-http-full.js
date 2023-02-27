@@ -15,6 +15,7 @@ console.log('Node.js web server at ' + UNIX_SOCKET + ' is running..');
 // setup ngrok
 var ngrok = require('@ngrok/ngrok');
 // import ngrok from '@ngrok/ngrok' // if inside a module
+ngrok.consoleLog(); // turn on debug logging
 builder = new ngrok.NgrokSessionBuilder();
 builder
   // .authtoken("<authtoken>")
@@ -49,7 +50,7 @@ builder.connect().then((session) => {
     // .responseHeader("X-Res-Yup", "true")
     // .scheme("HTTPS")
     // .websocketTcpConversion()
-    // .webhookVerification("twilio", "asdf"),
+    // .webhookVerification("twilio", "asdf")
     .metadata("example tunnel metadata from nodejs")
     .listen().then((tunnel) => {
       console.log("established tunnel at: " + tunnel.url())

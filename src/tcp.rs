@@ -8,7 +8,8 @@ impl NgrokTcpTunnelBuilder {
     /// The TCP address to request for this edge.
     #[napi]
     pub fn remote_addr(&mut self, remote_addr: String) -> &Self {
-        self.tunnel_builder = self.tunnel_builder.clone().remote_addr(remote_addr);
+        let mut builder = self.tunnel_builder.lock();
+        *builder = builder.clone().remote_addr(remote_addr);
         self
     }
 }

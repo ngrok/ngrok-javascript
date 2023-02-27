@@ -23,6 +23,9 @@ const run = async (): Promise<void> => {
   httpServer.listen(socket);
   */
 
+  ngrok.loggingCallback(function(level, target, message) {
+    console.log(`${level} ${target} - ${message}`);
+  });
   const sessionBuilder = new ngrok.NgrokSessionBuilder().authtokenFromEnv()
   .handleStopCommand(() => {
     console.log("stop command");
