@@ -119,11 +119,15 @@ pub fn logging_callback(callback: Option<JsFunction>, level: Option<String>) -> 
         LevelFilter::DEBUG
     };
 
-    // register the subscriber layer with tracing
-    tracing_subscriber::registry()
+    if let Err(err) = tracing_subscriber::registry()
         .with(CustomLayer)
         .with(tracing_level)
-        .init();
+        .try_init()
+    {
+        if !err.to_string().contains("already been set") {
+            return Err(napi_err(format!("Failed to subscribe logger, {err:?}")));
+        }
+    }
 
     Ok(())
 }
