@@ -4,7 +4,7 @@ if (typeof global.gc !== 'function') {
   process.exit();
 };
 
-const SegfaultHandler = require('segfault-handler');
+const SegfaultHandler = require('../node_modules/segfault-handler');
 SegfaultHandler.registerHandler('crash.log');
 
 const http = require('http');
@@ -14,7 +14,7 @@ http.createServer(
   res.end();
 } ).listen(8081); 
 
-var ngrok = require('/Users/bob/projects/ngrok-js/index.js');
+var ngrok = require('..');
 // turn on debug
 ngrok.consoleLog();
 
