@@ -302,13 +302,15 @@ async function ngrokListen(server, tunnel) {
   // todo: named pipe on windows: https://nodejs.org/api/net.html#ipc-support
 
   // attempt unix socket
+  var socket;
   try {
-    await ngrokLinkUnix(tunnel, server);
+    socket = await ngrokLinkUnix(tunnel, server);
   } catch (err) {
     console.debug("Using TCP socket. " + err);
     // fallback to tcp socket
-    await ngrokLinkTcp(tunnel, server);
+    socket = await ngrokLinkTcp(tunnel, server);
   }
+  registerCleanup(tunnel, socket);
 
   server.tunnel = tunnel; // surface to caller
   return tunnel;
@@ -316,9 +318,10 @@ async function ngrokListen(server, tunnel) {
 
 async function ngrokLinkTcp(tunnel, server) {
   // random local port
-  await server.listen(0);
+  const socket = await server.listen(0);
   // forward to socket
   tunnel.forwardTcp('localhost:' + server.address().port);
+  return socket;
 }
 
 async function ngrokLinkUnix(tunnel, server) {
@@ -339,7 +342,7 @@ async function ngrokLinkUnix(tunnel, server) {
   }
 
   // begin listening
-  await server.listen({path: filename});
+  const socket = await server.listen({path: filename});
   // tighten permissions
   try {
     fs.chmodSync(filename, fs.constants.S_IRWXU);
@@ -348,6 +351,31 @@ async function ngrokLinkUnix(tunnel, server) {
   }
   // forward tunnel
   tunnel.forwardUnix(filename);
+
+  return socket;
+}
+
+function registerCleanup(tunnel, socket) {
+  process.on('SIGINT', function() {
+    if (process.listenerCount('SIGINT') > 1) {
+      // user has registered a handler, abort this one
+      return;
+    }
+    // close tunnel
+    if (tunnel) {
+      tunnel.close().then(()=>{
+        console.debug('ngrok closed tunnel: ' + tunnel.id());
+      });
+    }
+    // close webserver's socket
+    if (socket) {
+      socket.close(function () {
+        console.debug('ngrok closed socket');
+      });
+    }
+    // unregister any logging callback
+    loggingCallback();
+  });
 }
 
 function consoleLog(level) {
