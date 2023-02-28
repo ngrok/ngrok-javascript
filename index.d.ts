@@ -137,13 +137,28 @@ export class NgrokHttpTunnel {
   url(): string
   /** The protocol of the endpoint that this tunnel backs. */
   proto(): string
-  /** The ID of this tunnel, assigned by the remote server. */
+  /** Returns a tunnel's unique ID. */
   id(): string
+  /**
+   * Returns a human-readable string presented in the ngrok dashboard
+   * and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
+   * [TcpTunnelBuilder::forwards_to], etc. to set this value
+   * explicitly.
+   */
+  forwardsTo(): string
+  /** Returns the arbitrary metadata string for this tunnel. */
+  metadata(): string
   /** Forward incoming tunnel connections to the provided TCP address. */
   forwardTcp(addr: string): Promise<void>
   /** Forward incoming tunnel connections to the provided Unix socket path. */
   forwardUnix(addr: string): Promise<void>
-  /** Close the tunnel. */
+  /**
+   * Close the tunnel.
+   *
+   * This is an RPC call that must be `.await`ed.
+   * It is equivalent to calling `Session::close_tunnel` with this
+   * tunnel's ID.
+   */
   close(): Promise<void>
 }
 /**r" An ngrok tunnel backing a TCP endpoint. */
@@ -152,13 +167,28 @@ export class NgrokTcpTunnel {
   url(): string
   /** The protocol of the endpoint that this tunnel backs. */
   proto(): string
-  /** The ID of this tunnel, assigned by the remote server. */
+  /** Returns a tunnel's unique ID. */
   id(): string
+  /**
+   * Returns a human-readable string presented in the ngrok dashboard
+   * and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
+   * [TcpTunnelBuilder::forwards_to], etc. to set this value
+   * explicitly.
+   */
+  forwardsTo(): string
+  /** Returns the arbitrary metadata string for this tunnel. */
+  metadata(): string
   /** Forward incoming tunnel connections to the provided TCP address. */
   forwardTcp(addr: string): Promise<void>
   /** Forward incoming tunnel connections to the provided Unix socket path. */
   forwardUnix(addr: string): Promise<void>
-  /** Close the tunnel. */
+  /**
+   * Close the tunnel.
+   *
+   * This is an RPC call that must be `.await`ed.
+   * It is equivalent to calling `Session::close_tunnel` with this
+   * tunnel's ID.
+   */
   close(): Promise<void>
 }
 /**r" An ngrok tunnel bcking a TLS endpoint. */
@@ -167,26 +197,56 @@ export class NgrokTlsTunnel {
   url(): string
   /** The protocol of the endpoint that this tunnel backs. */
   proto(): string
-  /** The ID of this tunnel, assigned by the remote server. */
+  /** Returns a tunnel's unique ID. */
   id(): string
+  /**
+   * Returns a human-readable string presented in the ngrok dashboard
+   * and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
+   * [TcpTunnelBuilder::forwards_to], etc. to set this value
+   * explicitly.
+   */
+  forwardsTo(): string
+  /** Returns the arbitrary metadata string for this tunnel. */
+  metadata(): string
   /** Forward incoming tunnel connections to the provided TCP address. */
   forwardTcp(addr: string): Promise<void>
   /** Forward incoming tunnel connections to the provided Unix socket path. */
   forwardUnix(addr: string): Promise<void>
-  /** Close the tunnel. */
+  /**
+   * Close the tunnel.
+   *
+   * This is an RPC call that must be `.await`ed.
+   * It is equivalent to calling `Session::close_tunnel` with this
+   * tunnel's ID.
+   */
   close(): Promise<void>
 }
 /**r" A labeled ngrok tunnel. */
 export class NgrokLabeledTunnel {
   /** The labels this tunnel was started with. */
   labels(): Record<string, string>
-  /** The ID of this tunnel, assigned by the remote server. */
+  /** Returns a tunnel's unique ID. */
   id(): string
+  /**
+   * Returns a human-readable string presented in the ngrok dashboard
+   * and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
+   * [TcpTunnelBuilder::forwards_to], etc. to set this value
+   * explicitly.
+   */
+  forwardsTo(): string
+  /** Returns the arbitrary metadata string for this tunnel. */
+  metadata(): string
   /** Forward incoming tunnel connections to the provided TCP address. */
   forwardTcp(addr: string): Promise<void>
   /** Forward incoming tunnel connections to the provided Unix socket path. */
   forwardUnix(addr: string): Promise<void>
-  /** Close the tunnel. */
+  /**
+   * Close the tunnel.
+   *
+   * This is an RPC call that must be `.await`ed.
+   * It is equivalent to calling `Session::close_tunnel` with this
+   * tunnel's ID.
+   */
   close(): Promise<void>
 }
 /**r" An ngrok tunnel backing an HTTP endpoint. */
@@ -226,12 +286,12 @@ export class NgrokHttpTunnelBuilder {
    * OAuth configuration.
    * If not called, OAuth is disabled.
    */
-  oauth(provider: string, allowEmails: Array<string>, allowDomains: Array<string>, scopes: Array<string>): this
+  oauth(provider: string, allowEmails?: Array<string> | undefined | null, allowDomains?: Array<string> | undefined | null, scopes?: Array<string> | undefined | null): this
   /**
    * OIDC configuration.
    * If not called, OIDC is disabled.
    */
-  oidc(issuerUrl: string, clientId: string, clientSecret: string, allowEmails: Array<string>, allowDomains: Array<string>, scopes: Array<string>): this
+  oidc(issuerUrl: string, clientId: string, clientSecret: string, allowEmails?: Array<string> | undefined | null, allowDomains?: Array<string> | undefined | null, scopes?: Array<string> | undefined | null): this
   /**
    * WebhookVerification configuration.
    * If not called, WebhookVerification is disabled.
@@ -251,7 +311,7 @@ export class NgrokHttpTunnelBuilder {
    * Call multiple times to add additional CIDR ranges.
    */
   denyCidr(cidr: string): this
-  /** The version of PROXY protocol to use with this tunnel, None if not using. */
+  /** The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using. */
   proxyProto(proxyProto: string): this
   /**
    * Tunnel backend metadata. Viewable via the dashboard and API, but has no
@@ -277,7 +337,7 @@ export class NgrokTcpTunnelBuilder {
    * Call multiple times to add additional CIDR ranges.
    */
   denyCidr(cidr: string): this
-  /** The version of PROXY protocol to use with this tunnel, None if not using. */
+  /** The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using. */
   proxyProto(proxyProto: string): this
   /**
    * Tunnel backend metadata. Viewable via the dashboard and API, but has no
@@ -307,7 +367,7 @@ export class NgrokTlsTunnelBuilder {
    * Call multiple times to add additional CIDR ranges.
    */
   denyCidr(cidr: string): this
-  /** The version of PROXY protocol to use with this tunnel, None if not using. */
+  /** The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using. */
   proxyProto(proxyProto: string): this
   /**
    * Tunnel backend metadata. Viewable via the dashboard and API, but has no

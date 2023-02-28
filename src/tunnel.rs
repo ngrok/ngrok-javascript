@@ -39,6 +39,8 @@ macro_rules! make_tunnel_type {
         #[allow(dead_code)]
         pub(crate) struct $wrapper {
             id: String,
+            forwards_to: String,
+            metadata: String,
             url: String,
             proto: String,
             session: Session,
@@ -50,6 +52,8 @@ macro_rules! make_tunnel_type {
         impl $wrapper {
             pub(crate) async fn new(session: Session, raw_tunnel: $tunnel) -> Self {
                 let id = raw_tunnel.id().to_string();
+                let forwards_to = raw_tunnel.forwards_to().to_string();
+                let metadata = raw_tunnel.metadata().to_string();
                 let url = raw_tunnel.url().to_string();
                 let proto = raw_tunnel.proto().to_string();
                 let arc = Arc::new(Mutex::new(raw_tunnel));
@@ -57,6 +61,8 @@ macro_rules! make_tunnel_type {
                 GLOBAL_TUNNELS.lock().await.insert(id.clone(), arc.clone());
                 $wrapper {
                     id,
+                    forwards_to,
+                    metadata,
                     url,
                     proto,
                     session,
@@ -87,6 +93,8 @@ macro_rules! make_tunnel_type {
         #[allow(dead_code)]
         pub(crate) struct $wrapper {
             id: String,
+            forwards_to: String,
+            metadata: String,
             labels: HashMap<String,String>,
             session: Session,
             inner: Option<Arc<Mutex<$tunnel>>>,
@@ -97,12 +105,16 @@ macro_rules! make_tunnel_type {
         impl $wrapper {
             pub(crate) async fn new(session: Session, raw_tunnel: $tunnel) -> Self {
                 let id = raw_tunnel.id().to_string();
+                let forwards_to = raw_tunnel.forwards_to().to_string();
+                let metadata = raw_tunnel.metadata().to_string();
                 let labels = raw_tunnel.labels().clone();
                 let arc = Arc::new(Mutex::new(raw_tunnel));
                 // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
                 GLOBAL_TUNNELS.lock().await.insert(id.clone(), arc.clone());
                 $wrapper {
                     id,
+                    forwards_to,
+                    metadata,
                     labels,
                     session,
                     inner: Some(arc),
@@ -124,10 +136,25 @@ macro_rules! make_tunnel_type {
         #[napi]
         #[allow(dead_code)]
         impl $wrapper {
-            /// The ID of this tunnel, assigned by the remote server.
+            /// Returns a tunnel's unique ID.
             #[napi]
             pub fn id(&self) -> String {
                 self.id.clone()
+            }
+
+            /// Returns a human-readable string presented in the ngrok dashboard
+            /// and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
+            /// [TcpTunnelBuilder::forwards_to], etc. to set this value
+            /// explicitly.
+            #[napi]
+            pub fn forwards_to(&self) -> String {
+                self.forwards_to.clone()
+            }
+
+            /// Returns the arbitrary metadata string for this tunnel.
+            #[napi]
+            pub fn metadata(&self) -> String {
+                self.metadata.clone()
             }
 
             /// Forward incoming tunnel connections to the provided TCP address.
@@ -171,6 +198,10 @@ macro_rules! make_tunnel_type {
             }
 
             /// Close the tunnel.
+            ///
+            /// This is an RPC call that must be `.await`ed.
+            /// It is equivalent to calling `Session::close_tunnel` with this
+            /// tunnel's ID.
             #[napi]
             pub async fn close(&self) -> Result<()> {
                 debug!("{} closing, id: {}", stringify!($wrapper), self.id);
