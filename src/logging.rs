@@ -82,6 +82,7 @@ pub fn log_to_callback(level: String, target: String, message: String) -> Result
 
 /// Register a callback function that will receive logging event information.
 /// An absent callback will unregister an existing callback function.
+/// The log level defaults to INFO, it can be set to one of ERROR, WARN, INFO, DEBUG, or TRACE.
 #[napi(
     ts_args_type = "callback?: (level: string, target: string, message: string) => void, level?: string"
 )]
@@ -116,7 +117,7 @@ pub fn logging_callback(callback: Option<JsFunction>, level: Option<String>) -> 
             _ => return Err(napi_err("Unknown log level: {level:?}")),
         }
     } else {
-        LevelFilter::DEBUG
+        LevelFilter::INFO
     };
 
     if let Err(err) = tracing_subscriber::registry()

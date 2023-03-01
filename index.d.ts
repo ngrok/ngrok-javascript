@@ -6,6 +6,7 @@
 /**
  * Register a callback function that will receive logging event information.
  * An absent callback will unregister an existing callback function.
+ * The log level defaults to INFO, it can be set to one of ERROR, WARN, INFO, DEBUG, or TRACE.
  */
 export function loggingCallback(callback?: (level: string, target: string, message: string) => void, level?: string): void
 /** The builder for an ngrok session. */
@@ -302,6 +303,12 @@ export class NgrokHttpTunnelBuilder {
   /** Begin listening for new connections on this tunnel. */
   listen(): Promise<NgrokHttpTunnel>
   /**
+   * Begin listening for new connections on this tunnel,
+   * and bind to a local socket so this tunnel can be
+   * passed directly into net.Server.listen.
+   */
+  bind(): Promise<NgrokHttpTunnel>
+  /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
    */
@@ -327,6 +334,12 @@ export class NgrokTcpTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(): Promise<NgrokTcpTunnel>
+  /**
+   * Begin listening for new connections on this tunnel,
+   * and bind to a local socket so this tunnel can be
+   * passed directly into net.Server.listen.
+   */
+  bind(): Promise<NgrokTcpTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -358,6 +371,12 @@ export class NgrokTlsTunnelBuilder {
   /** Begin listening for new connections on this tunnel. */
   listen(): Promise<NgrokTlsTunnel>
   /**
+   * Begin listening for new connections on this tunnel,
+   * and bind to a local socket so this tunnel can be
+   * passed directly into net.Server.listen.
+   */
+  bind(): Promise<NgrokTlsTunnel>
+  /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
    */
@@ -381,9 +400,21 @@ export class NgrokLabeledTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(): Promise<NgrokLabeledTunnel>
+  /**
+   * Begin listening for new connections on this tunnel,
+   * and bind to a local socket so this tunnel can be
+   * passed directly into net.Server.listen.
+   */
+  bind(): Promise<NgrokLabeledTunnel>
   /** Add a label, value pair for this tunnel. */
   label(label: string, value: string): this
 }
-export function getSocket(tunnel?: (NgrokHttpTunnel|NgrokTcpTunnel|NgrokTlsTunnel|NgrokLabeledTunnel)): net.Server
+/** Generate, or convert a given tunnel, into one that can be passed into net.Server.listen(). */
+export function listenable(tunnel?: (NgrokHttpTunnel|NgrokTcpTunnel|NgrokTlsTunnel|NgrokLabeledTunnel)): (NgrokHttpTunnel|NgrokTcpTunnel|NgrokTlsTunnel|NgrokLabeledTunnel)
+/** Start the given net.Server listening to a generated, or passed in, tunnel. */
 export function listen(server: net.Server, tunnel?: (NgrokHttpTunnel|NgrokTcpTunnel|NgrokTlsTunnel|NgrokLabeledTunnel)): (NgrokHttpTunnel|NgrokTcpTunnel|NgrokTlsTunnel|NgrokLabeledTunnel)
+/** 
+ * Register a console.log callback for ngrok INFO logging.
+ * Optionally set the logging level to one of ERROR, WARN, INFO, DEBUG, or TRACE.
+ */
 export function consoleLog(level?: String)

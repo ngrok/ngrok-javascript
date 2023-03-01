@@ -1,18 +1,31 @@
-import { NgrokSessionBuilder } from '../index.js'
+import * as ngrok from '../index.js'
 import test from 'ava'
 import axios, { AxiosError } from "axios";
+import express from 'express';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as net from 'net';
 
 const expected = 'Hello';
 
-async function makeHttp(useUnixSocket) {
-  const server = http.createServer(
+function createExpress() {
+  const app = express()
+  app.get('/', (req, res) => {
+    res.send(expected);
+  })
+  return app;
+}
+
+function createHttpServer() {
+  return http.createServer(
     function(req,res){res.writeHead(200);
     res.write(expected);
     res.end();
-  } )
+  } );
+}
+
+async function makeHttp(useUnixSocket) {
+  const server = createHttpServer();
   const listenTo = useUnixSocket ? ("tun-" + Math.floor(Math.random() * 1000000)) : 0;
   const socket = await server.listen(listenTo);
   server.socket = socket;
@@ -21,7 +34,7 @@ async function makeHttp(useUnixSocket) {
 }
 
 async function makeSession() {
-  const builder = new NgrokSessionBuilder();
+  const builder = new ngrok.NgrokSessionBuilder();
   return await builder
     .authtokenFromEnv()
     .metadata("session metadata")
@@ -271,3 +284,102 @@ test('tls tunnel', async (t) => {
   t.truthy(error.message.endsWith('signed certificate'), error.message);
   await shutdown(tunnel, httpServer.socket);
 });
+
+test('net listen', async (t) => {
+  const httpServer = await createHttpServer();
+  const socket = await ngrok.listen(httpServer);
+  const response = await validateHttpRequest(t, socket.tunnel.url());
+  await shutdown(socket.tunnel, socket);
+});
+
+test('net listenable', async (t) => {
+  const httpServer = await createHttpServer();
+  const tunnel = await ngrok.listenable();
+  httpServer.listen(tunnel);
+  const response = await validateHttpRequest(t, tunnel.url());
+  await shutdown(tunnel, tunnel.handle);
+});
+
+test('express listen', async (t) => {
+  const httpServer = await createExpress();
+  const socket = await ngrok.listen(httpServer);
+  const response = await validateHttpRequest(t, socket.tunnel.url());
+  await shutdown(socket.tunnel, socket);
+});
+
+test('express listenable', async (t) => {
+  const httpServer = await createExpress();
+  const tunnel = await ngrok.listenable();
+  httpServer.listen(tunnel);
+  const response = await validateHttpRequest(t, tunnel.url());
+  await shutdown(tunnel, tunnel.handle);
+});
+
+test('bind', async (t) => {
+  const httpServer = await createHttpServer();
+  const session = await makeSession();
+  const tunnel = await session.httpEndpoint().bind();
+  httpServer.listen(tunnel);
+  const response = await validateHttpRequest(t, tunnel.url());
+  await shutdown(tunnel, tunnel.handle);
+});
+
+// run serially so other tests are not logging
+test.serial('console log', async (t) => {
+  // register logging callback
+  ngrok.consoleLog();
+  const [httpServer, session] = await makeHttpAndSession();
+  const tunnel = await session.httpEndpoint().listen();
+  await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url());
+  // unregister the callback
+  ngrok.loggingCallback();
+});
+
+test('tcp multipass', async (t) => {
+  const [httpServer, session1] = await makeHttpAndSession();
+  const session2 = await makeSession();
+  const tunnel1 = await session1.httpEndpoint().listen();
+  const tunnel2 = await session1.httpEndpoint().listen();
+  const tunnel3 = await session2.httpEndpoint().listen();
+  const tunnel4 = await session2.tcpEndpoint().listen();
+
+  tunnel1.forwardTcp(httpServer.listenTo)
+  tunnel2.forwardTcp(httpServer.listenTo)
+  tunnel3.forwardTcp(httpServer.listenTo)
+  tunnel4.forwardTcp(httpServer.listenTo)
+
+  await validateHttpRequest(t, tunnel1.url());
+  await validateHttpRequest(t, tunnel2.url());
+  await validateHttpRequest(t, tunnel3.url());
+  await validateHttpRequest(t, tunnel4.url().replace("tcp:", "http:"));
+  await shutdown(tunnel1, httpServer.socket);
+  await tunnel2.close();
+  await tunnel3.close();
+  await tunnel4.close();
+});
+
+test('pipe multipass', async (t) => {
+  const httpServer = createHttpServer();
+  const session1 = await makeSession();
+  const session2 = await makeSession();
+  const tunnel1 = await session1.httpEndpoint().listen();
+  const tunnel2 = await session1.httpEndpoint().listen();
+  const tunnel3 = await session2.httpEndpoint().listen();
+  const tunnel4 = await session2.tcpEndpoint().listen();
+  const socket = await ngrok.listen(httpServer, tunnel1);
+
+  tunnel1.forwardUnix(socket.path)
+  tunnel2.forwardUnix(socket.path)
+  tunnel3.forwardUnix(socket.path)
+  tunnel4.forwardUnix(socket.path)
+
+  await validateHttpRequest(t, tunnel1.url());
+  await validateHttpRequest(t, tunnel2.url());
+  await validateHttpRequest(t, tunnel3.url());
+  await validateHttpRequest(t, tunnel4.url().replace("tcp:", "http:"));
+  await shutdown(tunnel1, socket);
+  await tunnel2.close();
+  await tunnel3.close();
+  await tunnel4.close();
+});
+

@@ -21,7 +21,10 @@ use ngrok::{
     Session,
 };
 use tokio::sync::Mutex;
-use tracing::debug;
+use tracing::{
+    debug,
+    info,
+};
 
 use crate::napi_err;
 
@@ -66,6 +69,7 @@ macro_rules! make_tunnel_type {
                 let metadata = raw_tunnel.metadata().to_string();
                 let url = raw_tunnel.url().to_string();
                 let proto = raw_tunnel.proto().to_string();
+                info!("Created tunnel {id:?} with url {url:?}");
                 // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
                 GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Mutex::new(raw_tunnel)));
                 $wrapper {
@@ -115,6 +119,7 @@ macro_rules! make_tunnel_type {
                 let forwards_to = raw_tunnel.forwards_to().to_string();
                 let metadata = raw_tunnel.metadata().to_string();
                 let labels = raw_tunnel.labels().clone();
+                info!("Created tunnel {id:?} with labels {labels:?}");
                 // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
                 GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Mutex::new(raw_tunnel)));
                 $wrapper {
@@ -176,12 +181,16 @@ macro_rules! make_tunnel_type {
             /// Forward incoming tunnel connections to the provided TCP address.
             #[napi]
             pub async fn forward_tcp(&self, addr: String) -> Result<()> {
+                info!("Tunnel {:?} TCP forwarding to {addr:?}", &self.id);
                 // we must clone the Arc before locking so we have a local reference
                 // to the mutex to unlock if this struct is dropped.
-                let res = GLOBAL_TUNNELS.lock().await
+                let arc = GLOBAL_TUNNELS.lock().await
                     .get(&self.id)
                     .ok_or(napi_err("Tunnel is no longer running"))?
-                    .clone() // required clone
+                    .clone(); // required clone
+
+                // doing this as a seperate statement so the GLOBAL_TUNNELS lock is dropped
+                let res = arc
                     .lock()
                     .await
                     .fwd_tcp(addr)
@@ -194,14 +203,18 @@ macro_rules! make_tunnel_type {
             /// Forward incoming tunnel connections to the provided Unix socket path.
             #[napi]
             pub async fn forward_unix(&self, addr: String) -> Result<()> {
+                info!("Tunnel {:?} pipe forwarding to {addr:?}", &self.id);
                 #[cfg(not(target_os = "windows"))]
                 {
                     // we must clone the Arc before locking so we have a local reference
                     // to the mutex to unlock if this struct is dropped.
-                    let res = GLOBAL_TUNNELS.lock().await
+                    let arc = GLOBAL_TUNNELS.lock().await
                         .get(&self.id)
                         .ok_or(napi_err("Tunnel is no longer running"))?
-                        .clone() // required clone
+                        .clone(); // required clone
+
+                    // doing this as a seperate statement so the GLOBAL_TUNNELS lock is dropped
+                    let res = arc
                         .lock()
                         .await
                         .fwd_unix(addr)

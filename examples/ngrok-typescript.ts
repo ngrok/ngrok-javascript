@@ -5,24 +5,38 @@ const httpServer = http.createServer(
   function(req,res){res.writeHead(200);
   res.write('Hello');
   res.end();
-} )
-.listen(8081); 
+} );
 
 import * as ngrok from "../index";
+ngrok.consoleLog();
 
 const run = async (): Promise<void> => {
-  /*
+  // await listenServer();
+  // await listenable();
+  // await bind();
+  await standardConfig();
+}
+
+async function listenServer() {
   const tunnel = await ngrok.listen(httpServer);
   if ( typeof tunnel['url'] === 'function') {
     console.log("tunnel at: " + tunnel['url']());
   }
-  */
+}
 
-  /*
-  const socket = await ngrok.getSocket();
-  httpServer.listen(socket);
-  */
+async function listenable() {
+  const tunnel = await ngrok.listenable();
+  httpServer.listen(tunnel);
+}
 
+async function bind() {
+  const sessionBuilder = new ngrok.NgrokSessionBuilder().authtokenFromEnv()
+  const session = await sessionBuilder.connect();
+  const tunnel = await session.httpEndpoint().bind();
+  httpServer.listen(tunnel); 
+}
+
+async function standardConfig() {
   ngrok.loggingCallback(function(level, target, message) {
     console.log(`${level} ${target} - ${message}`);
   });
@@ -40,7 +54,11 @@ const run = async (): Promise<void> => {
   const session = await sessionBuilder.connect();
   const tunnel = await session.httpEndpoint().listen();
   console.log('tunnel at: ' + tunnel.url());
+  httpServer.listen(8081); 
   tunnel.forwardTcp('localhost:8081');
+
+  // unregister logging callback
+  ngrok.loggingCallback();
 }
 
 run();

@@ -22,7 +22,10 @@ use ngrok::{
 };
 use parking_lot::Mutex as SyncMutex;
 use tokio::sync::Mutex;
-use tracing::debug;
+use tracing::{
+    debug,
+    info,
+};
 
 use crate::{
     napi_err,
@@ -251,8 +254,11 @@ impl NgrokSessionBuilder {
         builder
             .connect()
             .await
-            .map(|s| NgrokSession {
-                raw_session: Arc::new(SyncMutex::new(s)),
+            .map(|s| {
+                info!("Session created");
+                NgrokSession {
+                    raw_session: Arc::new(SyncMutex::new(s)),
+                }
             })
             .map_err(|e| napi_err(format!("failed to connect session, {e:?}")))
     }

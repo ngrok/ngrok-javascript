@@ -73,6 +73,15 @@ macro_rules! make_tunnel_builder {
                     Err(val) => Err(val),
                 }
             }
+
+            /// Begin listening for new connections on this tunnel,
+            /// and bind to a local socket so this tunnel can be
+            /// passed directly into net.Server.listen.
+            #[napi]
+            pub async fn bind(&self) -> Result<$tunnel> {
+                // this will actually get replaced by the trailer
+                return self.listen().await;
+            }
         }
 
         impl ObjectFinalize for $wrapper {

@@ -268,6 +268,54 @@ const net = require('net');
 const fs = require('fs');
 const os = require('os');
 
+NgrokHttpTunnelBuilder.prototype.bind = ngrokBind;
+NgrokTcpTunnelBuilder.prototype.bind = ngrokBind;
+NgrokTlsTunnelBuilder.prototype.bind = ngrokBind;
+NgrokLabeledTunnelBuilder.prototype.bind = ngrokBind;
+
+// Begin listening for new connections on this tunnel,
+// and bind to a local socket so this tunnel can be 
+// passed directly into net.Server.listen.
+async function ngrokBind() {
+  const socket = await randomTcpSocket();
+  const tunnel = await this.listen();
+  tunnel.forwardTcp('localhost:' + socket.address().port);
+  defineTunnelHandle(tunnel, socket);
+  return tunnel;
+}
+
+// add a 'handle' getter to the tunnel so it can be
+// passed directly into net.Server.listen.
+function defineTunnelHandle(tunnel, socket) {
+  // NodeJS net.Server asks passed-in object for 'handle',
+  // Return the native TCP object so the pre-existing socket is used.
+  Object.defineProperty( tunnel, 'handle', {
+    get: function() {
+      return socket._handle;
+    }
+  });
+}
+
+// generate a net.Server listening to a random port
+async function randomTcpSocket() {
+  return await asyncListen(new net.Server(), {host:'localhost', port:0});
+}
+
+// NodeJS has not promisified 'net': https://github.com/nodejs/node/issues/21482
+function asyncListen(server, options) {
+  return new Promise((resolve, reject) => {
+    const socket = server.listen(options);
+    socket.once('listening', () => {
+      resolve(socket);
+    })
+    .once('error', (err) => {
+      reject(err);
+    });
+  });
+}
+
+// Make a session using NGROK_AUTHTOKEN from the environment,
+// and then return a listening HTTP tunnel.
 async function defaultTunnel() {
   // set up a default session and tunnel
   var builder = new NgrokSessionBuilder();
@@ -278,22 +326,21 @@ async function defaultTunnel() {
   return tunnel;
 }
 
-// get a ngrok-connect socket, optionally passing in a pre-existing tunnel
-async function getSocket(tunnel) {
+// Get a listenable ngrok tunnel, optionally passing in a pre-existing tunnel
+async function listenable(tunnel) {
   if (!tunnel) {
     tunnel = await defaultTunnel();
   }
   // use tcp socket with random local port
-  const server = new net.Server();
-  await server.listen(0);
+  const socket = await randomTcpSocket();
   // forward to this socket
-  tunnel.forwardTcp('localhost:' + server.address().port);
-  // surface to caller
-  server.tunnel = tunnel;
-  return server;
+  tunnel.forwardTcp('localhost:' + socket.address().port);
+  // make it work with net.Servers
+  defineTunnelHandle(tunnel, socket);
+  return tunnel;
 }
 
-// bind a server to a ngrok tunnel, optionally passing in a pre-existing tunnel
+// Bind a server to a ngrok tunnel, optionally passing in a pre-existing tunnel
 async function ngrokListen(server, tunnel) {
   if (!tunnel) {
     tunnel = await defaultTunnel();
@@ -313,14 +360,16 @@ async function ngrokListen(server, tunnel) {
   registerCleanup(tunnel, socket);
 
   server.tunnel = tunnel; // surface to caller
-  return tunnel;
+  socket.tunnel = tunnel; // surface to caller
+  // return the newly created net.Server, which will be different in the express case
+  return socket;
 }
 
 async function ngrokLinkTcp(tunnel, server) {
   // random local port
-  const socket = await server.listen(0);
+  const socket = await asyncListen(server, {host:'localhost', port:0});
   // forward to socket
-  tunnel.forwardTcp('localhost:' + server.address().port);
+  tunnel.forwardTcp('localhost:' + socket.address().port);
   return socket;
 }
 
@@ -342,7 +391,7 @@ async function ngrokLinkUnix(tunnel, server) {
   }
 
   // begin listening
-  const socket = await server.listen({path: filename});
+  const socket = await asyncListen(server, {path: filename});
   // tighten permissions
   try {
     fs.chmodSync(filename, fs.constants.S_IRWXU);
@@ -351,6 +400,7 @@ async function ngrokLinkUnix(tunnel, server) {
   }
   // forward tunnel
   tunnel.forwardUnix(filename);
+  socket.path = filename; // surface to caller
 
   return socket;
 }
@@ -381,9 +431,9 @@ function registerCleanup(tunnel, socket) {
 function consoleLog(level) {
   loggingCallback((level, target, message) => {
     console.log(`${level} ${target} - ${message}`);
-  }, level||"DEBUG");
+  }, level);
 }
 
-module.exports.getSocket = getSocket;
+module.exports.listenable = listenable;
 module.exports.listen = ngrokListen;
 module.exports.consoleLog = consoleLog;
