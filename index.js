@@ -268,29 +268,38 @@ const net = require('net');
 const fs = require('fs');
 const os = require('os');
 
-NgrokHttpTunnelBuilder.prototype.bind = ngrokBind;
-NgrokTcpTunnelBuilder.prototype.bind = ngrokBind;
-NgrokTlsTunnelBuilder.prototype.bind = ngrokBind;
-NgrokLabeledTunnelBuilder.prototype.bind = ngrokBind;
+// wrap listen with the bind code for passing to net.Server.listen()
+NgrokHttpTunnelBuilder.prototype._listen = NgrokHttpTunnelBuilder.prototype.listen;
+NgrokTcpTunnelBuilder.prototype._listen = NgrokTcpTunnelBuilder.prototype.listen;
+NgrokTlsTunnelBuilder.prototype._listen = NgrokTlsTunnelBuilder.prototype.listen;
+NgrokLabeledTunnelBuilder.prototype._listen = NgrokLabeledTunnelBuilder.prototype.listen;
+
+NgrokHttpTunnelBuilder.prototype.listen = ngrokBind;
+NgrokTcpTunnelBuilder.prototype.listen = ngrokBind;
+NgrokTlsTunnelBuilder.prototype.listen = ngrokBind;
+NgrokLabeledTunnelBuilder.prototype.listen = ngrokBind;
 
 // Begin listening for new connections on this tunnel,
 // and bind to a local socket so this tunnel can be 
-// passed directly into net.Server.listen.
-async function ngrokBind() {
-  const socket = await randomTcpSocket();
-  const tunnel = await this.listen();
-  tunnel.forwardTcp('localhost:' + socket.address().port);
-  defineTunnelHandle(tunnel, socket);
+// passed into net.Server.listen().
+async function ngrokBind(bind) {
+  const tunnel = await this._listen();
+  if (bind !== false) {
+    const socket = await randomTcpSocket();
+    defineTunnelHandle(tunnel, socket);
+  }
   return tunnel;
 }
 
 // add a 'handle' getter to the tunnel so it can be
-// passed directly into net.Server.listen.
+// passed into net.Server.listen().
 function defineTunnelHandle(tunnel, socket) {
   // NodeJS net.Server asks passed-in object for 'handle',
   // Return the native TCP object so the pre-existing socket is used.
   Object.defineProperty( tunnel, 'handle', {
     get: function() {
+      // turn on forwarding now that it has been requested
+      tunnel.forwardTcp('localhost:' + socket.address().port);
       return socket._handle;
     }
   });
@@ -326,18 +335,9 @@ async function defaultTunnel() {
   return tunnel;
 }
 
-// Get a listenable ngrok tunnel, optionally passing in a pre-existing tunnel
-async function listenable(tunnel) {
-  if (!tunnel) {
-    tunnel = await defaultTunnel();
-  }
-  // use tcp socket with random local port
-  const socket = await randomTcpSocket();
-  // forward to this socket
-  tunnel.forwardTcp('localhost:' + socket.address().port);
-  // make it work with net.Servers
-  defineTunnelHandle(tunnel, socket);
-  return tunnel;
+// Get a listenable ngrok tunnel, suitable for passing to net.Server.listen().
+async function listenable() {
+  return await defaultTunnel();
 }
 
 // Bind a server to a ngrok tunnel, optionally passing in a pre-existing tunnel

@@ -13,7 +13,7 @@ ngrok.consoleLog();
 const run = async (): Promise<void> => {
   // await listenServer();
   // await listenable();
-  // await bind();
+  // await listen();
   await standardConfig();
 }
 
@@ -29,10 +29,10 @@ async function listenable() {
   httpServer.listen(tunnel);
 }
 
-async function bind() {
+async function listen() {
   const sessionBuilder = new ngrok.NgrokSessionBuilder().authtokenFromEnv()
   const session = await sessionBuilder.connect();
-  const tunnel = await session.httpEndpoint().bind();
+  const tunnel = await session.httpEndpoint().listen();
   httpServer.listen(tunnel); 
 }
 

@@ -301,13 +301,7 @@ export class NgrokHttpTunnelBuilder {
   /** Tunnel-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
-  listen(): Promise<NgrokHttpTunnel>
-  /**
-   * Begin listening for new connections on this tunnel,
-   * and bind to a local socket so this tunnel can be
-   * passed directly into net.Server.listen.
-   */
-  bind(): Promise<NgrokHttpTunnel>
+  listen(bind?: boolean | undefined | null): Promise<NgrokHttpTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -333,13 +327,7 @@ export class NgrokTcpTunnelBuilder {
   /** Tunnel-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
-  listen(): Promise<NgrokTcpTunnel>
-  /**
-   * Begin listening for new connections on this tunnel,
-   * and bind to a local socket so this tunnel can be
-   * passed directly into net.Server.listen.
-   */
-  bind(): Promise<NgrokTcpTunnel>
+  listen(bind?: boolean | undefined | null): Promise<NgrokTcpTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -369,13 +357,7 @@ export class NgrokTlsTunnelBuilder {
   /** Tunnel-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
-  listen(): Promise<NgrokTlsTunnel>
-  /**
-   * Begin listening for new connections on this tunnel,
-   * and bind to a local socket so this tunnel can be
-   * passed directly into net.Server.listen.
-   */
-  bind(): Promise<NgrokTlsTunnel>
+  listen(bind?: boolean | undefined | null): Promise<NgrokTlsTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -399,13 +381,7 @@ export class NgrokLabeledTunnelBuilder {
   /** Tunnel-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
-  listen(): Promise<NgrokLabeledTunnel>
-  /**
-   * Begin listening for new connections on this tunnel,
-   * and bind to a local socket so this tunnel can be
-   * passed directly into net.Server.listen.
-   */
-  bind(): Promise<NgrokLabeledTunnel>
+  listen(bind?: boolean | undefined | null): Promise<NgrokLabeledTunnel>
   /** Add a label, value pair for this tunnel. */
   label(label: string, value: string): this
 }

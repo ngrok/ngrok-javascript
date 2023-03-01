@@ -315,13 +315,11 @@ test('express listenable', async (t) => {
   await shutdown(tunnel, tunnel.handle);
 });
 
-test('bind', async (t) => {
+test('no bind', async (t) => {
   const httpServer = await createHttpServer();
   const session = await makeSession();
-  const tunnel = await session.httpEndpoint().bind();
-  httpServer.listen(tunnel);
-  const response = await validateHttpRequest(t, tunnel.url());
-  await shutdown(tunnel, tunnel.handle);
+  const tunnel = await session.httpEndpoint().listen(false);
+  t.is(undefined, tunnel.handle);
 });
 
 // run serially so other tests are not logging

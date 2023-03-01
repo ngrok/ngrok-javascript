@@ -59,7 +59,7 @@ macro_rules! make_tunnel_builder {
 
             /// Begin listening for new connections on this tunnel.
             #[napi]
-            pub async fn listen(&self) -> Result<$tunnel> {
+            pub async fn listen(&self, _bind: Option<bool>) -> Result<$tunnel> {
                 let session = self.session.lock().clone();
                 let tun = self.tunnel_builder.lock().clone();
                 let result = tun
@@ -72,15 +72,6 @@ macro_rules! make_tunnel_builder {
                     Ok(raw_tun) => Ok($tunnel::new(session, raw_tun).await),
                     Err(val) => Err(val),
                 }
-            }
-
-            /// Begin listening for new connections on this tunnel,
-            /// and bind to a local socket so this tunnel can be
-            /// passed directly into net.Server.listen.
-            #[napi]
-            pub async fn bind(&self) -> Result<$tunnel> {
-                // this will actually get replaced by the trailer
-                return self.listen().await;
             }
         }
 
