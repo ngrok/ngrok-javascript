@@ -302,6 +302,7 @@ impl NgrokSession {
         NgrokLabeledTunnelBuilder::new(session.clone(), session.labeled_tunnel())
     }
 
+    /// Close a tunnel with the given ID.
     #[napi]
     pub async fn close_tunnel(&self, id: String) -> Result<()> {
         let session = self.raw_session.lock().clone();

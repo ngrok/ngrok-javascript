@@ -30,6 +30,7 @@
     "express": "^4.18.2",
     "segfault-handler": "^1.3.0",
     "ts-node": "^10.9.1",
+    "typedoc": "^0.23.26",
     "typescript": "^4.9.5",
     "winston": "^3.8.2"
   },
@@ -43,6 +44,7 @@
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release --js gen.js --dts gen.d.ts --pipe 'node post-build.js trailer index'",
     "build:debug": "napi build --platform",
+    "docs": "mv trailer.d.ts trailer.d.hidden; npx typedoc index.d.ts; mv trailer.d.hidden trailer.d.ts",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "ava",
     "universal": "napi universal",
