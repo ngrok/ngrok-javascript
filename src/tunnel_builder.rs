@@ -59,7 +59,7 @@ macro_rules! make_tunnel_builder {
 
             /// Begin listening for new connections on this tunnel.
             #[napi]
-            pub async fn listen(&self) -> Result<$tunnel> {
+            pub async fn listen(&self, _bind: Option<bool>) -> Result<$tunnel> {
                 let session = self.session.lock().clone();
                 let tun = self.tunnel_builder.lock().clone();
                 let result = tun
