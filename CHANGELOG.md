@@ -1,6 +1,9 @@
-## 0.1.0:
+## 0.0.8:
 
 * Support callbacks for logging, include console.log and Winston handlers.
+* Can now pass tunnels directly to net.Server.listen().
+* Clean shutdown on SIGINT after ngrok.listen(server).
+* Typedoc generation of documentation.
 
 ## 0.0.7:
 
