@@ -33,6 +33,6 @@ builder.connect().then((session) => {
     .metadata("example tunnel metadata from nodejs")
     .listen().then((tunnel) => {
       console.log("established tunnel at: " + tunnel.url())
-      tunnel.forwardUnix(UNIX_SOCKET);
+      tunnel.forwardPipe(UNIX_SOCKET);
   })
 });

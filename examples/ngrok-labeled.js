@@ -24,6 +24,6 @@ builder.connect().then((session) => {
     .metadata("example tunnel metadata from nodejs")
     .listen().then((tunnel) => {
       console.log("established tunnel at: " + JSON.stringify(tunnel.labels()))
-      tunnel.forwardUnix(UNIX_SOCKET);
+      tunnel.forwardPipe(UNIX_SOCKET);
   })
 });

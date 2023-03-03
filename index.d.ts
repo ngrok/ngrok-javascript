@@ -152,8 +152,12 @@ export class NgrokHttpTunnel {
   metadata(): string
   /** Forward incoming tunnel connections to the provided TCP address. */
   forwardTcp(addr: string): Promise<void>
-  /** Forward incoming tunnel connections to the provided Unix socket path. */
-  forwardUnix(addr: string): Promise<void>
+  /**
+   * Forward incoming tunnel connections to the provided file socket path.
+   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
+   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
+   */
+  forwardPipe(addr: string): Promise<void>
   /**
    * Close the tunnel.
    *
@@ -182,8 +186,12 @@ export class NgrokTcpTunnel {
   metadata(): string
   /** Forward incoming tunnel connections to the provided TCP address. */
   forwardTcp(addr: string): Promise<void>
-  /** Forward incoming tunnel connections to the provided Unix socket path. */
-  forwardUnix(addr: string): Promise<void>
+  /**
+   * Forward incoming tunnel connections to the provided file socket path.
+   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
+   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
+   */
+  forwardPipe(addr: string): Promise<void>
   /**
    * Close the tunnel.
    *
@@ -212,8 +220,12 @@ export class NgrokTlsTunnel {
   metadata(): string
   /** Forward incoming tunnel connections to the provided TCP address. */
   forwardTcp(addr: string): Promise<void>
-  /** Forward incoming tunnel connections to the provided Unix socket path. */
-  forwardUnix(addr: string): Promise<void>
+  /**
+   * Forward incoming tunnel connections to the provided file socket path.
+   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
+   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
+   */
+  forwardPipe(addr: string): Promise<void>
   /**
    * Close the tunnel.
    *
@@ -240,8 +252,12 @@ export class NgrokLabeledTunnel {
   metadata(): string
   /** Forward incoming tunnel connections to the provided TCP address. */
   forwardTcp(addr: string): Promise<void>
-  /** Forward incoming tunnel connections to the provided Unix socket path. */
-  forwardUnix(addr: string): Promise<void>
+  /**
+   * Forward incoming tunnel connections to the provided file socket path.
+   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
+   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
+   */
+  forwardPipe(addr: string): Promise<void>
   /**
    * Close the tunnel.
    *

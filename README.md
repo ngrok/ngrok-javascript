@@ -35,6 +35,10 @@ The published library is available on
 npm install @ngrok/ngrok
 ```
 
+# Documentation
+
+A quickstart guide and a full API reference are included in the [ngrok-js TypeScript API documentation](https://ngrok.github.io/ngrok-js/).
+
 # Quickstart
 
 After you've installed the package, you'll need an Auth Token. Retrieve one on the
