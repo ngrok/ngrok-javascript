@@ -40,8 +40,7 @@ lazy_static! {
 #[async_trait]
 pub trait ExtendedTunnel: Tunnel {
     async fn fwd_tcp(&mut self, addr: String) -> core::result::Result<(), io::Error>;
-    #[cfg(not(target_os = "windows"))]
-    async fn fwd_unix(&mut self, addr: String) -> core::result::Result<(), io::Error>;
+    async fn fwd_pipe(&mut self, addr: String) -> core::result::Result<(), io::Error>;
 }
 
 macro_rules! make_tunnel_type {
@@ -148,9 +147,8 @@ macro_rules! make_tunnel_type {
             async fn fwd_tcp(&mut self, addr: String) -> core::result::Result<(), io::Error> {
                 self.forward_tcp(addr).await
             }
-            #[cfg(not(target_os = "windows"))]
-            async fn fwd_unix(&mut self, addr: String) -> core::result::Result<(), io::Error> {
-                self.forward_unix(addr).await
+            async fn fwd_pipe(&mut self, addr: String) -> core::result::Result<(), io::Error> {
+                self.forward_pipe(addr).await
             }
         }
 
@@ -200,32 +198,27 @@ macro_rules! make_tunnel_type {
                 res
             }
 
-            /// Forward incoming tunnel connections to the provided Unix socket path.
+            /// Forward incoming tunnel connections to the provided file socket path.
+            /// On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
+            /// On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
             #[napi]
-            pub async fn forward_unix(&self, addr: String) -> Result<()> {
-                info!("Tunnel {:?} pipe forwarding to {addr:?}", &self.id);
-                #[cfg(not(target_os = "windows"))]
-                {
-                    // we must clone the Arc before locking so we have a local reference
-                    // to the mutex to unlock if this struct is dropped.
-                    let arc = GLOBAL_TUNNELS.lock().await
-                        .get(&self.id)
-                        .ok_or(napi_err("Tunnel is no longer running"))?
-                        .clone(); // required clone
+            pub async fn forward_pipe(&self, addr: String) -> Result<()> {
+                // we must clone the Arc before locking so we have a local reference
+                // to the mutex to unlock if this struct is dropped.
+                let arc = GLOBAL_TUNNELS.lock().await
+                    .get(&self.id)
+                    .ok_or(napi_err("Tunnel is no longer running"))?
+                    .clone(); // required clone
 
-                    // doing this as a seperate statement so the GLOBAL_TUNNELS lock is dropped
-                    let res = arc
-                        .lock()
-                        .await
-                        .fwd_unix(addr)
-                        .await
-                        .map_err(|e| napi_err(format!("cannot forward unix: {e:?}")));
-                    debug!("forward_unix returning");
-                    res
-                }
-                #[cfg(target_os = "windows")] {
-                    Err(napi_err(format!("forward_unix not supported on windows")))
-                }
+                // doing this as a seperate statement so the GLOBAL_TUNNELS lock is dropped
+                let res = arc
+                    .lock()
+                    .await
+                    .fwd_pipe(addr)
+                    .await
+                    .map_err(|e| napi_err(format!("cannot forward pipe: {e:?}")));
+                debug!("forward_pipe returning");
+                res
             }
 
             /// Close the tunnel.

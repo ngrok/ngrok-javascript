@@ -91,11 +91,11 @@ test('http tunnel', async (t) => {
   await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url());
 });
 
-test('unix socket', async (t) => {
+test('pipe socket', async (t) => {
   const [httpServer, session] = await makeHttpAndSession(true);
   const tunnel = await session.httpEndpoint().listen();
   t.truthy(httpServer.listenTo.startsWith("tun-"), httpServer.listenTo);
-  tunnel.forwardUnix(httpServer.listenTo)
+  tunnel.forwardPipe(httpServer.listenTo)
   const response = await validateHttpRequest(t, tunnel.url());
   await shutdown(tunnel, httpServer.socket);
 });
@@ -366,10 +366,10 @@ test('pipe multipass', async (t) => {
   const tunnel4 = await session2.tcpEndpoint().listen();
   const socket = await ngrok.listen(httpServer, tunnel1);
 
-  tunnel1.forwardUnix(socket.path)
-  tunnel2.forwardUnix(socket.path)
-  tunnel3.forwardUnix(socket.path)
-  tunnel4.forwardUnix(socket.path)
+  tunnel1.forwardPipe(socket.path)
+  tunnel2.forwardPipe(socket.path)
+  tunnel3.forwardPipe(socket.path)
+  tunnel4.forwardPipe(socket.path)
 
   await validateHttpRequest(t, tunnel1.url());
   await validateHttpRequest(t, tunnel2.url());

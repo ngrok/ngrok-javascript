@@ -63,12 +63,12 @@ function asyncListen(server, options) {
 
 // Make a session using NGROK_AUTHTOKEN from the environment,
 // and then return a listening HTTP tunnel.
-async function defaultTunnel() {
+async function defaultTunnel(bind) {
   // set up a default session and tunnel
   var builder = new NgrokSessionBuilder();
   builder.authtokenFromEnv();
   var session = await builder.connect();
-  var tunnel = await session.httpEndpoint().listen();
+  var tunnel = await session.httpEndpoint().listen(bind);
   tunnel.session = session; // surface to caller
   return tunnel;
 }
@@ -81,15 +81,13 @@ async function listenable() {
 // Bind a server to a ngrok tunnel, optionally passing in a pre-existing tunnel
 async function ngrokListen(server, tunnel) {
   if (!tunnel) {
-    tunnel = await defaultTunnel();
+    // turn off automatic bind
+    tunnel = await defaultTunnel(false);
   }
-  // todo: abstract socket on linux: https://stackoverflow.com/a/60014174
-  // todo: named pipe on windows: https://nodejs.org/api/net.html#ipc-support
 
-  // attempt unix socket
-  var socket;
+  // attempt pipe socket
   try {
-    socket = await ngrokLinkUnix(tunnel, server);
+    socket = await ngrokLinkPipe(tunnel, server);
   } catch (err) {
     console.debug("Using TCP socket. " + err);
     // fallback to tcp socket
@@ -111,8 +109,11 @@ async function ngrokLinkTcp(tunnel, server) {
   return socket;
 }
 
-async function ngrokLinkUnix(tunnel, server) {
-  const proposed = "tun-" + tunnel.id() + ".sock";
+async function ngrokLinkPipe(tunnel, server) {
+  var proposed = "tun-" + tunnel.id() + ".sock";
+  if (platform == 'win32') {
+    proposed = '\\\\.\\pipe\\' + proposed;
+  }
   var filename;
   try {
     fs.accessSync(process.cwd(), fs.constants.W_OK);
@@ -132,12 +133,14 @@ async function ngrokLinkUnix(tunnel, server) {
   const socket = await asyncListen(server, {path: filename});
   // tighten permissions
   try {
-    fs.chmodSync(filename, fs.constants.S_IRWXU);
+    if (platform != 'win32') {
+      fs.chmodSync(filename, fs.constants.S_IRWXU);
+    }
   } catch (err) {
     console.debug("Cannot change permissions of file: " + filename);
   }
   // forward tunnel
-  tunnel.forwardUnix(filename);
+  tunnel.forwardPipe(filename);
   socket.path = filename; // surface to caller
 
   return socket;
