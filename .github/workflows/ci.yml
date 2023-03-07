@@ -472,6 +472,8 @@ jobs:
         shell: bash
       - name: Publish
         run: |
+          echo "git log:"
+          git log -1 --pretty=%B
           if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
           then
             echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
