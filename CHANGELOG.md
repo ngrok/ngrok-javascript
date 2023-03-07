@@ -1,3 +1,7 @@
+## 0.0.9:
+
+* Support for named pipes on Windows.
+
 ## 0.0.8:
 
 * Support callbacks for logging, include console.log and Winston handlers.
