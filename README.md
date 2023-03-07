@@ -83,6 +83,23 @@ new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect()
     .await;
 ```
 
+# Platform Support
+
+Pre-built binaries are provided on NPM for the following platforms:
+
+| OS         | i686 | x64 | aarch64 | arm |
+| ---------- | -----|-----|---------|-----|
+| Windows    |   ✓  |  ✓  |    *    |     |
+| MacOS      |      |  ✓  |    ✓    |     |
+| Linux      |      |  ✓  |    ✓    |  ✓  |
+| Linux musl |      |  ✓  |    ✓    |     |
+| FreeBSD    |      |  ✓  |         |     |
+| Android    |      |     |    ✓    |  ✓  |
+
+ngrok-js, and [ngrok-rs](https://github.com/ngrok/ngrok-rs/) which it depends on, are open source, so it may be possible to build them for other platforms.
+
+* Windows-aarch64 will be supported after the next release of [Ring](https://github.com/briansmith/ring/issues/1167).
+
 # Dependencies
 
 This project relies on [NAPI-RS](https://napi.rs/), an excellent system to ease development and building of Rust plugins for NodeJS.
