@@ -150,14 +150,7 @@ export class NgrokHttpTunnel {
   forwardsTo(): string
   /** Returns the arbitrary metadata string for this tunnel. */
   metadata(): string
-  /** Forward incoming tunnel connections to the provided TCP address. */
-  forwardTcp(addr: string): Promise<void>
-  /**
-   * Forward incoming tunnel connections to the provided file socket path.
-   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-   */
-  forwardPipe(addr: string): Promise<void>
+  join(): Promise<void>
   /**
    * Close the tunnel.
    *
@@ -184,14 +177,7 @@ export class NgrokTcpTunnel {
   forwardsTo(): string
   /** Returns the arbitrary metadata string for this tunnel. */
   metadata(): string
-  /** Forward incoming tunnel connections to the provided TCP address. */
-  forwardTcp(addr: string): Promise<void>
-  /**
-   * Forward incoming tunnel connections to the provided file socket path.
-   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-   */
-  forwardPipe(addr: string): Promise<void>
+  join(): Promise<void>
   /**
    * Close the tunnel.
    *
@@ -218,14 +204,7 @@ export class NgrokTlsTunnel {
   forwardsTo(): string
   /** Returns the arbitrary metadata string for this tunnel. */
   metadata(): string
-  /** Forward incoming tunnel connections to the provided TCP address. */
-  forwardTcp(addr: string): Promise<void>
-  /**
-   * Forward incoming tunnel connections to the provided file socket path.
-   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-   */
-  forwardPipe(addr: string): Promise<void>
+  join(): Promise<void>
   /**
    * Close the tunnel.
    *
@@ -250,14 +229,7 @@ export class NgrokLabeledTunnel {
   forwardsTo(): string
   /** Returns the arbitrary metadata string for this tunnel. */
   metadata(): string
-  /** Forward incoming tunnel connections to the provided TCP address. */
-  forwardTcp(addr: string): Promise<void>
-  /**
-   * Forward incoming tunnel connections to the provided file socket path.
-   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-   */
-  forwardPipe(addr: string): Promise<void>
+  join(): Promise<void>
   /**
    * Close the tunnel.
    *
@@ -319,6 +291,8 @@ export class NgrokHttpTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(bind?: boolean | undefined | null): Promise<NgrokHttpTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<NgrokHttpTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -345,6 +319,8 @@ export class NgrokTcpTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(bind?: boolean | undefined | null): Promise<NgrokTcpTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<NgrokTcpTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -375,6 +351,8 @@ export class NgrokTlsTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(bind?: boolean | undefined | null): Promise<NgrokTlsTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<NgrokTlsTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -399,6 +377,8 @@ export class NgrokLabeledTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(bind?: boolean | undefined | null): Promise<NgrokLabeledTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<NgrokLabeledTunnel>
   /** Add a label, value pair for this tunnel. */
   label(label: string, value: string): this
 }

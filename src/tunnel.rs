@@ -1,26 +1,32 @@
 use std::{
     collections::HashMap,
     io,
+    result::Result as StdResult,
     sync::Arc,
 };
 
-use async_trait::async_trait;
+use futures_util::future::FutureExt;
 use lazy_static::lazy_static;
-use napi::bindgen_prelude::*;
+use napi::{
+    bindgen_prelude::*,
+    JsObject,
+};
 use napi_derive::napi;
 use ngrok::{
+    forwarder::Forwarder,
     prelude::*,
     tunnel::{
         HttpTunnel,
         LabeledTunnel,
-        ProtoTunnel,
         TcpTunnel,
         TlsTunnel,
-        UrlTunnel,
     },
     Session,
 };
-use tokio::sync::Mutex;
+use tokio::{
+    sync::Mutex,
+    task::JoinHandle,
+};
 use tracing::{
     debug,
     info,
@@ -32,15 +38,8 @@ lazy_static! {
     // tunnel references to be kept until explicit close to prevent nodejs gc from dropping them.
     // the tunnel wrapper object, and the underlying tunnel, both have references to the Session
     // so the Session is safe from premature dropping.
-    static ref GLOBAL_TUNNELS: Mutex<HashMap<String,Arc<Mutex<dyn ExtendedTunnel>>>> = Mutex::new(HashMap::new());
-}
-
-/// The TunnelExt cannot be turned into an object since it contains generics, so implementing
-/// a proxy trait without generics which can be the dyn type stored in the global map.
-#[async_trait]
-pub trait ExtendedTunnel: Tunnel {
-    async fn fwd_tcp(&mut self, addr: String) -> core::result::Result<(), io::Error>;
-    async fn fwd_pipe(&mut self, addr: String) -> core::result::Result<(), io::Error>;
+    // Storing as a TunnelCloser+Send which can hold a Tunnel or Forwarder
+    static ref GLOBAL_TUNNELS: Mutex<HashMap<String,Arc<Mutex<dyn TunnelCloser+Send>>>> = Mutex::new(HashMap::new());
 }
 
 macro_rules! make_tunnel_type {
@@ -57,6 +56,7 @@ macro_rules! make_tunnel_type {
             url: String,
             proto: String,
             session: Session,
+            join: Option<JoinHandle<StdResult<(), io::Error>>>,
         }
 
         #[napi]
@@ -78,6 +78,28 @@ macro_rules! make_tunnel_type {
                     url,
                     proto,
                     session,
+                    join: None,
+                }
+            }
+
+            pub(crate) async fn new_forwarder(session: Session, mut forwarder: Forwarder<$tunnel>) -> Self {
+                let id = forwarder.id().to_string();
+                let forwards_to = forwarder.forwards_to().to_string();
+                let metadata = forwarder.metadata().to_string();
+                let url = forwarder.url().to_string();
+                let proto = forwarder.proto().to_string();
+                let join = forwarder.join();
+                info!("Created tunnel {id:?} with url {url:?}");
+                // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
+                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Mutex::new(forwarder)));
+                $wrapper {
+                    id,
+                    forwards_to,
+                    metadata,
+                    url,
+                    proto,
+                    session,
+                    join,
                 }
             }
 
@@ -108,6 +130,7 @@ macro_rules! make_tunnel_type {
             metadata: String,
             labels: HashMap<String,String>,
             session: Session,
+            join: Option<JoinHandle<StdResult<(), io::Error>>>,
         }
 
         #[napi]
@@ -127,6 +150,26 @@ macro_rules! make_tunnel_type {
                     metadata,
                     labels,
                     session,
+                    join: None,
+                }
+            }
+
+            pub(crate) async fn new_forwarder(session: Session, mut forwarder: Forwarder<$tunnel>) -> Self {
+                let id = forwarder.id().to_string();
+                let forwards_to = forwarder.forwards_to().to_string();
+                let metadata = forwarder.metadata().to_string();
+                let labels = forwarder.labels().clone();
+                let join = forwarder.join();
+                info!("Created tunnel {id:?} with labels {labels:?}");
+                // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
+                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Mutex::new(forwarder)));
+                $wrapper {
+                    id,
+                    forwards_to,
+                    metadata,
+                    labels,
+                    session,
+                    join,
                 }
             }
 
@@ -142,16 +185,6 @@ macro_rules! make_tunnel_type {
 
     // all tunnels get these
     ($wrapper:ident, $tunnel:tt) => {
-        #[async_trait]
-        impl ExtendedTunnel for $tunnel {
-            async fn fwd_tcp(&mut self, addr: String) -> core::result::Result<(), io::Error> {
-                self.forward_tcp(addr).await
-            }
-            async fn fwd_pipe(&mut self, addr: String) -> core::result::Result<(), io::Error> {
-                self.forward_pipe(addr).await
-            }
-        }
-
         #[napi]
         #[allow(dead_code)]
         impl $wrapper {
@@ -176,49 +209,22 @@ macro_rules! make_tunnel_type {
                 self.metadata.clone()
             }
 
-            /// Forward incoming tunnel connections to the provided TCP address.
-            #[napi]
-            pub async fn forward_tcp(&self, addr: String) -> Result<()> {
-                info!("Tunnel {:?} TCP forwarding to {addr:?}", &self.id);
-                // we must clone the Arc before locking so we have a local reference
-                // to the mutex to unlock if this struct is dropped.
-                let arc = GLOBAL_TUNNELS.lock().await
-                    .get(&self.id)
-                    .ok_or(napi_err("Tunnel is no longer running"))?
-                    .clone(); // required clone
-
-                // doing this as a seperate statement so the GLOBAL_TUNNELS lock is dropped
-                let res = arc
-                    .lock()
-                    .await
-                    .fwd_tcp(addr)
-                    .await
-                    .map_err(|e| napi_err(format!("cannot forward tcp: {e:?}")));
-                debug!("forward_tcp returning");
-                res
+            #[napi(ts_return_type = "Promise<void>")]
+            pub fn join(&mut self, env: Env) -> Result<JsObject> {
+                let join = self.join.take();
+                // hand off to async for joining, returning a promise to nodejs.
+                env.spawn_future(Self::async_join(join))
             }
 
-            /// Forward incoming tunnel connections to the provided file socket path.
-            /// On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-            /// On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-            #[napi]
-            pub async fn forward_pipe(&self, addr: String) -> Result<()> {
-                // we must clone the Arc before locking so we have a local reference
-                // to the mutex to unlock if this struct is dropped.
-                let arc = GLOBAL_TUNNELS.lock().await
-                    .get(&self.id)
-                    .ok_or(napi_err("Tunnel is no longer running"))?
-                    .clone(); // required clone
-
-                // doing this as a seperate statement so the GLOBAL_TUNNELS lock is dropped
-                let res = arc
-                    .lock()
-                    .await
-                    .fwd_pipe(addr)
-                    .await
-                    .map_err(|e| napi_err(format!("cannot forward pipe: {e:?}")));
-                debug!("forward_pipe returning");
-                res
+            async fn async_join(mut join: Option<JoinHandle<StdResult<(), io::Error>>>) -> Result<()> {
+                if let Some(join_handle) = join.take() {
+                    join_handle.fuse().await
+                        .map_err(|e| napi_err(format!("error on join: {e:?}")))?
+                        .map_err(|e| napi_err(format!("error on join: {e:?}")))
+                }
+                else {
+                    Err(napi_err("Tunnel is not joinable"))
+                }
             }
 
             /// Close the tunnel.

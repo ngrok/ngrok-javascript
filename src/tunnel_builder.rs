@@ -7,6 +7,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use ngrok::{
     config::{
+        ForwarderBuilder,
         HttpTunnelBuilder,
         LabeledTunnelBuilder,
         ProxyProto,
@@ -18,6 +19,7 @@ use ngrok::{
 };
 use parking_lot::Mutex;
 use tracing::debug;
+use url::Url;
 
 use crate::{
     napi_err,
@@ -61,8 +63,8 @@ macro_rules! make_tunnel_builder {
             #[napi]
             pub async fn listen(&self, _bind: Option<bool>) -> Result<$tunnel> {
                 let session = self.session.lock().clone();
-                let tun = self.tunnel_builder.lock().clone();
-                let result = tun
+                let builder = self.tunnel_builder.lock().clone();
+                let result = builder
                     .listen()
                     .await
                     .map_err(|e| napi_err(format!("failed to start tunnel: {e:?}")));
@@ -70,6 +72,24 @@ macro_rules! make_tunnel_builder {
                 // create the wrapping tunnel object via its async new()
                 match result {
                     Ok(raw_tun) => Ok($tunnel::new(session, raw_tun).await),
+                    Err(val) => Err(val),
+                }
+            }
+
+            /// Begin listening for new connections on this tunnel and forwarding them to the given url.
+            #[napi]
+            pub async fn listen_and_forward(&self, to_url: String) -> Result<$tunnel> {
+                let session = self.session.lock().clone();
+                let builder = self.tunnel_builder.lock().clone();
+                let result = builder
+                    .listen_and_forward(Url::from_str(to_url.as_str())
+                       .map_err(|e| napi_err(format!("Url forward argument: {e:?}")))?)
+                    .await
+                    .map_err(|e| napi_err(format!("failed to start tunnel: {e:?}")));
+
+                // create the wrapping tunnel object via its async new()
+                match result {
+                    Ok(raw_fwd) => Ok($tunnel::new_forwarder(session, raw_fwd).await),
                     Err(val) => Err(val),
                 }
             }
