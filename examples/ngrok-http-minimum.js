@@ -6,9 +6,13 @@ http.createServer(
 } ).listen(8081); 
 
 var ngrok = require('..');
-ngrok.consoleLog("DEBUG");
+ngrok.consoleLog("TRACE");
 new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect().then((session) => {
   session.httpEndpoint().listenAndForward('tcp://localhost:8081').then((tunnel) => {
     console.log('tunnel at: ' + tunnel.url());
+    tunnel.join().then(() => {
+      console.log('tunnel joined!');
+    });
+    console.log('here');
   })
 });
