@@ -24,7 +24,7 @@ builder.connect().then((session) => {
     // .allowCidr("0.0.0.0/0")
     // .denyCidr("10.1.1.1/32")
     // .forwardsTo("example nodejs")
-    // .proxyProto("") // One of: "", "V1", "V2"
+    // .proxyProto("") // One of: "", "1", "2"
     // .remoteAddr("<n>.tcp.ngrok.io:<p>")
     .metadata("example tunnel metadata from nodejs")
     .listen().then((tunnel) => {
