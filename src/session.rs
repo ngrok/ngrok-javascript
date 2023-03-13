@@ -38,6 +38,9 @@ use crate::{
     },
 };
 
+const CLIENT_TYPE: &str = "library/official/nodejs";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// The builder for an ngrok session.
 #[napi]
 #[allow(dead_code)]
@@ -53,7 +56,9 @@ impl NgrokSessionBuilder {
     #[napi(constructor)]
     pub fn new() -> Self {
         NgrokSessionBuilder {
-            raw_builder: Arc::new(SyncMutex::new(Session::builder())),
+            raw_builder: Arc::new(SyncMutex::new(
+                Session::builder().child_client(CLIENT_TYPE, VERSION),
+            )),
         }
     }
 
