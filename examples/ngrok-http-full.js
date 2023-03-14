@@ -40,10 +40,10 @@ builder.connect().then((session) => {
     // .compression()
     // .denyCidr("10.1.1.1/32")
     // .domain("<somedomain>.ngrok.io")
-    // .mutualTlsca(fs.readFileSync('domain.crt'))
+    // .mutualTlsca(fs.readFileSync('ca.crt'))
     // .oauth("google", ["<user>@<domain>"], ["<domain>"], ["<scope>"])
     // .oidc("<url>", "<id>", "<secret>", ["<user>@<domain>"], ["<domain>"], ["<scope>"])
-    // .proxyProto("") // One of: "", "V1", "V2"
+    // .proxyProto("") // One of: "", "1", "2"
     // .removeRequestHeader("X-Req-Nope")
     // .removeResponseHeader("X-Res-Nope")
     // .requestHeader("X-Req-Yup", "true")

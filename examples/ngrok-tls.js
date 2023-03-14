@@ -26,8 +26,7 @@ builder.connect().then((session) => {
     // .domain("<somedomain>.ngrok.io")
     // .forwardsTo("example nodejs")
     // .mutualTlsca(fs.readFileSync('ca.crt'))
-    // .proxyProto("") // One of: "", "V1", "V2"
-    // .remoteAddr("<n>.tcp.ngrok.io:<p>")
+    // .proxyProto("") // One of: "", "1", "2"
     .termination(fs.readFileSync('domain.crt'),
       fs.readFileSync('domain.key'))
     .metadata("example tunnel metadata from nodejs")
