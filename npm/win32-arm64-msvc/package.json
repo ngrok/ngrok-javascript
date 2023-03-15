@@ -1,6 +1,6 @@
 {
   "name": "@ngrok/ngrok-win32-arm64-msvc",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "os": [
     "win32"
   ],
