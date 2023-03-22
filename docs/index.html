@@ -37,6 +37,11 @@ to manage.</p>
 <pre><code class="language-shell"><span class="hl-0">npm </span><span class="hl-1">install</span><span class="hl-0"> </span><span class="hl-1">@ngrok/ngrok</span>
 </code></pre>
 
+<a href="#documentation" id="documentation" style="color: inherit; text-decoration: none;">
+  <h1>Documentation</h1>
+</a>
+<p>A quickstart guide and a full API reference are included in the <a href="https://ngrok.github.io/ngrok-js/">ngrok-js TypeScript API documentation</a>.</p>
+
 <a href="#quickstart" id="quickstart" style="color: inherit; text-decoration: none;">
   <h1>Quickstart</h1>
 </a>
@@ -61,6 +66,68 @@ or the <code>await</code> keyword to wait for completion of an API call.</p>
 which can be caught and dealt with using standard then/catch semantics.</p>
 <pre><code class="language-jsx"><span class="hl-2">new</span><span class="hl-0"> </span><span class="hl-5">ngrok</span><span class="hl-0">.</span><span class="hl-4">NgrokSessionBuilder</span><span class="hl-0">().</span><span class="hl-4">authtokenFromEnv</span><span class="hl-0">().</span><span class="hl-4">connect</span><span class="hl-0">()</span><br/><span class="hl-0">    .</span><span class="hl-4">then</span><span class="hl-0">((</span><span class="hl-5">session</span><span class="hl-0">) </span><span class="hl-2">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">        </span><span class="hl-5">session</span><span class="hl-0">.</span><span class="hl-4">httpEndpoint</span><span class="hl-0">().</span><span class="hl-4">listen</span><span class="hl-0">()</span><br/><span class="hl-0">            .</span><span class="hl-4">then</span><span class="hl-0">((</span><span class="hl-5">tun</span><span class="hl-0">) </span><span class="hl-2">=&gt;</span><span class="hl-0"> {})</span><br/><span class="hl-0">            .</span><span class="hl-4">catch</span><span class="hl-0">(</span><span class="hl-5">err</span><span class="hl-0"> </span><span class="hl-2">=&gt;</span><span class="hl-0"> </span><span class="hl-5">console</span><span class="hl-0">.</span><span class="hl-4">log</span><span class="hl-0">(</span><span class="hl-1">&#39;tunnel setup error: &#39;</span><span class="hl-0"> + </span><span class="hl-5">err</span><span class="hl-0">))</span><br/><span class="hl-0">    })</span><br/><span class="hl-0">    .</span><span class="hl-4">catch</span><span class="hl-0">(</span><span class="hl-5">err</span><span class="hl-0"> </span><span class="hl-2">=&gt;</span><span class="hl-0"> </span><span class="hl-5">console</span><span class="hl-0">.</span><span class="hl-4">log</span><span class="hl-0">(</span><span class="hl-1">&#39;session setup error: &#39;</span><span class="hl-0"> + </span><span class="hl-5">err</span><span class="hl-0">))</span><br/><span class="hl-0">    .</span><span class="hl-5">await</span><span class="hl-0">;</span>
 </code></pre>
+
+<a href="#platform-support" id="platform-support" style="color: inherit; text-decoration: none;">
+  <h1>Platform Support</h1>
+</a>
+<p>Pre-built binaries are provided on NPM for the following platforms:</p>
+<table>
+<thead>
+<tr>
+<th>OS</th>
+<th>i686</th>
+<th>x64</th>
+<th>aarch64</th>
+<th>arm</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Windows</td>
+<td>✓</td>
+<td>✓</td>
+<td>*</td>
+<td></td>
+</tr>
+<tr>
+<td>MacOS</td>
+<td></td>
+<td>✓</td>
+<td>✓</td>
+<td></td>
+</tr>
+<tr>
+<td>Linux</td>
+<td></td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Linux musl</td>
+<td></td>
+<td>✓</td>
+<td>✓</td>
+<td></td>
+</tr>
+<tr>
+<td>FreeBSD</td>
+<td></td>
+<td>✓</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Android</td>
+<td></td>
+<td></td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+</tbody></table>
+<p>ngrok-js, and <a href="https://github.com/ngrok/ngrok-rs/">ngrok-rs</a> which it depends on, are open source, so it may be possible to build them for other platforms.</p>
+<ul>
+<li>Windows-aarch64 will be supported after the next release of <a href="https://github.com/briansmith/ring/issues/1167">Ring</a>.</li>
+</ul>
 
 <a href="#dependencies" id="dependencies" style="color: inherit; text-decoration: none;">
   <h1>Dependencies</h1>
