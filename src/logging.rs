@@ -86,7 +86,11 @@ pub fn log_to_callback(level: String, target: String, message: String) -> Result
 #[napi(
     ts_args_type = "callback?: (level: string, target: string, message: string) => void, level?: string"
 )]
-pub fn logging_callback(callback: Option<JsFunction>, level: Option<String>) -> Result<()> {
+pub fn logging_callback(
+    env: Env,
+    callback: Option<JsFunction>,
+    level: Option<String>,
+) -> Result<()> {
     if callback.is_none() {
         // clear out any registered callback
         GLOBAL_DATA.lock().take();
@@ -94,7 +98,7 @@ pub fn logging_callback(callback: Option<JsFunction>, level: Option<String>) -> 
     }
 
     // create the threadsafe function wrapper
-    let tsfn: ThreadsafeFunction<Vec<String>, ErrorStrategy::Fatal> = callback
+    let mut tsfn: ThreadsafeFunction<Vec<String>, ErrorStrategy::Fatal> = callback
         .unwrap()
         .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<Vec<String>>| {
             Ok(ctx
@@ -103,6 +107,8 @@ pub fn logging_callback(callback: Option<JsFunction>, level: Option<String>) -> 
                 .map(|s| ctx.env.create_string_from_std(s.clone()))
                 .collect())
         })?;
+    // tell the runtime it can exit while this callback exists
+    tsfn.unref(&env)?;
 
     // store the global callback
     let _ = GLOBAL_DATA.lock().insert(tsfn);

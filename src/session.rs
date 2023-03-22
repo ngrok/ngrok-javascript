@@ -158,21 +158,14 @@ impl NgrokSessionBuilder {
     /// stop operation to time out. Do not call [std::process::exit] inside this
     /// callback, it will also cause the operation to time out.
     #[napi(ts_args_type = "handler: () => void")]
-    pub fn handle_stop_command(&mut self, handler: JsFunction) -> &Self {
+    pub fn handle_stop_command(&mut self, env: Env, handler: JsFunction) -> &Self {
         // create threadsafe function
-        let tsfn = create_no_io_tsfn(handler);
+        let tsfn = create_tsfn(env, handler);
         // register stop handler
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().handle_stop_command(move |_req| {
-            let tsfn = tsfn.clone();
-            async move {
-                tsfn.clone()
-                    .lock()
-                    .await
-                    .call((), ThreadsafeFunctionCallMode::NonBlocking);
-                Ok(())
-            }
-        });
+        *builder = builder
+            .clone()
+            .handle_stop_command(move |_req| call_tsfn(tsfn.clone(), ()));
         self
     }
 
@@ -188,21 +181,14 @@ impl NgrokSessionBuilder {
     /// stop operation to time out. Do not call [std::process::exit] inside this
     /// callback, it will also cause the operation to time out.
     #[napi(ts_args_type = "handler: () => void")]
-    pub fn handle_restart_command(&mut self, handler: JsFunction) -> &Self {
+    pub fn handle_restart_command(&mut self, env: Env, handler: JsFunction) -> &Self {
         // create threadsafe function
-        let tsfn = create_no_io_tsfn(handler);
+        let tsfn = create_tsfn(env, handler);
         // register restart handler
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().handle_restart_command(move |_req| {
-            let tsfn = tsfn.clone();
-            async move {
-                tsfn.clone()
-                    .lock()
-                    .await
-                    .call((), ThreadsafeFunctionCallMode::NonBlocking);
-                Ok(())
-            }
-        });
+        *builder = builder
+            .clone()
+            .handle_restart_command(move |_req| call_tsfn(tsfn.clone(), ()));
         self
     }
 
@@ -218,32 +204,17 @@ impl NgrokSessionBuilder {
     /// stop operation to time out. Do not call [std::process::exit] inside this
     /// callback, it will also cause the operation to time out.
     #[napi(ts_args_type = "handler: (update: UpdateRequest) => void")]
-    pub fn handle_update_command(&mut self, handler: JsFunction) -> &Self {
+    pub fn handle_update_command(&mut self, env: Env, handler: JsFunction) -> &Self {
         // create threadsafe function
-        let tsfn: Arc<Mutex<ThreadsafeFunction<UpdateRequest, ErrorStrategy::Fatal>>> =
-            Arc::new(Mutex::new(
-                handler
-                    .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<UpdateRequest>| {
-                        Ok(vec![ctx.value])
-                    })
-                    .expect("Failed to create update callback function"),
-            ));
+        let tsfn = create_tsfn(env, handler);
         // register update handler
         let mut builder = self.raw_builder.lock();
         *builder = builder.clone().handle_update_command(move |req: Update| {
-            let tsfn = tsfn.clone();
             let update = UpdateRequest {
                 version: req.version,
                 permit_major_version: req.permit_major_version,
             };
-
-            async move {
-                tsfn.clone()
-                    .lock()
-                    .await
-                    .call(update, ThreadsafeFunctionCallMode::NonBlocking);
-                Ok(())
-            }
+            call_tsfn(tsfn.clone(), update)
         });
         self
     }
@@ -341,12 +312,34 @@ pub struct UpdateRequest {
     pub permit_major_version: bool,
 }
 
-pub(crate) fn create_no_io_tsfn(
-    js_function: JsFunction,
-) -> Arc<Mutex<ThreadsafeFunction<(), ErrorStrategy::Fatal>>> {
-    Arc::new(Mutex::new(
-        js_function
-            .create_threadsafe_function(0, |_ctx: ThreadSafeCallContext<()>| Ok(vec![()]))
-            .expect("Failed to create callback function"),
-    ))
+/// Create a threadsafe function that has the given argument type and no return value.
+pub(crate) fn create_tsfn<A>(
+    env: Env,
+    handler: JsFunction,
+) -> Arc<Mutex<ThreadsafeFunction<A, ErrorStrategy::Fatal>>>
+where
+    A: ToNapiValue,
+{
+    Arc::new(Mutex::new({
+        let mut tsfn = handler
+            .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<A>| Ok(vec![ctx.value]))
+            .expect("Failed to create update callback function");
+        // tell the runtime it can exit while this callback exists
+        tsfn.unref(&env).expect("Failed to unref callback function");
+        tsfn
+    }))
+}
+
+/// Call a threadsafe function that has the given argument type and no return value.
+pub(crate) async fn call_tsfn<A>(
+    tsfn: Arc<Mutex<ThreadsafeFunction<A, ErrorStrategy::Fatal>>>,
+    arg: A,
+) -> core::result::Result<(), String>
+where
+    A: ToNapiValue,
+{
+    tsfn.lock()
+        .await
+        .call(arg, ThreadsafeFunctionCallMode::NonBlocking);
+    Ok(())
 }
