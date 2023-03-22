@@ -394,6 +394,6 @@ test('connect heartbeat callbacks', async (t) => {
       test_addr = addr;
     });
   await builder.connect();
-  t.truthy(test_addr.includes("ngrok"));
-  t.truthy(test_latency > 0);
+  t.truthy(test_addr.includes("ngrok"), test_addr);
+  t.truthy(test_latency > 0, String(test_latency));
 });

@@ -250,7 +250,7 @@ impl NgrokSessionBuilder {
         let mut builder = self.raw_builder.lock();
         *builder = builder
             .clone()
-            .handle_stop_command(move |_req| call_tsfn(tsfn.clone(), ()));
+            .handle_stop_command(move |_req| call_tsfn(tsfn.clone(), vec!(())));
         self
     }
 
@@ -273,7 +273,7 @@ impl NgrokSessionBuilder {
         let mut builder = self.raw_builder.lock();
         *builder = builder
             .clone()
-            .handle_restart_command(move |_req| call_tsfn(tsfn.clone(), ()));
+            .handle_restart_command(move |_req| call_tsfn(tsfn.clone(), vec!(())));
         self
     }
 
@@ -299,7 +299,7 @@ impl NgrokSessionBuilder {
                 version: req.version,
                 permit_major_version: req.permit_major_version,
             };
-            call_tsfn(tsfn.clone(), update)
+            call_tsfn(tsfn.clone(), vec!(update))
         });
         self
     }
@@ -321,7 +321,7 @@ impl NgrokSessionBuilder {
             .handle_heartbeat(move |latency: Option<Duration>| {
                 call_tsfn(
                     tsfn.clone(),
-                    latency.map(|d| u32::try_from(d.as_millis()).ok()),
+                    vec!(latency.map(|d| u32::try_from(d.as_millis()).ok())),
                 )
             });
         self
@@ -416,17 +416,18 @@ pub struct UpdateRequest {
     pub permit_major_version: bool,
 }
 
-/// Create a threadsafe function that has the given argument type and no return value.
 pub(crate) fn create_tsfn<A>(
     env: Env,
     handler: JsFunction,
-) -> Arc<Mutex<ThreadsafeFunction<A, ErrorStrategy::Fatal>>>
+) -> Arc<Mutex<ThreadsafeFunction<Vec<A>, ErrorStrategy::Fatal>>>
 where
     A: ToNapiValue,
 {
     Arc::new(Mutex::new({
         let mut tsfn = handler
-            .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<A>| Ok(vec![ctx.value]))
+            .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<Vec<A>>| {
+                Ok(ctx.value)
+            })
             .expect("Failed to create update callback function");
         // tell the runtime it can exit while this callback exists
         tsfn.unref(&env).expect("Failed to unref callback function");

@@ -13,7 +13,7 @@ http.createServer(function (req, res) {
 console.log('Node.js web server at ' + UNIX_SOCKET + ' is running..');
 
 // setup ngrok
-var ngrok = require('@ngrok/ngrok');
+var ngrok = require('..');
 // import ngrok from '@ngrok/ngrok' // if inside a module
 ngrok.consoleLog(); // turn on debug logging
 builder = new ngrok.NgrokSessionBuilder();
@@ -30,6 +30,13 @@ builder
   .handleUpdateCommand((update) => {
     console.log("update command, version: " + update.version
       + " permitMajorVersion: " + update.permitMajorVersion);
+  })
+  .handleHeartbeat((latency) => {
+    console.log("heartbeat, latency: " + latency + " milliseconds");
+  })
+  .connector((addr, error) => {
+    console.log("connecting, addr: " + addr
+      + " error: " + error);
   });
 
 builder.connect().then((session) => {
