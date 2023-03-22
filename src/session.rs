@@ -1,8 +1,13 @@
 use std::{
+    io,
     sync::Arc,
     time::Duration,
 };
 
+use async_rustls::rustls::{
+    self,
+    ClientConfig,
+};
 use napi::{
     bindgen_prelude::*,
     threadsafe_function::{
@@ -15,12 +20,16 @@ use napi::{
 use napi_derive::napi;
 use ngrok::{
     session::{
+        default_connect,
+        ConnectError,
         SessionBuilder,
         Update,
     },
+    tunnel::AcceptError,
     Session,
 };
 use parking_lot::Mutex as SyncMutex;
+use rustls_pemfile::Item;
 use tokio::sync::Mutex;
 use tracing::{
     debug,
@@ -147,6 +156,82 @@ impl NgrokSessionBuilder {
         self
     }
 
+    /// Configures the TLS client used to connect to the ngrok service while
+    /// establishing the session. Use this option only if you are connecting through
+    /// a man-in-the-middle or deep packet inspection proxy. Pass in the bytes of the certificate
+    /// to be used to validate the connection, then override the address to connect to via
+    /// the connector call.
+    ///
+    /// Roughly corresponds to the [root_cas parameter in the ngrok docs].
+    ///
+    /// [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
+    #[napi]
+    pub fn tls_config(&mut self, cert_bytes: Uint8Array) -> &Self {
+        let mut root_store = rustls::RootCertStore::empty();
+        let mut cert_pem = io::Cursor::new(cert_bytes);
+        root_store.add_parsable_certificates(
+            rustls_pemfile::read_all(&mut cert_pem)
+                .expect("a valid root certificate")
+                .into_iter()
+                .filter_map(|it| match it {
+                    Item::X509Certificate(bs) => Some(bs),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+                .as_slice(),
+        );
+
+        let tls_config = rustls::ClientConfig::builder()
+            .with_safe_defaults()
+            .with_root_certificates(root_store)
+            .with_no_client_auth();
+
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().tls_config(tls_config);
+        self
+    }
+
+    /// Configures a function which is called to establish the connection to the
+    /// ngrok service. Use this option if you need to connect through an outbound
+    /// proxy. In the event of network disruptions, it will be called each time
+    /// the session reconnects. If the handler responds with a string it will be
+    /// used as the new address to connect to, e.g. "192.168.1.1:443".
+    #[napi(ts_args_type = "handler: (addr: string, error?: string) => string")]
+    pub fn connector(&mut self, env: Env, handler: JsFunction) -> &Self {
+        // create threadsafe function
+        let tsfn = create_tsfn(env, handler);
+
+        // register connect handler. this needs the return value, so cannot use call_tsfn().
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().connector(
+            move |addr: String, tls_config: Arc<ClientConfig>, err: Option<AcceptError>| {
+                let tsfn = tsfn.clone();
+                let mut args = vec![addr.clone()];
+                if err.is_some() {
+                    args.push(err.clone().unwrap().to_string());
+                }
+
+                async move {
+                    // call javascript handler
+                    let result: Option<String> = tsfn
+                        .clone()
+                        .lock()
+                        .await
+                        .call_async(args)
+                        .await
+                        .map_err(|_e| ConnectError::Canceled)?;
+                    // call the upstream connector
+                    let new_addr = match result {
+                        Some(result) => result,
+                        None => addr,
+                    };
+                    default_connect(new_addr, tls_config, err).await
+                }
+            },
+        );
+        self
+    }
+
     /// Configures a function which is called when the ngrok service requests that
     /// this [Session] stops. Your application may choose to interpret this callback
     /// as a request to terminate the [Session] or the entire process.
@@ -219,9 +304,28 @@ impl NgrokSessionBuilder {
         self
     }
 
-    // Omitting these configurations:
-    // tls_config(&mut self, config: rustls::ClientConfig)
-    // connector(&mut self, connect: ConnectFn)
+    /// Call the provided handler whenever a heartbeat response is received,
+    /// with the latency in milliseconds.
+    ///
+    /// If the handler returns an error, the heartbeat task will exit, resulting
+    /// in the session eventually dying as well.
+    #[napi(ts_args_type = "handler: (latency: number) => void")]
+    pub fn handle_heartbeat(&mut self, env: Env, handler: JsFunction) -> &Self {
+        // create threadsafe function
+        let tsfn = create_tsfn(env, handler);
+
+        // register heartbeat handler
+        let mut builder = self.raw_builder.lock();
+        *builder = builder
+            .clone()
+            .handle_heartbeat(move |latency: Option<Duration>| {
+                call_tsfn(
+                    tsfn.clone(),
+                    latency.map(|d| u32::try_from(d.as_millis()).ok()),
+                )
+            });
+        self
+    }
 
     /// Attempt to establish an ngrok session using the current configuration.
     #[napi]
@@ -331,10 +435,10 @@ where
 }
 
 /// Call a threadsafe function that has the given argument type and no return value.
-pub(crate) async fn call_tsfn<A>(
+pub(crate) async fn call_tsfn<A, E>(
     tsfn: Arc<Mutex<ThreadsafeFunction<A, ErrorStrategy::Fatal>>>,
     arg: A,
-) -> core::result::Result<(), String>
+) -> core::result::Result<(), E>
 where
     A: ToNapiValue,
 {

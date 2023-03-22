@@ -1,5 +1,14 @@
 Release Instructions
 --------------------
+
+Pre-Commit
+----------
+1. fix-n-fmt
+1. yarn test
+1. yarn docs
+
+Release
+-------
 1. `git checkout main; git pull origin main`
 1. `git checkout -b <username>/<version>`
 1. Bump patch number in `version` in `Cargo.toml`

@@ -71,6 +71,26 @@ export class NgrokSessionBuilder {
    */
   serverAddr(addr: string): this
   /**
+   * Configures the TLS client used to connect to the ngrok service while
+   * establishing the session. Use this option only if you are connecting through
+   * a man-in-the-middle or deep packet inspection proxy. Pass in the bytes of the certificate
+   * to be used to validate the connection, then override the address to connect to via
+   * the connector call.
+   *
+   * Roughly corresponds to the [root_cas parameter in the ngrok docs].
+   *
+   * [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
+   */
+  tlsConfig(certBytes: Uint8Array): this
+  /**
+   * Configures a function which is called to establish the connection to the
+   * ngrok service. Use this option if you need to connect through an outbound
+   * proxy. In the event of network disruptions, it will be called each time
+   * the session reconnects. If the handler responds with a string it will be
+   * used as the new address to connect to, e.g. "192.168.1.1:443".
+   */
+  connector(handler: (addr: string, error?: string) => string): this
+  /**
    * Configures a function which is called when the ngrok service requests that
    * this [Session] stops. Your application may choose to interpret this callback
    * as a request to terminate the [Session] or the entire process.
@@ -111,6 +131,14 @@ export class NgrokSessionBuilder {
    * callback, it will also cause the operation to time out.
    */
   handleUpdateCommand(handler: (update: UpdateRequest) => void): this
+  /**
+   * Call the provided handler whenever a heartbeat response is received,
+   * with the latency in milliseconds.
+   *
+   * If the handler returns an error, the heartbeat task will exit, resulting
+   * in the session eventually dying as well.
+   */
+  handleHeartbeat(handler: (latency: number) => void): this
   /** Attempt to establish an ngrok session using the current configuration. */
   connect(): Promise<NgrokSession>
 }
