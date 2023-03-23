@@ -1,3 +1,8 @@
+## 0.0.12:
+
+* Added NgrokSession.close().
+* Cleanly shutdown when listen is called with a pre-configured tunnel.
+
 ## 0.0.11:
 
 * Cleanly shutdown on all platforms when there are callbacks registered.
