@@ -30,6 +30,13 @@ builder
   .handleUpdateCommand((update) => {
     console.log("update command, version: " + update.version
       + " permitMajorVersion: " + update.permitMajorVersion);
+  })
+  .handleHeartbeat((latency) => {
+    console.log("heartbeat, latency: " + latency + " milliseconds");
+  })
+  .connector((addr, error) => {
+    console.log("connecting, addr: " + addr
+      + " error: " + error);
   });
 
 builder.connect().then((session) => {
