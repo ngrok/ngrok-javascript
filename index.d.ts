@@ -126,6 +126,8 @@ export class NgrokSession {
   labeledTunnel(): NgrokLabeledTunnelBuilder
   /** Close a tunnel with the given ID. */
   closeTunnel(id: string): Promise<void>
+  /** Close the ngrok session. */
+  close(): Promise<void>
 }
 export class UpdateRequest {
   /** The version that the agent is requested to update to. */

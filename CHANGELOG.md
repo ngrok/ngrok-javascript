@@ -1,3 +1,11 @@
+## 0.0.11:
+
+* Cleanly shutdown on all platforms when there are callbacks registered.
+
+## 0.0.10:
+
+* Child client versioning support.
+
 ## 0.0.9:
 
 * Support for named pipes on Windows.

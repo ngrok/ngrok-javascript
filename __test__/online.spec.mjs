@@ -352,8 +352,7 @@ test('tcp multipass', async (t) => {
   await validateHttpRequest(t, tunnel4.url().replace("tcp:", "http:"));
   await shutdown(tunnel1, httpServer.socket);
   await tunnel2.close();
-  await tunnel3.close();
-  await tunnel4.close();
+  await session2.close();
 });
 
 test('pipe multipass', async (t) => {
