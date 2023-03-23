@@ -294,6 +294,16 @@ impl NgrokSession {
         }
         res
     }
+
+    /// Close the ngrok session.
+    #[napi]
+    pub async fn close(&self) -> Result<()> {
+        let mut session = self.raw_session.lock().clone();
+        session
+            .close()
+            .await
+            .map_err(|e| napi_err(format!("failed to close tunnel, {e:?}")))
+    }
 }
 
 impl ObjectFinalize for NgrokSession {

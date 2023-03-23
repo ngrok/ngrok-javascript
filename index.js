@@ -343,11 +343,13 @@ async function defaultTunnel(bind) {
 }
 
 // Get a listenable ngrok tunnel, suitable for passing to net.Server.listen().
+// Uses the NGROK_AUTHTOKEN environment variable to authenticate.
 async function listenable() {
   return await defaultTunnel();
 }
 
-// Bind a server to a ngrok tunnel, optionally passing in a pre-existing tunnel
+// Bind a server to a new ngrok tunnel, optionally passing in a pre-existing tunnel instead.
+// Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new tunnel is created.
 async function ngrokListen(server, tunnel) {
   if (tunnel && tunnel.socket) {
     // close the default bound port
