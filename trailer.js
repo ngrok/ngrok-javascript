@@ -24,6 +24,7 @@ async function ngrokBind(bind) {
   const tunnel = await this._listen();
   if (bind !== false) {
     const socket = await randomTcpSocket();
+    tunnel.socket = socket;
     defineTunnelHandle(tunnel, socket);
   }
   return tunnel;
@@ -80,6 +81,10 @@ async function listenable() {
 
 // Bind a server to a ngrok tunnel, optionally passing in a pre-existing tunnel
 async function ngrokListen(server, tunnel) {
+  if (tunnel && tunnel.socket) {
+    // close the default bound port
+    tunnel.socket.close();
+  }
   if (!tunnel) {
     // turn off automatic bind
     tunnel = await defaultTunnel(false);
