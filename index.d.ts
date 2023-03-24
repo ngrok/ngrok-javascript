@@ -71,25 +71,32 @@ export class NgrokSessionBuilder {
    */
   serverAddr(addr: string): this
   /**
-   * Configures the TLS client used to connect to the ngrok service while
+   * Configures the TLS certificate used to connect to the ngrok service while
    * establishing the session. Use this option only if you are connecting through
    * a man-in-the-middle or deep packet inspection proxy. Pass in the bytes of the certificate
    * to be used to validate the connection, then override the address to connect to via
-   * the connector call.
+   * the server_addr call.
    *
    * Roughly corresponds to the [root_cas parameter in the ngrok docs].
    *
    * [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
    */
-  tlsConfig(certBytes: Uint8Array): this
+  caCert(certBytes: Uint8Array): this
   /**
-   * Configures a function which is called to establish the connection to the
-   * ngrok service. Use this option if you need to connect through an outbound
-   * proxy. In the event of network disruptions, it will be called each time
-   * the session reconnects. If the handler responds with a string it will be
-   * used as the new address to connect to, e.g. "192.168.1.1:443".
+   * Configures a function which is called to prior the connection to the
+   * ngrok service. In the event of network disruptions, it will be called each time
+   * the session reconnects. The handler is given the address that will be used to
+   * connect the session to, e.g. "example.com:443".
    */
-  connector(handler: (addr: string, error?: string) => string): this
+  handleConnection(handler: (addr: string) => string): this
+  /**
+   * Configures a function which is called to after a disconnection to the
+   * ngrok service. In the event of network disruptions, it will be called each time
+   * the session reconnects. The handler is given the address that will be used to
+   * connect the session to, e.g. "example.com:443", and the message from the error
+   * that occurred.
+   */
+  handleDisconnection(handler: (addr: string, error?: string) => string): this
   /**
    * Configures a function which is called when the ngrok service requests that
    * this [Session] stops. Your application may choose to interpret this callback

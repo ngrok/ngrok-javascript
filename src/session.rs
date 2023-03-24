@@ -50,11 +50,17 @@ use crate::{
 const CLIENT_TYPE: &str = "library/official/nodejs";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+// appease clippy
+type TsfnOption = Option<Arc<Mutex<ThreadsafeFunction<Vec<String>, ErrorStrategy::Fatal>>>>;
+
 /// The builder for an ngrok session.
 #[napi]
 #[allow(dead_code)]
+#[derive(Default)]
 struct NgrokSessionBuilder {
     raw_builder: Arc<SyncMutex<SessionBuilder>>,
+    connect_handler: TsfnOption,
+    disconnect_handler: TsfnOption,
 }
 
 #[napi]
@@ -68,6 +74,7 @@ impl NgrokSessionBuilder {
             raw_builder: Arc::new(SyncMutex::new(
                 Session::builder().child_client(CLIENT_TYPE, VERSION),
             )),
+            ..Default::default()
         }
     }
 
@@ -156,17 +163,17 @@ impl NgrokSessionBuilder {
         self
     }
 
-    /// Configures the TLS client used to connect to the ngrok service while
+    /// Configures the TLS certificate used to connect to the ngrok service while
     /// establishing the session. Use this option only if you are connecting through
     /// a man-in-the-middle or deep packet inspection proxy. Pass in the bytes of the certificate
     /// to be used to validate the connection, then override the address to connect to via
-    /// the connector call.
+    /// the server_addr call.
     ///
     /// Roughly corresponds to the [root_cas parameter in the ngrok docs].
     ///
     /// [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
     #[napi]
-    pub fn tls_config(&mut self, cert_bytes: Uint8Array) -> &Self {
+    pub fn ca_cert(&mut self, cert_bytes: Uint8Array) -> &Self {
         let mut root_store = rustls::RootCertStore::empty();
         let mut cert_pem = io::Cursor::new(cert_bytes);
         root_store.add_parsable_certificates(
@@ -191,41 +198,63 @@ impl NgrokSessionBuilder {
         self
     }
 
-    /// Configures a function which is called to establish the connection to the
-    /// ngrok service. Use this option if you need to connect through an outbound
-    /// proxy. In the event of network disruptions, it will be called each time
-    /// the session reconnects. If the handler responds with a string it will be
-    /// used as the new address to connect to, e.g. "192.168.1.1:443".
-    #[napi(ts_args_type = "handler: (addr: string, error?: string) => string")]
-    pub fn connector(&mut self, env: Env, handler: JsFunction) -> &Self {
+    /// Configures a function which is called to prior the connection to the
+    /// ngrok service. In the event of network disruptions, it will be called each time
+    /// the session reconnects. The handler is given the address that will be used to
+    /// connect the session to, e.g. "example.com:443".
+    #[napi(ts_args_type = "handler: (addr: string) => string")]
+    pub fn handle_connection(&mut self, env: Env, handler: JsFunction) -> &Self {
         // create threadsafe function
         let tsfn = create_tsfn(env, handler);
+        self.connect_handler = Some(tsfn);
+        self.update_connector()
+    }
 
+    /// Configures a function which is called to after a disconnection to the
+    /// ngrok service. In the event of network disruptions, it will be called each time
+    /// the session reconnects. The handler is given the address that will be used to
+    /// connect the session to, e.g. "example.com:443", and the message from the error
+    /// that occurred.
+    #[napi(ts_args_type = "handler: (addr: string, error?: string) => string")]
+    pub fn handle_disconnection(&mut self, env: Env, handler: JsFunction) -> &Self {
+        // create threadsafe function
+        let tsfn = create_tsfn(env, handler);
+        self.disconnect_handler = Some(tsfn);
+        self.update_connector()
+    }
+
+    /// Update the connector callback in the upstream rust sdk.
+    fn update_connector(&mut self) -> &Self {
         // register connect handler. this needs the return value, so cannot use call_tsfn().
         let mut builder = self.raw_builder.lock();
+        // clone for move to connector function
+        let disconnect_handler = self.disconnect_handler.clone();
+        let connect_handler = self.connect_handler.clone();
         *builder = builder.clone().connector(
             move |addr: String, tls_config: Arc<ClientConfig>, err: Option<AcceptError>| {
-                let tsfn = tsfn.clone();
-                let mut args = vec![addr.clone()];
-                if err.is_some() {
-                    args.push(err.clone().unwrap().to_string());
-                }
-
+                // clone for async move out of environment
+                let disconn_tsfn = disconnect_handler.clone();
+                let conn_tsfn = connect_handler.clone();
                 async move {
-                    // call javascript handler
-                    let result: Option<String> = tsfn
-                        .clone()
-                        .lock()
-                        .await
-                        .call_async(args)
-                        .await
-                        .map_err(|_e| ConnectError::Canceled)?;
-                    // call the upstream connector
-                    let new_addr = match result {
-                        Some(result) => result,
-                        None => addr,
+                    // call disconnect javascript handler
+                    if let Some(handler) = disconn_tsfn {
+                        if let Some(err) = err.clone() {
+                            call_tsfn::<Vec<String>, String>(
+                                handler.clone(),
+                                vec![addr.clone(), err.to_string()],
+                            )
+                            .await
+                            .map_err(|_e| ConnectError::Canceled)?;
+                        }
                     };
-                    default_connect(new_addr, tls_config, err).await
+                    // call connect javascript handler
+                    if let Some(handler) = conn_tsfn {
+                        call_tsfn::<Vec<String>, String>(handler.clone(), vec![addr.clone()])
+                            .await
+                            .map_err(|_e| ConnectError::Canceled)?;
+                    };
+                    // call the upstream connector
+                    default_connect(addr, tls_config, err).await
                 }
             },
         );

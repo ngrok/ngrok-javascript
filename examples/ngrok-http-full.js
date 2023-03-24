@@ -21,6 +21,8 @@ builder
   // .authtoken("<authtoken>")
   .authtokenFromEnv()
   .metadata("Online in One Line")
+  // .caCert(fs.readFileSync('ca.crt'))
+  // .serverAddr('192.168.1.1:443')
   .handleStopCommand(() => {
     console.log("stop command");
   })
@@ -34,8 +36,11 @@ builder
   .handleHeartbeat((latency) => {
     console.log("heartbeat, latency: " + latency + " milliseconds");
   })
-  .connector((addr, error) => {
-    console.log("connecting, addr: " + addr
+  .handleConnection((addr) => {
+    console.log("connecting, addr: " + addr);
+  })
+  .handleDisconnection((addr, error) => {
+    console.log("disconnected, addr: " + addr
       + " error: " + error);
   });
 

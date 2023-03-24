@@ -383,16 +383,20 @@ test('pipe multipass', async (t) => {
 });
 
 test('connect heartbeat callbacks', async (t) => {
-  var test_addr, test_latency;
+  var conn_addr, disconn_addr, test_latency;
   const builder = new ngrok.NgrokSessionBuilder();
   builder
     .handleHeartbeat((latency) => {
       test_latency = latency;
     })
-    .connector((addr) => {
-      test_addr = addr;
+    .handleConnection((addr) => {
+      conn_addr = addr;
+    })
+    .handleDisconnection((addr, err) => {
+      disconn_addr = addr;
     });
   await builder.connect();
-  t.truthy(test_addr.includes("ngrok"), test_addr);
+  t.truthy(conn_addr.includes("ngrok"), conn_addr);
   t.truthy(test_latency > 0, String(test_latency));
+  t.is(undefined, disconn_addr, String(disconn_addr));
 });
