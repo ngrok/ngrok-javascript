@@ -71,6 +71,27 @@ export class NgrokSessionBuilder {
    */
   serverAddr(addr: string): this
   /**
+   * Configures the TLS certificate used to connect to the ngrok service while
+   * establishing the session. Use this option only if you are connecting through
+   * a man-in-the-middle or deep packet inspection proxy. Pass in the bytes of the certificate
+   * to be used to validate the connection, then override the address to connect to via
+   * the server_addr call.
+   *
+   * Roughly corresponds to the [root_cas parameter in the ngrok docs].
+   *
+   * [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
+   */
+  caCert(certBytes: Uint8Array): this
+  /**
+   * Configures a function which is called to after a disconnection to the
+   * ngrok service. In the event of network disruptions, it will be called each time
+   * the session reconnects. The handler is given the address that will be used to
+   * connect the session to, e.g. "example.com:443", and the message from the error
+   * that occurred. Returning true from the handler will cause the session to
+   * reconnect, returning false will cause the Session to throw an uncaught error.
+   */
+  handleDisconnection(handler: (addr: string, error: string) => boolean): this
+  /**
    * Configures a function which is called when the ngrok service requests that
    * this [Session] stops. Your application may choose to interpret this callback
    * as a request to terminate the [Session] or the entire process.
@@ -111,6 +132,14 @@ export class NgrokSessionBuilder {
    * callback, it will also cause the operation to time out.
    */
   handleUpdateCommand(handler: (update: UpdateRequest) => void): this
+  /**
+   * Call the provided handler whenever a heartbeat response is received,
+   * with the latency in milliseconds.
+   *
+   * If the handler returns an error, the heartbeat task will exit, resulting
+   * in the session eventually dying as well.
+   */
+  handleHeartbeat(handler: (latency: number) => void): this
   /** Attempt to establish an ngrok session using the current configuration. */
   connect(): Promise<NgrokSession>
 }

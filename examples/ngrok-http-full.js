@@ -15,12 +15,15 @@ console.log('Node.js web server at ' + UNIX_SOCKET + ' is running..');
 // setup ngrok
 var ngrok = require('@ngrok/ngrok');
 // import ngrok from '@ngrok/ngrok' // if inside a module
-ngrok.consoleLog(); // turn on debug logging
+ngrok.consoleLog('INFO'); // turn on info logging
+
 builder = new ngrok.NgrokSessionBuilder();
 builder
   // .authtoken("<authtoken>")
   .authtokenFromEnv()
   .metadata("Online in One Line")
+  // .caCert(fs.readFileSync('ca.crt'))
+  // .serverAddr('192.168.1.1:443')
   .handleStopCommand(() => {
     console.log("stop command");
   })
@@ -30,6 +33,13 @@ builder
   .handleUpdateCommand((update) => {
     console.log("update command, version: " + update.version
       + " permitMajorVersion: " + update.permitMajorVersion);
+  })
+  .handleHeartbeat((latency) => {
+    console.log("heartbeat, latency: " + latency + " milliseconds");
+  })
+  .handleDisconnection((addr, error) => {
+    console.log("disconnected, addr: " + addr
+      + " error: " + error);
   });
 
 builder.connect().then((session) => {

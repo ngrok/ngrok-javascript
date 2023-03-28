@@ -1,3 +1,5 @@
+// to run a single ava test case use the match flag: yarn test -m 'https tunnel'
+
 import * as ngrok from '../index.js'
 import test from 'ava'
 import axios, { AxiosError } from "axios";
@@ -380,3 +382,17 @@ test('pipe multipass', async (t) => {
   await tunnel4.close();
 });
 
+test('connect heartbeat callbacks', async (t) => {
+  var conn_addr, disconn_addr, test_latency;
+  const builder = new ngrok.NgrokSessionBuilder();
+  builder
+    .handleHeartbeat((latency) => {
+      test_latency = latency;
+    })
+    .handleDisconnection((addr, err) => {
+      disconn_addr = addr;
+    });
+  await builder.connect();
+  t.truthy(test_latency > 0, String(test_latency));
+  t.is(undefined, disconn_addr, String(disconn_addr));
+});
