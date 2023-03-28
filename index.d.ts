@@ -83,20 +83,14 @@ export class NgrokSessionBuilder {
    */
   caCert(certBytes: Uint8Array): this
   /**
-   * Configures a function which is called to prior the connection to the
-   * ngrok service. In the event of network disruptions, it will be called each time
-   * the session reconnects. The handler is given the address that will be used to
-   * connect the session to, e.g. "example.com:443".
-   */
-  handleConnection(handler: (addr: string) => string): this
-  /**
    * Configures a function which is called to after a disconnection to the
    * ngrok service. In the event of network disruptions, it will be called each time
    * the session reconnects. The handler is given the address that will be used to
    * connect the session to, e.g. "example.com:443", and the message from the error
-   * that occurred.
+   * that occurred. Returning true from the handler will cause the session to
+   * reconnect, returning false will cause the Session to throw an uncaught error.
    */
-  handleDisconnection(handler: (addr: string, error?: string) => string): this
+  handleDisconnection(handler: (addr: string, error: string) => boolean): this
   /**
    * Configures a function which is called when the ngrok service requests that
    * this [Session] stops. Your application may choose to interpret this callback

@@ -59,7 +59,6 @@ type TsfnOption = Option<Arc<Mutex<ThreadsafeFunction<Vec<String>, ErrorStrategy
 #[derive(Default)]
 struct NgrokSessionBuilder {
     raw_builder: Arc<SyncMutex<SessionBuilder>>,
-    connect_handler: TsfnOption,
     disconnect_handler: TsfnOption,
 }
 
@@ -198,24 +197,13 @@ impl NgrokSessionBuilder {
         self
     }
 
-    /// Configures a function which is called to prior the connection to the
-    /// ngrok service. In the event of network disruptions, it will be called each time
-    /// the session reconnects. The handler is given the address that will be used to
-    /// connect the session to, e.g. "example.com:443".
-    #[napi(ts_args_type = "handler: (addr: string) => string")]
-    pub fn handle_connection(&mut self, env: Env, handler: JsFunction) -> &Self {
-        // create threadsafe function
-        let tsfn = create_tsfn(env, handler);
-        self.connect_handler = Some(tsfn);
-        self.update_connector()
-    }
-
     /// Configures a function which is called to after a disconnection to the
     /// ngrok service. In the event of network disruptions, it will be called each time
     /// the session reconnects. The handler is given the address that will be used to
     /// connect the session to, e.g. "example.com:443", and the message from the error
-    /// that occurred.
-    #[napi(ts_args_type = "handler: (addr: string, error?: string) => string")]
+    /// that occurred. Returning true from the handler will cause the session to
+    /// reconnect, returning false will cause the Session to throw an uncaught error.
+    #[napi(ts_args_type = "handler: (addr: string, error: string) => boolean")]
     pub fn handle_disconnection(&mut self, env: Env, handler: JsFunction) -> &Self {
         // create threadsafe function
         let tsfn = create_tsfn(env, handler);
@@ -229,30 +217,32 @@ impl NgrokSessionBuilder {
         let mut builder = self.raw_builder.lock();
         // clone for move to connector function
         let disconnect_handler = self.disconnect_handler.clone();
-        let connect_handler = self.connect_handler.clone();
         *builder = builder.clone().connector(
             move |addr: String, tls_config: Arc<ClientConfig>, err: Option<AcceptError>| {
                 // clone for async move out of environment
                 let disconn_tsfn = disconnect_handler.clone();
-                let conn_tsfn = connect_handler.clone();
                 async move {
                     // call disconnect javascript handler
                     if let Some(handler) = disconn_tsfn {
                         if let Some(err) = err.clone() {
-                            call_tsfn::<Vec<String>, String>(
-                                handler.clone(),
-                                vec![addr.clone(), err.to_string()],
-                            )
-                            .await
-                            .map_err(|_e| ConnectError::Canceled)?;
-                        }
-                    };
-                    // call connect javascript handler
-                    if let Some(handler) = conn_tsfn {
-                        call_tsfn::<Vec<String>, String>(handler.clone(), vec![addr.clone()])
-                            .await
-                            .map_err(|_e| ConnectError::Canceled)?;
-                    };
+                            // call javascript handler
+                            let resp: Option<bool> = handler
+                                .clone()
+                                .lock()
+                                .await
+                                .call_async(vec![addr.clone(), err.to_string()])
+                                .await
+                                .map_err(|_e| ConnectError::Canceled)?;
+
+                            if let Some(reconnect) = resp {
+                                if !reconnect {
+                                    info!("Aborting connection to {addr}");
+                                    println!("Aborting connection to {addr}"); // still shown if this takes down the process
+                                    return Err(ConnectError::Canceled);
+                                }
+                            }
+                        };
+                    }
                     // call the upstream connector
                     default_connect(addr, tls_config, err).await
                 }

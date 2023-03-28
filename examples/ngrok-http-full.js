@@ -15,7 +15,8 @@ console.log('Node.js web server at ' + UNIX_SOCKET + ' is running..');
 // setup ngrok
 var ngrok = require('@ngrok/ngrok');
 // import ngrok from '@ngrok/ngrok' // if inside a module
-ngrok.consoleLog(); // turn on debug logging
+ngrok.consoleLog('INFO'); // turn on info logging
+
 builder = new ngrok.NgrokSessionBuilder();
 builder
   // .authtoken("<authtoken>")
@@ -35,9 +36,6 @@ builder
   })
   .handleHeartbeat((latency) => {
     console.log("heartbeat, latency: " + latency + " milliseconds");
-  })
-  .handleConnection((addr) => {
-    console.log("connecting, addr: " + addr);
   })
   .handleDisconnection((addr, error) => {
     console.log("disconnected, addr: " + addr
