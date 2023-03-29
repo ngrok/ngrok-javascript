@@ -1,3 +1,7 @@
+## 0.1.0:
+
+* Added `ca_cert`, `handle_heartbeat`, and `handle_disconnection` to NgrokSession.
+
 ## 0.0.12:
 
 * Added NgrokSession.close().

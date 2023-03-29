@@ -1,6 +1,6 @@
 {
   "name": "@ngrok/ngrok-linux-arm-gnueabihf",
-  "version": "0.0.12",
+  "version": "0.1.0",
   "os": [
     "linux"
   ],
