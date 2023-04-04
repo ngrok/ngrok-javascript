@@ -203,6 +203,7 @@ macro_rules! make_tunnel_type {
             /// On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
             #[napi]
             pub async fn forward_pipe(&self, addr: String) -> Result<()> {
+                info!("Tunnel {:?} Pipe forwarding to {addr:?}", &self.id);
                 // we must clone the Arc before locking so we have a local reference
                 // to the mutex to unlock if this struct is dropped.
                 let arc = GLOBAL_TUNNELS.lock().await

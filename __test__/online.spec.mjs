@@ -396,3 +396,14 @@ test('connect heartbeat callbacks', async (t) => {
   t.truthy(test_latency > 0, String(test_latency));
   t.is(undefined, disconn_addr, String(disconn_addr));
 });
+
+test('session ca_cert', async (t) => {
+  const builder = new ngrok.NgrokSessionBuilder();
+  const error = await t.throwsAsync(async () => {
+    await builder
+      .authtokenFromEnv()
+      .caCert(fs.readFileSync('examples/domain.crt'))
+      .connect();
+  }, {instanceOf: Error});
+  t.truthy(error.message.includes('certificate'), error.message);
+});
