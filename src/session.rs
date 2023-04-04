@@ -1,13 +1,10 @@
 use std::{
-    io,
     sync::Arc,
     time::Duration,
 };
 
-use async_rustls::rustls::{
-    self,
-    ClientConfig,
-};
+use async_rustls::rustls::ClientConfig;
+use bytes::Bytes;
 use napi::{
     bindgen_prelude::*,
     threadsafe_function::{
@@ -29,7 +26,6 @@ use ngrok::{
     Session,
 };
 use parking_lot::Mutex as SyncMutex;
-use rustls_pemfile::Item;
 use tokio::sync::Mutex;
 use tracing::{
     debug,
@@ -173,27 +169,8 @@ impl NgrokSessionBuilder {
     /// [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
     #[napi]
     pub fn ca_cert(&mut self, cert_bytes: Uint8Array) -> &Self {
-        let mut root_store = rustls::RootCertStore::empty();
-        let mut cert_pem = io::Cursor::new(cert_bytes);
-        root_store.add_parsable_certificates(
-            rustls_pemfile::read_all(&mut cert_pem)
-                .expect("a valid root certificate")
-                .into_iter()
-                .filter_map(|it| match it {
-                    Item::X509Certificate(bs) => Some(bs),
-                    _ => None,
-                })
-                .collect::<Vec<_>>()
-                .as_slice(),
-        );
-
-        let tls_config = rustls::ClientConfig::builder()
-            .with_safe_defaults()
-            .with_root_certificates(root_store)
-            .with_no_client_auth();
-
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().tls_config(tls_config);
+        *builder = builder.clone().ca_cert(Bytes::from(cert_bytes.to_vec()));
         self
     }
 
