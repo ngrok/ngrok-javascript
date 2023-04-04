@@ -1,3 +1,8 @@
+## 0.1.1:
+
+* Bump `ngrok-rs` to `0.11.3`.
+* Migrate `ca_cert` to the upstream call in `ngrok-rs`.
+
 ## 0.1.0:
 
 * Added `ca_cert`, `handle_heartbeat`, and `handle_disconnection` to NgrokSession.
