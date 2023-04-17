@@ -1,0 +1,20 @@
+{
+  "devDependencies": {
+    "@hapi/hapi": "21.3.1",
+    "@nestjs/cli": "9.4.0",
+    "create-remix": "1.15.0",
+    "create-svelte": "3.3.0",
+    "create-vue": "3.6.1",
+    "fastify": "4.15.0",
+    "koa": "2.14.2",
+    "next": "13.3.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "remix": "1.15.0",
+    "svelte": "3.58.0",
+    "ts-node": "^10.9.1",
+    "vue": "3.2.47",
+    "winston": "^3.8.2"
+  },
+  "packageManager": "yarn@3.3.1"
+}
