@@ -1,0 +1,11 @@
+# Ignore artifacts:
+*.css
+*.json
+*.html
+*.md
+*.vue
+*.yml
+
+index.js
+index.d.ts
+docs/
