@@ -1,4 +1,4 @@
-// Run with 'ts-node examples/ngrok-typescript.ts'
+// Run with 'ts-node ngrok-typescript.ts'
 
 import * as http from "http";
 const httpServer = http.createServer(
@@ -7,7 +7,7 @@ const httpServer = http.createServer(
   res.end();
 } );
 
-import * as ngrok from "../index";
+import * as ngrok from "@ngrok/ngrok";
 ngrok.consoleLog();
 
 const run = async (): Promise<void> => {
@@ -20,7 +20,7 @@ const run = async (): Promise<void> => {
 async function listenServer() {
   const tunnel = await ngrok.listen(httpServer);
   if ( typeof tunnel['url'] === 'function') {
-    console.log("tunnel at: " + tunnel['url']());
+    console.log("Ingress established at: " + tunnel['url']());
   }
 }
 
@@ -53,7 +53,7 @@ async function standardConfig() {
   });
   const session = await sessionBuilder.connect();
   const tunnel = await session.httpEndpoint().listen();
-  console.log('tunnel at: ' + tunnel.url());
+  console.log(`Ingress established at: ${tunnel.url()}`);
   httpServer.listen(8081); 
   tunnel.forwardTcp('localhost:8081');
 
