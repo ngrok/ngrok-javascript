@@ -4,13 +4,9 @@ const Hapi = require('@hapi/hapi');
 const ngrok = require('@ngrok/ngrok');
 
 const init = async () => {
-    const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
-    const tunnel = await session.httpEndpoint().listen();
-    console.log('Ingress at: ' + tunnel.url());
-    tunnel.forwardTcp('localhost:3000');
-
+    const port = 3000;
     const server = Hapi.server({
-        port: 3000,
+        port: port,
         host: 'localhost'
     });
 
@@ -25,6 +21,11 @@ const init = async () => {
 
     await server.start();
     console.log('Server running on %s', server.info.uri);
+
+    const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
+    const tunnel = await session.httpEndpoint().listen();
+    console.log(`Ingress established at: ${tunnel.url()}`);
+    tunnel.forwardTcp(`localhost:${port}`);
 };
 
 process.on('unhandledRejection', (err) => {

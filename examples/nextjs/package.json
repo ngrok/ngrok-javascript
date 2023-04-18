@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@ngrok/ngrok": "0.1.1",
+    "next": "13.3.0"
+  }
+}
