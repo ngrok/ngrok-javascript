@@ -11,11 +11,11 @@ Release
 1. `git checkout main; git pull origin main`
 1. `git checkout -b <username>/<version>`
 1. Bump version number in `version` in `Cargo.toml`
-1. `npm version patch --no-commit-hooks --no-git-tag-version`
-    - Can be 'minor' or 'major' instead of 'patch'
+1. `npm version minor --no-commit-hooks --no-git-tag-version`
+    - Can be 'patch' or 'major' instead of 'minor'
 1. Verify version numbers all match in `git diff --cached`
 1. Update CHANGELOG.md
-1. yarn docs
+1. yarn build && yarn docs
 1. `git add .`
 1. `git commit -m '<version>'`
 1. `git push origin <username>/<version>`

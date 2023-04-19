@@ -270,9 +270,9 @@ module.exports.NgrokLabeledTunnelBuilder = NgrokLabeledTunnelBuilder
 // javascript trailer
 //
 
-const net = require('net');
-const fs = require('fs');
-const os = require('os');
+const net = require("net");
+const fs = require("fs");
+const os = require("os");
 
 // wrap listen with the bind code for passing to net.Server.listen()
 NgrokHttpTunnelBuilder.prototype._listen = NgrokHttpTunnelBuilder.prototype.listen;
@@ -286,7 +286,7 @@ NgrokTlsTunnelBuilder.prototype.listen = ngrokBind;
 NgrokLabeledTunnelBuilder.prototype.listen = ngrokBind;
 
 // Begin listening for new connections on this tunnel,
-// and bind to a local socket so this tunnel can be 
+// and bind to a local socket so this tunnel can be
 // passed into net.Server.listen().
 async function ngrokBind(bind) {
   const tunnel = await this._listen();
@@ -303,30 +303,31 @@ async function ngrokBind(bind) {
 function defineTunnelHandle(tunnel, socket) {
   // NodeJS net.Server asks passed-in object for 'handle',
   // Return the native TCP object so the pre-existing socket is used.
-  Object.defineProperty( tunnel, 'handle', {
-    get: function() {
+  Object.defineProperty(tunnel, "handle", {
+    get: function () {
       // turn on forwarding now that it has been requested
-      tunnel.forwardTcp('localhost:' + socket.address().port);
+      tunnel.forwardTcp("localhost:" + socket.address().port);
       return socket._handle;
-    }
+    },
   });
 }
 
 // generate a net.Server listening to a random port
 async function randomTcpSocket() {
-  return await asyncListen(new net.Server(), {host:'localhost', port:0});
+  return await asyncListen(new net.Server(), { host: "localhost", port: 0 });
 }
 
 // NodeJS has not promisified 'net': https://github.com/nodejs/node/issues/21482
 function asyncListen(server, options) {
   return new Promise((resolve, reject) => {
     const socket = server.listen(options);
-    socket.once('listening', () => {
-      resolve(socket);
-    })
-    .once('error', (err) => {
-      reject(err);
-    });
+    socket
+      .once("listening", () => {
+        resolve(socket);
+      })
+      .once("error", (err) => {
+        reject(err);
+      });
   });
 }
 
@@ -378,16 +379,16 @@ async function ngrokListen(server, tunnel) {
 
 async function ngrokLinkTcp(tunnel, server) {
   // random local port
-  const socket = await asyncListen(server, {host:'localhost', port:0});
+  const socket = await asyncListen(server, { host: "localhost", port: 0 });
   // forward to socket
-  tunnel.forwardTcp('localhost:' + socket.address().port);
+  tunnel.forwardTcp("localhost:" + socket.address().port);
   return socket;
 }
 
 async function ngrokLinkPipe(tunnel, server) {
   var proposed = "tun-" + tunnel.id() + ".sock";
-  if (platform == 'win32') {
-    proposed = '\\\\.\\pipe\\' + proposed;
+  if (platform == "win32") {
+    proposed = "\\\\.\\pipe\\" + proposed;
   }
   var filename;
   try {
@@ -405,10 +406,10 @@ async function ngrokLinkPipe(tunnel, server) {
   }
 
   // begin listening
-  const socket = await asyncListen(server, {path: filename});
+  const socket = await asyncListen(server, { path: filename });
   // tighten permissions
   try {
-    if (platform != 'win32') {
+    if (platform != "win32") {
       fs.chmodSync(filename, fs.constants.S_IRWXU);
     }
   } catch (err) {
@@ -422,21 +423,21 @@ async function ngrokLinkPipe(tunnel, server) {
 }
 
 function registerCleanup(tunnel, socket) {
-  process.on('SIGINT', function() {
-    if (process.listenerCount('SIGINT') > 1) {
+  process.on("SIGINT", function () {
+    if (process.listenerCount("SIGINT") > 1) {
       // user has registered a handler, abort this one
       return;
     }
     // close tunnel
     if (tunnel) {
-      tunnel.close().then(()=>{
-        console.debug('ngrok closed tunnel: ' + tunnel.id());
+      tunnel.close().then(() => {
+        console.debug("ngrok closed tunnel: " + tunnel.id());
       });
     }
     // close webserver's socket
     if (socket) {
       socket.close(function () {
-        console.debug('ngrok closed socket');
+        console.debug("ngrok closed socket");
       });
     }
     // unregister any logging callback

@@ -51,8 +51,46 @@ A minimal use-case looks like the following:</p>
 <pre><code class="language-jsx"><span class="hl-2">const</span><span class="hl-0"> </span><span class="hl-3">server</span><span class="hl-0"> = </span><span class="hl-4">require</span><span class="hl-0">(</span><span class="hl-1">&#39;http&#39;</span><span class="hl-0">).</span><span class="hl-4">createServer</span><span class="hl-0">(</span><br/><span class="hl-0">  </span><span class="hl-2">function</span><span class="hl-0">(</span><span class="hl-5">req</span><span class="hl-0">,</span><span class="hl-5">res</span><span class="hl-0">){</span><span class="hl-5">res</span><span class="hl-0">.</span><span class="hl-4">writeHead</span><span class="hl-0">(</span><span class="hl-6">200</span><span class="hl-0">);</span><br/><span class="hl-0">  </span><span class="hl-5">res</span><span class="hl-0">.</span><span class="hl-4">write</span><span class="hl-0">(</span><span class="hl-1">&#39;Hello&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">  </span><span class="hl-5">res</span><span class="hl-0">.</span><span class="hl-4">end</span><span class="hl-0">();</span><br/><span class="hl-0">} );</span><br/><br/><span class="hl-2">var</span><span class="hl-0"> </span><span class="hl-5">ngrok</span><span class="hl-0"> = </span><span class="hl-4">require</span><span class="hl-0">(</span><span class="hl-1">&#39;@ngrok/ngrok&#39;</span><span class="hl-0">);</span><br/><br/><span class="hl-5">ngrok</span><span class="hl-0">.</span><span class="hl-4">listen</span><span class="hl-0">(</span><span class="hl-5">server</span><span class="hl-0">).</span><span class="hl-4">then</span><span class="hl-0">(() </span><span class="hl-2">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">  </span><span class="hl-5">console</span><span class="hl-0">.</span><span class="hl-4">log</span><span class="hl-0">(</span><span class="hl-1">&quot;url: &quot;</span><span class="hl-0"> + </span><span class="hl-5">server</span><span class="hl-0">.</span><span class="hl-5">tunnel</span><span class="hl-0">.</span><span class="hl-4">url</span><span class="hl-0">());</span><br/><span class="hl-0">});</span>
 </code></pre>
 
+<a href="#examples" id="examples" style="color: inherit; text-decoration: none;">
+  <h1>Examples</h1>
+</a>
+<p>Degit can be used for cloning and running an example directory like this:</p>
+<pre><code class="language-bash"><span class="hl-0">npx </span><span class="hl-1">degit</span><span class="hl-0"> </span><span class="hl-1">github:ngrok/ngrok-js/examples/</span><span class="hl-0">&lt;</span><span class="hl-1">exampl</span><span class="hl-0">e&gt; &lt;</span><span class="hl-1">folder-nam</span><span class="hl-0">e&gt;</span><br/><span class="hl-4">cd</span><span class="hl-0"> &lt;</span><span class="hl-1">folder-nam</span><span class="hl-0">e&gt;</span><br/><span class="hl-0">npm </span><span class="hl-1">i</span>
+</code></pre>
+<p>For example:</p>
+<pre><code class="language-bash"><span class="hl-0">npx </span><span class="hl-1">degit</span><span class="hl-0"> </span><span class="hl-1">github:ngrok/ngrok-js/examples/express</span><span class="hl-0"> </span><span class="hl-1">express</span><span class="hl-0"> &amp;&amp; </span><span class="hl-4">cd</span><span class="hl-0"> </span><span class="hl-1">express</span><span class="hl-0"> &amp;&amp; npm </span><span class="hl-1">i</span>
+</code></pre>
+
+<a href="#frameworks" id="frameworks" style="color: inherit; text-decoration: none;">
+  <h2>Frameworks</h2>
+</a>
+<ul>
+<li><a href="https://expressjs.com/">Express</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/express/ngrok-express-quickstart.js">Quickstart Example</a>, <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/express/ngrok-express.js">Configuration Example</a></li>
+<li><a href="https://www.fastify.io/">Fastify</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/fastify/ngrok-fastify.js">Example</a></li>
+<li><a href="https://hapi.dev/">Hapi</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/hapi/ngrok-hapi.js">Example</a></li>
+<li><a href="https://koajs.com/">Koa</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/koa/ngrok-koa.js">Example</a></li>
+<li><a href="https://nestjs.com/">Nest.js</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/nestjs/src/main.ts">Example main.ts</a></li>
+<li><a href="https://nextjs.org/">Next.js</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/nextjs/next.config.js">Example next.config.js</a> loading <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/nextjs/ngrok.config.js">ngrok.config.js</a></li>
+<li><a href="https://remix.run/">Remix</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/remix/remix.config.js">Example remix.config.js</a> loading <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/remix/ngrok.config.js">ngrok.config.js</a></li>
+<li><a href="https://svelte.dev/">Svelte</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/svelte/svelte.config.js">Example svelte.config.js</a> (works in vite.config.js too) loading <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/svelte/ngrok.config.cjs">ngrok.config.cjs</a></li>
+<li><a href="https://www.typescriptlang.org/">Typescript</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-typescript.ts">Example ts-node</a></li>
+<li><a href="https://vuejs.org/">Vue</a> - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/vue/vite.config.ts">Example vite.config.ts</a> loading <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/vue/ngrok.config.ts">ngrok.config.ts</a></li>
+<li><a href="https://github.com/winstonjs/winston#readme">Winston</a> Logging - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-winston.js">Example</a></li>
+</ul>
+
+<a href="#tunnel-types" id="tunnel-types" style="color: inherit; text-decoration: none;">
+  <h2>Tunnel Types</h2>
+</a>
+<ul>
+<li>HTTP - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-listen.js">ngrok.listen Example</a>, <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-http-minimum.js">Minimal Example</a>, <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-http-full.js">Full Configuration Example</a></li>
+<li>Labeled - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-labeled.js">Example</a></li>
+<li>TCP - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-tcp.js">Example</a></li>
+<li>TLS - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-tls.js">Example</a></li>
+<li>Windows Pipe - <a href="https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-windows-pipe.js">Example</a></li>
+</ul>
+
 <a href="#async-programming" id="async-programming" style="color: inherit; text-decoration: none;">
-  <h3>Async Programming</h3>
+  <h1>Async Programming</h1>
 </a>
 <p>All methods return a <code>Promise</code> and are suitable for use in asynchronous
 programming. You can use callback chaining with <code>.then()</code> and <code>.catch()</code> syntax
