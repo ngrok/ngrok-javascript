@@ -1,8 +1,8 @@
-import test from 'ava'
+import test from "ava";
 
-import { NgrokSessionBuilder } from '../index.js'
+import { NgrokSessionBuilder } from "../index.js";
 
-test('smoke', (t) => {
+test("smoke", (t) => {
   var builder = new NgrokSessionBuilder();
   t.truthy(builder);
-})
+});

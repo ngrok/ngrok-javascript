@@ -1,9 +1,9 @@
-const Koa = require('koa');
-const ngrok = require('@ngrok/ngrok');
+const Koa = require("koa");
+const ngrok = require("@ngrok/ngrok");
 const app = new Koa();
 
-app.use(async ctx => {
-  ctx.body = 'Hello World';
+app.use(async (ctx) => {
+  ctx.body = "Hello World";
 });
 
 ngrok.listen(app).then((socket) => {

@@ -1,11 +1,11 @@
-const ngrok = require('@ngrok/ngrok');
+const ngrok = require("@ngrok/ngrok");
 
 // setup ngrok ingress in the parent process
-var host = 'localhost';
-var port = '5173';
+var host = "localhost";
+var port = "5173";
 process.argv.forEach((item, index) => {
-  if (item == '--host') host = process.argv[index+1];
-  if (item == '--port') port = process.argv[index+1];
+  if (item == "--host") host = process.argv[index + 1];
+  if (item == "--port") port = process.argv[index + 1];
 });
 
 async function setup() {

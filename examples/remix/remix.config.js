@@ -1,4 +1,4 @@
-require('./ngrok.config.js');
+require("./ngrok.config.js");
 
 /** @type {import('@remix-run/dev').AppConfig} */
 module.exports = {

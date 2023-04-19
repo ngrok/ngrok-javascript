@@ -1,4 +1,4 @@
-require('./ngrok.config.js');
+require("./ngrok.config.js");
 
 module.exports = async (phase, { defaultConfig }) => {
   /**
@@ -6,7 +6,7 @@ module.exports = async (phase, { defaultConfig }) => {
    */
   const nextConfig = {
     /* config options here */
-  }
+  };
 
-  return nextConfig
-}
+  return nextConfig;
+};

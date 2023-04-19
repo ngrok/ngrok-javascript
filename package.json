@@ -28,6 +28,7 @@
     "ava": "^4.3.3",
     "axios": "^1.3.3",
     "express": "^4.18.2",
+    "prettier": "^2.8.7",
     "typedoc": "^0.23.26",
     "typescript": "^4.9.5"
   },
@@ -44,6 +45,7 @@
     "clean": "rm -rf node_modules/ target/",
     "docs": "mv trailer.d.ts trailer.d.hidden; mv examples .examples; npx typedoc index.d.ts; mv .examples examples; mv trailer.d.hidden trailer.d.ts",
     "prepublishOnly": "napi prepublish -t npm",
+    "prettier": "prettier --write .",
     "test": "ava",
     "universal": "napi universal",
     "version": "napi version"
