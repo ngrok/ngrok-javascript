@@ -1,37 +1,40 @@
 var UNIX_SOCKET = "/tmp/http.socket";
-const fs = require('fs');
-try{fs.unlinkSync(UNIX_SOCKET)} catch {}
+const fs = require("fs");
+try {
+  fs.unlinkSync(UNIX_SOCKET);
+} catch {}
 
 // make webserver
-var http = require('http'); 
-http.createServer(function (req, res) {
-  res.writeHead(200, {'Content-Type': 'text/html'}); 
-  res.write('Congrats you have a created an ngrok web server');
-  res.end();
-})
-.listen(UNIX_SOCKET); // Server object listens on unix socket
-console.log('Node.js web server at ' + UNIX_SOCKET + ' is running..');
+var http = require("http");
+http
+  .createServer(function (req, res) {
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.write("Congrats you have a created an ngrok web server");
+    res.end();
+  })
+  .listen(UNIX_SOCKET); // Server object listens on unix socket
+console.log("Node.js web server at " + UNIX_SOCKET + " is running..");
 
 // setup ngrok
-var ngrok = require('@ngrok/ngrok');
+var ngrok = require("@ngrok/ngrok");
 builder = new ngrok.NgrokSessionBuilder();
-builder.authtokenFromEnv()
-  .metadata("Online in One Line");
+builder.authtokenFromEnv().metadata("Online in One Line");
 
 builder.connect().then((session) => {
   console.log("established session");
-  session.tlsEndpoint()
+  session
+    .tlsEndpoint()
     // .allowCidr("0.0.0.0/0")
     // .denyCidr("10.1.1.1/32")
     // .domain("<somedomain>.ngrok.io")
     // .forwardsTo("example nodejs")
     // .mutualTlsca(fs.readFileSync('ca.crt'))
     // .proxyProto("") // One of: "", "1", "2"
-    .termination(fs.readFileSync('domain.crt'),
-      fs.readFileSync('domain.key'))
+    .termination(fs.readFileSync("domain.crt"), fs.readFileSync("domain.key"))
     .metadata("example tunnel metadata from nodejs")
-    .listen().then((tunnel) => {
-      console.log("established tunnel at: " + tunnel.url())
+    .listen()
+    .then((tunnel) => {
+      console.log("established tunnel at: " + tunnel.url());
       tunnel.forwardPipe(UNIX_SOCKET);
-  })
+    });
 });

@@ -1,10 +1,10 @@
-const express = require('express')
-const ngrok = require('@ngrok/ngrok')
-const app = express()
+const express = require("express");
+const ngrok = require("@ngrok/ngrok");
+const app = express();
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 async function setup() {
   // create session
@@ -13,13 +13,14 @@ async function setup() {
     .metadata("Online in One Line")
     .connect();
   // create tunnel
-  const tunnel = await session.httpEndpoint()
+  const tunnel = await session
+    .httpEndpoint()
     .allowCidr("0.0.0.0/0")
     .oauth("google")
     .requestHeader("X-Req-Yup", "true")
     .listen();
   // link tunnel to app
-  const socket = await ngrok.listen(app, tunnel)
+  const socket = await ngrok.listen(app, tunnel);
   console.log(`Ingress established at: ${tunnel.url()}`);
   console.log(`Express listening on: ${socket.address()}`);
 }
