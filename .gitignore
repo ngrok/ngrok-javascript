@@ -193,6 +193,9 @@ Cargo.lock
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+examples/.yarn/*
+examples/*/.yarn/*
+examples/nextjs/.next
 
 *.node
 .direnv

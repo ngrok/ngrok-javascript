@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@ngrok/ngrok": "0.1.1",
+    "fastify": "4.15.0"
+  },
+  "packageManager": "yarn@3.3.1"
+}

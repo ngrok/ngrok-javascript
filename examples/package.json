@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "@ngrok/ngrok": "^0.1.1",
+    "create-remix": "1.15.0",
+    "create-svelte": "3.3.0",
+    "create-vue": "3.6.1",
+    "ts-node": "^10.9.1",
+    "winston": "^3.8.2"
+  },
+  "packageManager": "yarn@3.3.1"
+}

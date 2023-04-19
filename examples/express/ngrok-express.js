@@ -18,9 +18,10 @@ async function setup() {
     .oauth("google")
     .requestHeader("X-Req-Yup", "true")
     .listen();
-  console.log("tunnel established at: " + tunnel.url());
   // link tunnel to app
-  ngrok.listen(app, tunnel)
+  const socket = await ngrok.listen(app, tunnel)
+  console.log(`Ingress established at: ${tunnel.url()}`);
+  console.log(`Express listening on: ${socket.address()}`);
 }
 
 setup();

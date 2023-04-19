@@ -19,6 +19,6 @@ const server = require('http').createServer(
   res.write('Hello');
   res.end();
 });
-ngrok.listen(server).then((tunnel) => {
-  console.log("url: " + tunnel.url());
+ngrok.listen(server).then((socket) => {
+  logger.info(`Ingress established at: ${socket.tunnel.url()}`);
 });
