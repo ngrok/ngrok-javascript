@@ -1,3 +1,8 @@
+## 0.2.0:
+
+* Now have examples for Express, Fastify, Hapi, Koa, Nest.js, Next.js, Remix, Svelte, and Vue.
+* Add `prettier` auto code formatting.
+
 ## 0.1.1:
 
 * Bump `ngrok-rs` to `0.11.3`.
