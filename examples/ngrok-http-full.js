@@ -25,6 +25,7 @@ builder
   // .authtoken("<authtoken>")
   .authtokenFromEnv()
   .metadata("Online in One Line")
+  .clientInfo("ngrok-http-full", "1.2.3")
   // .caCert(fs.readFileSync('ca.crt'))
   // .serverAddr('192.168.1.1:443')
   .handleStopCommand(() => {

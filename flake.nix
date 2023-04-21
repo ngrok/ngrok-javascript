@@ -93,7 +93,7 @@
           OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
           OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
           shellHook = ''
-            export PATH="$PATH:node_modules/.bin:`pwd`/node_modules/.bin"
+            export PATH="$PATH:$(git rev-parse --show-toplevel)/node_modules/.bin:$(git rev-parse --show-toplevel)/examples/node_modules/.bin"
           '';
           buildInputs = with pkgs; [
             toolchain

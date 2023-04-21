@@ -208,6 +208,18 @@ export class NgrokSessionBuilder {
    */
   authtokenFromEnv(): this
   /**
+   * Add client type and version information for a client application.
+   *
+   * This is a way for applications and library consumers of this crate
+   * identify themselves.
+   *
+   * This will add a new entry to the `User-Agent` field in the "most significant"
+   * (first) position. Comments must follow [RFC 7230] or a connection error may occur.
+   *
+   * [RFC 7230]: https://datatracker.ietf.org/doc/html/rfc7230#section-3.2.6
+   */
+  clientInfo(clientType: string, version: string, comments?: string | undefined | null): this
+  /**
    * Configures how often the session will send heartbeat messages to the ngrok
    * service to check session liveness.
    *

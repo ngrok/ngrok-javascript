@@ -44,7 +44,7 @@ use crate::{
     },
 };
 
-const CLIENT_TYPE: &str = "library/official/nodejs";
+const CLIENT_TYPE: &str = "ngrok-nodejs";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // appease clippy
@@ -84,9 +84,11 @@ impl NgrokSessionBuilder {
     #[napi(constructor)]
     pub fn new() -> Self {
         NgrokSessionBuilder {
-            raw_builder: Arc::new(SyncMutex::new(
-                Session::builder().child_client(CLIENT_TYPE, VERSION),
-            )),
+            raw_builder: Arc::new(SyncMutex::new(Session::builder().client_info(
+                CLIENT_TYPE,
+                VERSION,
+                None::<String>,
+            ))),
             ..Default::default()
         }
     }
@@ -115,6 +117,27 @@ impl NgrokSessionBuilder {
         let mut builder = self.raw_builder.lock();
         *builder = builder.clone().authtoken_from_env();
         self.auth_token_set = true;
+        self
+    }
+
+    /// Add client type and version information for a client application.
+    ///
+    /// This is a way for applications and library consumers of this crate
+    /// identify themselves.
+    ///
+    /// This will add a new entry to the `User-Agent` field in the "most significant"
+    /// (first) position. Comments must follow [RFC 7230] or a connection error may occur.
+    ///
+    /// [RFC 7230]: https://datatracker.ietf.org/doc/html/rfc7230#section-3.2.6
+    #[napi]
+    pub fn client_info(
+        &mut self,
+        client_type: String,
+        version: String,
+        comments: Option<String>,
+    ) -> &Self {
+        let mut builder = self.raw_builder.lock();
+        *builder = builder.clone().client_info(client_type, version, comments);
         self
     }
 
