@@ -7,7 +7,7 @@ const logger = createLogger({
 });
 
 // plumb ngrok logging to winston
-var ngrok = require("@ngrok/ngrok");
+const ngrok = require("@ngrok/ngrok");
 ngrok.loggingCallback(function (level, target, message) {
   level = level == "TRACE" ? "silly" : level.toLowerCase();
   logger.log(level, message, { target: target });
@@ -20,5 +20,5 @@ const server = require("http").createServer(function (req, res) {
   res.end();
 });
 ngrok.listen(server).then((socket) => {
-  logger.info(`Ingress established at: ${socket.tunnel.url()}`);
+  logger.info("Ingress established at:", socket.tunnel.url());
 });

@@ -20,7 +20,7 @@ const run = async (): Promise<void> => {
 async function listenServer() {
   const tunnel = await ngrok.listen(httpServer);
   if (typeof tunnel["url"] === "function") {
-    console.log("Ingress established at: " + tunnel["url"]());
+    console.log("Ingress established at: ", tunnel["url"]());
   }
 }
 
@@ -38,7 +38,7 @@ async function listen() {
 
 async function standardConfig() {
   ngrok.loggingCallback(function (level, target, message) {
-    console.log(`${level} ${target} - ${message}`);
+    console.log(level, target, "-", message);
   });
   const sessionBuilder = new ngrok.NgrokSessionBuilder()
     .authtokenFromEnv()
@@ -58,7 +58,7 @@ async function standardConfig() {
     });
   const session = await sessionBuilder.connect();
   const tunnel = await session.httpEndpoint().listen();
-  console.log(`Ingress established at: ${tunnel.url()}`);
+  console.log("Ingress established at:", tunnel.url()); 
   httpServer.listen(8081);
   tunnel.forwardTcp("localhost:8081");
 
