@@ -32,7 +32,15 @@ lazy_static! {
     // tunnel references to be kept until explicit close to prevent nodejs gc from dropping them.
     // the tunnel wrapper object, and the underlying tunnel, both have references to the Session
     // so the Session is safe from premature dropping.
-    static ref GLOBAL_TUNNELS: Mutex<HashMap<String,Arc<Mutex<dyn ExtendedTunnel>>>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_TUNNELS: Mutex<HashMap<String,Arc<Storage>>> = Mutex::new(HashMap::new());
+}
+
+/// Stores the tunnel and session references to be kept until explicit close.
+#[allow(dead_code)]
+struct Storage {
+    tunnel: Arc<Mutex<dyn ExtendedTunnel>>,
+    session: Arc<Mutex<Session>>,
+    url: Option<String>,
 }
 
 /// The TunnelExt cannot be turned into an object since it contains generics, so implementing
@@ -70,7 +78,12 @@ macro_rules! make_tunnel_type {
                 let proto = raw_tunnel.proto().to_string();
                 info!("Created tunnel {id:?} with url {url:?}");
                 // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
-                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Mutex::new(raw_tunnel)));
+                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Storage {
+                    tunnel: Arc::new(Mutex::new(raw_tunnel)),
+                    session: Arc::new(Mutex::new(session.clone())),
+                    url: Some(url.clone()),
+                }));
+                // create the user-facing object
                 $wrapper {
                     id,
                     forwards_to,
@@ -120,7 +133,12 @@ macro_rules! make_tunnel_type {
                 let labels = raw_tunnel.labels().clone();
                 info!("Created tunnel {id:?} with labels {labels:?}");
                 // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
-                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Mutex::new(raw_tunnel)));
+                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Storage {
+                    tunnel: Arc::new(Mutex::new(raw_tunnel)),
+                    session: Arc::new(Mutex::new(session.clone())),
+                    url: None,
+                }));
+                // create the user-facing object
                 $wrapper {
                     id,
                     forwards_to,
@@ -179,23 +197,7 @@ macro_rules! make_tunnel_type {
             /// Forward incoming tunnel connections to the provided TCP address.
             #[napi]
             pub async fn forward_tcp(&self, addr: String) -> Result<()> {
-                info!("Tunnel {:?} TCP forwarding to {addr:?}", &self.id);
-                // we must clone the Arc before locking so we have a local reference
-                // to the mutex to unlock if this struct is dropped.
-                let arc = GLOBAL_TUNNELS.lock().await
-                    .get(&self.id)
-                    .ok_or(napi_err("Tunnel is no longer running"))?
-                    .clone(); // required clone
-
-                // doing this as a seperate statement so the GLOBAL_TUNNELS lock is dropped
-                let res = arc
-                    .lock()
-                    .await
-                    .fwd_tcp(addr)
-                    .await
-                    .map_err(|e| napi_err(format!("cannot forward tcp: {e:?}")));
-                debug!("forward_tcp returning");
-                res
+                forward_tcp(&self.id, addr).await
             }
 
             /// Forward incoming tunnel connections to the provided file socket path.
@@ -203,23 +205,7 @@ macro_rules! make_tunnel_type {
             /// On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
             #[napi]
             pub async fn forward_pipe(&self, addr: String) -> Result<()> {
-                info!("Tunnel {:?} Pipe forwarding to {addr:?}", &self.id);
-                // we must clone the Arc before locking so we have a local reference
-                // to the mutex to unlock if this struct is dropped.
-                let arc = GLOBAL_TUNNELS.lock().await
-                    .get(&self.id)
-                    .ok_or(napi_err("Tunnel is no longer running"))?
-                    .clone(); // required clone
-
-                // doing this as a seperate statement so the GLOBAL_TUNNELS lock is dropped
-                let res = arc
-                    .lock()
-                    .await
-                    .fwd_pipe(addr)
-                    .await
-                    .map_err(|e| napi_err(format!("cannot forward pipe: {e:?}")));
-                debug!("forward_pipe returning");
-                res
+                forward_pipe(&self.id, addr).await
             }
 
             /// Close the tunnel.
@@ -271,7 +257,84 @@ make_tunnel_type! {
     NgrokLabeledTunnel, LabeledTunnel, label
 }
 
+pub async fn forward_tcp(id: &String, addr: String) -> Result<()> {
+    info!("Tunnel {id:?} TCP forwarding to {addr:?}");
+    let res = get_storage_by_id(id)
+        .await?
+        .tunnel
+        .lock()
+        .await
+        .fwd_tcp(addr)
+        .await
+        .map_err(|e| napi_err(format!("cannot forward tcp: {e:?}")));
+    debug!("forward_tcp returning");
+    res
+}
+
+pub async fn forward_pipe(id: &String, addr: String) -> Result<()> {
+    info!("Tunnel {id:?} Pipe forwarding to {addr:?}");
+    let res = get_storage_by_id(id)
+        .await?
+        .tunnel
+        .lock()
+        .await
+        .fwd_pipe(addr)
+        .await
+        .map_err(|e| napi_err(format!("cannot forward pipe: {e:?}")));
+    debug!("forward_pipe returning");
+    res
+}
+
+/// Delete any reference to the tunnel id
+#[allow(dead_code)]
+pub(crate) async fn get_url(id: &String) -> Option<String> {
+    GLOBAL_TUNNELS
+        .lock()
+        .await
+        .get(id)
+        .and_then(|s| s.url.clone())
+}
+
+async fn get_storage_by_id(id: &String) -> Result<Arc<Storage>> {
+    // we must clone the Arc before any locking so there is a local reference
+    // to the mutex to unlock if the tunnel wrapper struct is dropped.
+    Ok(GLOBAL_TUNNELS
+        .lock()
+        .await
+        .get(id)
+        .ok_or(napi_err("Tunnel is no longer running"))?
+        .clone()) // required clone
+}
+
 /// Delete any reference to the tunnel id
 pub(crate) async fn remove_global_tunnel(id: &String) {
     GLOBAL_TUNNELS.lock().await.remove(id);
+}
+
+/// Close a tunnel with the given url, or all tunnels if no url is defined.
+#[allow(dead_code)]
+pub(crate) async fn close_url(url: Option<String>) -> Result<()> {
+    let mut close_ids: Vec<String> = vec![];
+    let tunnels = GLOBAL_TUNNELS.lock().await;
+    for (id, storage) in tunnels.iter() {
+        debug!("tunnel: {}", id);
+        if url.as_ref().is_none() || url == storage.url {
+            debug!("closing tunnel: {}", id);
+            storage
+                .session
+                .lock()
+                .await
+                .close_tunnel(id)
+                .await
+                .map_err(|e| napi_err(format!("error closing tunnel: {e:?}")))?;
+            close_ids.push(id.clone());
+        }
+    }
+    drop(tunnels); // unlock GLOBAL_TUNNELS
+
+    // remove references entirely
+    for id in close_ids {
+        remove_global_tunnel(&id).await;
+    }
+    Ok(())
 }

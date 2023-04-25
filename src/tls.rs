@@ -23,7 +23,7 @@ impl NgrokTlsTunnelBuilder {
             .mutual_tlsca(Bytes::from(mutual_tlsca.to_vec()));
         self
     }
-    /// The key to use for TLS termination at the ngrok edge in PEM format.
+    /// The certificate and key to use for TLS termination at the ngrok edge in PEM format.
     #[napi]
     pub fn termination(&mut self, cert_pem: Uint8Array, key_pem: Uint8Array) -> &Self {
         let mut builder = self.tunnel_builder.lock();

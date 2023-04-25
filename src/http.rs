@@ -64,28 +64,28 @@ impl NgrokHttpTunnelBuilder {
         self
     }
 
-    /// with_request_header adds a header to all requests to this edge.
+    /// request_header adds a header to all requests to this edge.
     #[napi]
     pub fn request_header(&mut self, name: String, value: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
         *builder = builder.clone().request_header(name, value);
         self
     }
-    /// with_response_header adds a header to all responses coming from this edge.
+    /// response_header adds a header to all responses coming from this edge.
     #[napi]
     pub fn response_header(&mut self, name: String, value: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
         *builder = builder.clone().response_header(name, value);
         self
     }
-    /// with_remove_request_header removes a header from requests to this edge.
+    /// remove_request_header removes a header from requests to this edge.
     #[napi]
     pub fn remove_request_header(&mut self, name: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
         *builder = builder.clone().remove_request_header(name);
         self
     }
-    /// with_remove_response_header removes a header from responses from this edge.
+    /// remove_response_header removes a header from responses from this edge.
     #[napi]
     pub fn remove_response_header(&mut self, name: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
@@ -104,6 +104,7 @@ impl NgrokHttpTunnelBuilder {
 
     /// OAuth configuration.
     /// If not called, OAuth is disabled.
+    /// https://ngrok.com/docs/cloud-edge/modules/oauth/
     #[napi]
     pub fn oauth(
         &mut self,
