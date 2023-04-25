@@ -16,7 +16,7 @@ new ngrok.NgrokSessionBuilder()
       .httpEndpoint()
       .listen()
       .then((tunnel) => {
-        console.log("tunnel at: " + tunnel.url());
+        console.log("Ingress established at:", tunnel.url());
         tunnel.forwardTcp("localhost:8081");
       });
   });
