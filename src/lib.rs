@@ -4,6 +4,7 @@ use napi::{
 };
 
 pub mod config;
+pub mod connect;
 pub mod http;
 pub mod logging;
 pub mod session;

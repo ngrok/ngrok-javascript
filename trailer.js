@@ -183,6 +183,58 @@ function consoleLog(level) {
   }, level);
 }
 
-module.exports.listenable = listenable;
-module.exports.listen = ngrokListen;
+// wrap connect with code to vectorize and split out functions
+const _connect = connect;
+async function ngrokConnect(config) {
+  if (Number.isInteger(config) || typeof config === 'string' || config instanceof String) {
+    address = String(config);
+    if (!address.includes(":")) {
+      address = `localhost:${address}`;
+    }
+    config = {addr: address};
+  }
+  // Convert addr to string to allow for numeric port numbers
+  const addr = config["addr"];
+  if (Number.isInteger(addr)) config["addr"] = "localhost:" + String(config["addr"]);
+  // convert scalar values to arrays to meet what napi-rs expects
+  ["auth", "basic_auth", "ip_restriction.allow_cidrs", "ip_restriction.deny_cidrs", "labels",
+      "oauth.allow_domains", "oauth.allow_emails" , "oauth.scopes", "oidc.scopes", "oidc.allow_domains", "oidc.allow_emails",
+      "request_header.add", "request_header.remove", "response_header.add", "response_header.remove", "schemes"].forEach((key) => {
+    vectorize(config, key);
+  });
+  // break out the logging callback function to meet what napi-rs expects
+  var on_log_event;
+  if (config["onLogEvent"]) {
+    const onLogEvent = config.onLogEvent;
+    on_log_event = (level, target, message) => {
+      onLogEvent(`${level} ${target} - ${message}`);
+    }
+    config["onLogEvent"] = true;
+  }
+  // break out the status change callback functions to what napi-rs expects
+  var on_connection, on_disconnection;
+  if (config["onStatusChange"]) {
+    const onStatusChange = config.onStatusChange;
+    on_connection = (status, err) => {
+      onStatusChange(status);
+    }
+    on_disconnection = (addr, err) => {
+      onStatusChange("closed");
+    }
+    config["onStatusChange"] = true;
+  }
+  // call into rust
+  return await _connect(config, on_log_event, on_connection, on_disconnection);
+}
+
+function vectorize(config, key) {
+  if (config[key] == null) return;
+  if (!(config[key] instanceof Array)) {
+    config[key] = [config[key]];
+  }
+}
+
+module.exports.connect = ngrokConnect;;
 module.exports.consoleLog = consoleLog;
+module.exports.listen = ngrokListen;
+module.exports.listenable = listenable;

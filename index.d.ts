@@ -163,6 +163,12 @@ export interface Config {
   /** Convert incoming websocket connections to TCP-like streams. */
   websocket_tcp_converter?: boolean
 }
+/** Transform a json object configuration into a tunnel */
+export function connect(config: Config|string|number): Promise<string>
+/** Close a tunnel with the given url, or all tunnels if no url is defined. */
+export function disconnect(url?: string | undefined | null): Promise<void>
+/** Close all tunnels. */
+export function kill(): Promise<void>
 /**
  * Register a callback function that will receive logging event information.
  * An absent callback will unregister an existing callback function.
