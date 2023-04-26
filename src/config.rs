@@ -58,13 +58,13 @@ pub struct Config {
     pub inspect: Option<String>,
     /// Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
     #[napi(
-        js_name = "ip_restriction.allow_cidrs",
+        js_name = "ip_restriction_allow_cidrs",
         ts_type = "string|Array<string>"
     )]
     pub allow_cidr: Option<Vec<String>>,
     /// Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
     #[napi(
-        js_name = "ip_restriction.deny_cidrs",
+        js_name = "ip_restriction_deny_cidrs",
         ts_type = "string|Array<string>"
     )]
     pub deny_cidr: Option<Vec<String>>,
@@ -83,35 +83,35 @@ pub struct Config {
     /// Unused, will warn and be ignored
     pub name: Option<String>,
     /// OAuth configuration of domains to allow.
-    #[napi(js_name = "oauth.allow_domains", ts_type = "string|Array<string>")]
+    #[napi(js_name = "oauth_allow_domains", ts_type = "string|Array<string>")]
     pub oauth_allow_domains: Option<Vec<String>>,
     /// OAuth configuration of email addresses to allow.
-    #[napi(js_name = "oauth.allow_emails", ts_type = "string|Array<string>")]
+    #[napi(js_name = "oauth_allow_emails", ts_type = "string|Array<string>")]
     pub oauth_allow_emails: Option<Vec<String>>,
     /// OAuth configuration of scopes.
-    #[napi(js_name = "oauth.scopes", ts_type = "string|Array<string>")]
+    #[napi(js_name = "oauth_scopes", ts_type = "string|Array<string>")]
     pub oauth_scopes: Option<Vec<String>>,
     /// OAuth configuration of the provider, e.g. "google".
     /// https://ngrok.com/docs/cloud-edge/modules/oauth/
-    #[napi(js_name = "oauth.provider")]
+    #[napi(js_name = "oauth_provider")]
     pub oauth_provider: Option<String>,
     /// OIDC configuration of client ID.
-    #[napi(js_name = "oidc.client_id")]
+    #[napi(js_name = "oidc_client_id")]
     pub oidc_client_id: Option<String>,
     /// OIDC configuration of client secret.
-    #[napi(js_name = "oidc.client_secret")]
+    #[napi(js_name = "oidc_client_secret")]
     pub oidc_client_secret: Option<String>,
     /// OIDC configuration of scopes.
-    #[napi(js_name = "oidc.scopes", ts_type = "string|Array<string>")]
+    #[napi(js_name = "oidc_scopes", ts_type = "string|Array<string>")]
     pub oidc_scopes: Option<Vec<String>>,
     /// OIDC configuration of the issuer URL.
-    #[napi(js_name = "oidc.issuer_url")]
+    #[napi(js_name = "oidc_issuer_url")]
     pub oidc_issuer_url: Option<String>,
     /// OIDC configuration of domains to allow.
-    #[napi(js_name = "oidc.allow_domains", ts_type = "string|Array<string>")]
+    #[napi(js_name = "oidc_allow_domains", ts_type = "string|Array<string>")]
     pub oidc_allow_domains: Option<Vec<String>>,
     /// OIDC configuration of email addresses to allow.
-    #[napi(js_name = "oidc.allow_emails", ts_type = "string|Array<string>")]
+    #[napi(js_name = "oidc_allow_emails", ts_type = "string|Array<string>")]
     pub oidc_allow_emails: Option<Vec<String>>,
     /// Returns log messages from the ngrok library.
     #[napi(ts_type = "handler: (data: string) => void")]
@@ -128,16 +128,16 @@ pub struct Config {
     #[napi(js_name = "proxy_proto")]
     pub proxy_proto: Option<String>,
     /// Adds a header to all requests to this edge.
-    #[napi(js_name = "request_header.add", ts_type = "string|Array<string>")]
+    #[napi(js_name = "request_header_add", ts_type = "string|Array<string>")]
     pub request_header_add: Option<Vec<String>>,
     /// Removes a header from requests to this edge.
-    #[napi(js_name = "request_header.remove", ts_type = "string|Array<string>")]
+    #[napi(js_name = "request_header_remove", ts_type = "string|Array<string>")]
     pub request_header_remove: Option<Vec<String>>,
     /// Adds a header to all responses coming from this edge.
-    #[napi(js_name = "response_header.add", ts_type = "string|Array<string>")]
+    #[napi(js_name = "response_header_add", ts_type = "string|Array<string>")]
     pub response_header_add: Option<Vec<String>>,
     /// Removes a header from responses from this edge.
-    #[napi(js_name = "response_header.remove", ts_type = "string|Array<string>")]
+    #[napi(js_name = "response_header_remove", ts_type = "string|Array<string>")]
     pub response_header_remove: Option<Vec<String>>,
     /// Unused, will warn and be ignored
     pub region: Option<String>,
@@ -165,10 +165,10 @@ pub struct Config {
     #[napi(js_name = "terminate_at")]
     pub terminate_at: Option<String>,
     /// WebhookVerification configuration, the provider to use.
-    #[napi(js_name = "verify_webhook.provider")]
+    #[napi(js_name = "verify_webhook_provider")]
     pub verify_webhook_provider: Option<String>,
     /// WebhookVerification configuration, the secret to use.
-    #[napi(js_name = "verify_webhook.secret")]
+    #[napi(js_name = "verify_webhook_secret")]
     pub verify_webhook_secret: Option<String>,
     /// Unused, will warn and be ignored
     #[napi(js_name = "web_addr")]

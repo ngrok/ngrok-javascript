@@ -64,9 +64,9 @@ export interface Config {
   /** Unused, will warn and be ignored */
   inspect?: string
   /** Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges. */
-  ip_restriction.allow_cidrs?: string|Array<string>
+  ip_restriction_allow_cidrs?: string|Array<string>
   /** Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges. */
-  ip_restriction.deny_cidrs?: string|Array<string>
+  ip_restriction_deny_cidrs?: string|Array<string>
   /**
    * The certificate to use for TLS termination at the ngrok edge in PEM format.
    * Only used if "proto" is "tls".
@@ -84,28 +84,28 @@ export interface Config {
   /** Unused, will warn and be ignored */
   name?: string
   /** OAuth configuration of domains to allow. */
-  oauth.allow_domains?: string|Array<string>
+  oauth_allow_domains?: string|Array<string>
   /** OAuth configuration of email addresses to allow. */
-  oauth.allow_emails?: string|Array<string>
+  oauth_allow_emails?: string|Array<string>
   /** OAuth configuration of scopes. */
-  oauth.scopes?: string|Array<string>
+  oauth_scopes?: string|Array<string>
   /**
    * OAuth configuration of the provider, e.g. "google".
    * https://ngrok.com/docs/cloud-edge/modules/oauth/
    */
-  oauth.provider?: string
+  oauth_provider?: string
   /** OIDC configuration of client ID. */
-  oidc.client_id?: string
+  oidc_client_id?: string
   /** OIDC configuration of client secret. */
-  oidc.client_secret?: string
+  oidc_client_secret?: string
   /** OIDC configuration of scopes. */
-  oidc.scopes?: string|Array<string>
+  oidc_scopes?: string|Array<string>
   /** OIDC configuration of the issuer URL. */
-  oidc.issuer_url?: string
+  oidc_issuer_url?: string
   /** OIDC configuration of domains to allow. */
-  oidc.allow_domains?: string|Array<string>
+  oidc_allow_domains?: string|Array<string>
   /** OIDC configuration of email addresses to allow. */
-  oidc.allow_emails?: string|Array<string>
+  oidc_allow_emails?: string|Array<string>
   /** Returns log messages from the ngrok library. */
   onLogEvent?: handler: (data: string) => void
   /** 'closed' - connection is lost, 'connected' - reconnected */
@@ -120,13 +120,13 @@ export interface Config {
   /** The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using. */
   proxy_proto?: string
   /** Adds a header to all requests to this edge. */
-  request_header.add?: string|Array<string>
+  request_header_add?: string|Array<string>
   /** Removes a header from requests to this edge. */
-  request_header.remove?: string|Array<string>
+  request_header_remove?: string|Array<string>
   /** Adds a header to all responses coming from this edge. */
-  response_header.add?: string|Array<string>
+  response_header_add?: string|Array<string>
   /** Removes a header from responses from this edge. */
-  response_header.remove?: string|Array<string>
+  response_header_remove?: string|Array<string>
   /** Unused, will warn and be ignored */
   region?: string
   /**
@@ -155,9 +155,9 @@ export interface Config {
   /** Unused, will warn and be ignored */
   terminate_at?: string
   /** WebhookVerification configuration, the provider to use. */
-  verify_webhook.provider?: string
+  verify_webhook_provider?: string
   /** WebhookVerification configuration, the secret to use. */
-  verify_webhook.secret?: string
+  verify_webhook_secret?: string
   /** Unused, will warn and be ignored */
   web_addr?: string
   /** Convert incoming websocket connections to TCP-like streams. */
