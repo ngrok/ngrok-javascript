@@ -202,6 +202,13 @@ async function ngrokConnect(config) {
       "request_header.add", "request_header.remove", "response_header.add", "response_header.remove", "schemes"].forEach((key) => {
     vectorize(config, key);
   });
+  // convert dotted values to underscores for backwards compatibility
+  ["ip_restriction.allow_cidrs", "ip_restriction.deny_cidrs", "oauth.allow_domains", "oauth.allow_emails", "oauth.scopes",
+      "oauth.provider", "oidc.client_id", "oidc.client_secret", "oidc.scopes", "oidc.issuer_url", "oidc.allow_domains",
+      "oidc.allow_emails", "request_header.add", "request_header.remove", "response_header.add", "response_header.remove",
+      "verify_webhook.provider", "verify_webhook.secret"].forEach((key) => {
+    undot(config, key);
+  });
   // break out the logging callback function to meet what napi-rs expects
   var on_log_event;
   if (config["onLogEvent"]) {
@@ -227,8 +234,29 @@ async function ngrokConnect(config) {
   return await _connect(config, on_log_event, on_connection, on_disconnection);
 }
 
+function undot(config, dotKey) {
+  const noDotKey = dotKey.replace(".","_");
+  if (config[dotKey] == null) return; // no dotKey value, done
+  if (config[noDotKey] == null) {
+    // nothing at destination, just set and be done
+    config[noDotKey] = config[dotKey];
+    return;
+  }
+  if (config[dotKey] instanceof Array && config[noDotKey] instanceof Array) {
+    // merge arrays
+    for (const obj of config[dotKey]) {
+      config[noDotKey].push(obj);
+    }
+  }
+  // destination exists and is not an array, do nothing so noDotKey can take precedence
+}
+
 function vectorize(config, key) {
-  if (config[key] == null) return;
+  // backwards compatible keys are passed in, check the new style as well
+  const noDotKey = key.replace(".","_");
+  if (key != noDotKey) vectorize(config, noDotKey);
+
+  if (config[key] == null) return; // no value, done
   if (!(config[key] instanceof Array)) {
     config[key] = [config[key]];
   }
