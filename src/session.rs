@@ -5,6 +5,7 @@ use std::{
 
 use async_rustls::rustls::ClientConfig;
 use bytes::Bytes;
+use lazy_static::lazy_static;
 use napi::{
     bindgen_prelude::*,
     threadsafe_function::{
@@ -49,13 +50,28 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 // appease clippy
 type TsfnOption = Option<Arc<Mutex<ThreadsafeFunction<Vec<String>, ErrorStrategy::Fatal>>>>;
 
+lazy_static! {
+    // Allow user to store a default auth token to use for all sessions
+    static ref AUTH_TOKEN: Mutex<Option<String>> = Mutex::new(None);
+}
+
+/// Set the default auth token to use for any future sessions.
+#[napi]
+#[allow(dead_code)]
+pub async fn authtoken(authtoken: String) {
+    let mut token = AUTH_TOKEN.lock().await;
+    token.replace(authtoken);
+}
+
 /// The builder for an ngrok session.
 #[napi]
 #[allow(dead_code)]
 #[derive(Default)]
-struct NgrokSessionBuilder {
+pub(crate) struct NgrokSessionBuilder {
     raw_builder: Arc<SyncMutex<SessionBuilder>>,
+    connect_handler: TsfnOption,
     disconnect_handler: TsfnOption,
+    auth_token_set: bool,
 }
 
 #[napi]
@@ -86,6 +102,7 @@ impl NgrokSessionBuilder {
     pub fn authtoken(&mut self, authtoken: String) -> &Self {
         let mut builder = self.raw_builder.lock();
         *builder = builder.clone().authtoken(authtoken);
+        self.auth_token_set = true;
         self
     }
 
@@ -95,6 +112,7 @@ impl NgrokSessionBuilder {
     pub fn authtoken_from_env(&mut self) -> &Self {
         let mut builder = self.raw_builder.lock();
         *builder = builder.clone().authtoken_from_env();
+        self.auth_token_set = true;
         self
     }
 
@@ -188,15 +206,24 @@ impl NgrokSessionBuilder {
         self.update_connector()
     }
 
+    pub fn handle_connection(&mut self, env: Env, handler: JsFunction) -> &Self {
+        // create threadsafe function
+        let tsfn = create_tsfn(env, handler);
+        self.connect_handler = Some(tsfn);
+        self.update_connector()
+    }
+
     /// Update the connector callback in the upstream rust sdk.
     fn update_connector(&mut self) -> &Self {
         // register connect handler. this needs the return value, so cannot use call_tsfn().
         let mut builder = self.raw_builder.lock();
         // clone for move to connector function
+        let connect_handler = self.connect_handler.clone();
         let disconnect_handler = self.disconnect_handler.clone();
         *builder = builder.clone().connector(
             move |addr: String, tls_config: Arc<ClientConfig>, err: Option<AcceptError>| {
                 // clone for async move out of environment
+                let conn_tsfn = connect_handler.clone();
                 let disconn_tsfn = disconnect_handler.clone();
                 async move {
                     // call disconnect javascript handler
@@ -221,7 +248,24 @@ impl NgrokSessionBuilder {
                         };
                     }
                     // call the upstream connector
-                    default_connect(addr, tls_config, err).await
+                    let res = default_connect(addr, tls_config, err).await;
+
+                    // call connect handler
+                    if let Some(handler) = conn_tsfn {
+                        let args = match &res {
+                            Ok(_) => vec!["connected".to_string()],
+                            Err(err) => vec!["closed".to_string(), err.to_string()],
+                        };
+                        // call javascript handler
+                        handler
+                            .clone()
+                            .lock()
+                            .await
+                            .call_async(args)
+                            .await
+                            .map_err(|_e| ConnectError::Canceled)?;
+                    }
+                    res
                 }
             },
         );
@@ -326,7 +370,13 @@ impl NgrokSessionBuilder {
     /// Attempt to establish an ngrok session using the current configuration.
     #[napi]
     pub async fn connect(&self) -> Result<NgrokSession> {
-        let builder = self.raw_builder.lock().clone();
+        let mut builder = self.raw_builder.lock().clone();
+        // set default auth token if it exists
+        let default_auth_token = AUTH_TOKEN.lock().await;
+        if default_auth_token.is_some() && !self.auth_token_set {
+            builder = builder.authtoken(default_auth_token.as_ref().unwrap());
+        }
+        // connect to ngrok
         builder
             .connect()
             .await
@@ -342,7 +392,7 @@ impl NgrokSessionBuilder {
 
 /// An ngrok session.
 #[napi(custom_finalize)]
-struct NgrokSession {
+pub(crate) struct NgrokSession {
     #[allow(dead_code)]
     raw_session: Arc<SyncMutex<Session>>,
 }
