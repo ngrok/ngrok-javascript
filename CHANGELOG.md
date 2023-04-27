@@ -1,3 +1,8 @@
+## 0.3.0:
+
+* Added `ngrok.connect(Config)`, `ngrok.authtoken()`, and `ngrok.disconnect(url)`
+* Examples cleanup
+
 ## 0.2.0:
 
 * Now have examples for Express, Fastify, Hapi, Koa, Nest.js, Next.js, Remix, Svelte, and Vue.

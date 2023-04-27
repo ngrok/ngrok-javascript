@@ -57,14 +57,11 @@ test("connect https", async (t) => {
 test("connect number", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const url = await ngrok.connect(
-    parseInt(httpServer.listenTo.split(":")[1], 10)
-  );
+  const url = await ngrok.connect(parseInt(httpServer.listenTo.split(":")[1], 10));
 
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
   await validateShutdown(t, httpServer, url);
-  ngrok.authtoken("");
 });
 
 test("connect string", async (t) => {
@@ -75,7 +72,6 @@ test("connect string", async (t) => {
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
   await validateShutdown(t, httpServer, url);
-  ngrok.authtoken("");
 });
 
 test("connect vectorize", async (t) => {
@@ -94,23 +90,25 @@ test("connect vectorize", async (t) => {
     // scalar to array conversion
     basic_auth: "ngrok:online1line",
     "ip_restriction.allow_cidrs": "0.0.0.0/0",
-    "ip_restriction_allow_cidrs": "0.0.0.0/0",
+    ip_restriction_allow_cidrs: "0.0.0.0/0",
     "ip_restriction.deny_cidrs": "10.1.1.1/32",
-    "ip_restriction_deny_cidrs": "10.1.1.1/32",
+    ip_restriction_deny_cidrs: "10.1.1.1/32",
     "request_header.remove": "X-Req-Nope",
-    "request_header_remove": "X-Req-Nope2",
+    request_header_remove: "X-Req-Nope2",
     "response_header.remove": "X-Res-Nope",
-    "response_header_remove": "X-Res-Nope2",
+    response_header_remove: "X-Res-Nope2",
     "request_header.add": "X-Req-Yup:true",
-    "request_header_add": "X-Req-Yup2:true2",
+    request_header_add: "X-Req-Yup2:true2",
     "response_header.add": "X-Res-Yup:true",
-    "response_header_add": "X-Res-Yup2:true2",
+    response_header_add: "X-Res-Yup2:true2",
     schemes: "HTTPS",
   });
 
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
-  const response = await validateShutdown(t, httpServer, url, {auth: { username: "ngrok", password: "online1line" }} );
+  const response = await validateShutdown(t, httpServer, url, {
+    auth: { username: "ngrok", password: "online1line" },
+  });
   t.is("true", response.headers["x-res-yup"]);
   t.is("true2", response.headers["x-res-yup2"]);
 });

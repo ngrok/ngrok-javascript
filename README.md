@@ -43,19 +43,25 @@ After you've installed the package, you'll need an Auth Token. Retrieve one on t
 [Auth Token page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken)
 
 There are multiple examples in [the /examples directory](https://github.com/ngrok/ngrok-js/tree/main/examples).
-A minimal use-case looks like the following:
+A minimal use-case looks like [the following](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-http-minimum.js):
 
 ```jsx
-const server = require('http').createServer(
-  function(req,res){res.writeHead(200);
-  res.write('Hello');
-  res.end();
-} );
+var ngrok = require("@ngrok/ngrok");
 
-var ngrok = require('@ngrok/ngrok');
+async function create_tunnel() {
+  const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
+  const tunnel = await session.httpEndpoint().listen();
+  console.log("Ingress established at:", tunnel.url());
+  tunnel.forwardTcp("localhost:8081");
+}
+```
 
-ngrok.listen(server).then(() => {
-  console.log("url: " + server.tunnel.url());
+or [with the 'connect' convenience function](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-connect-minimal.js):
+
+```jsx
+const ngrok = require("@ngrok/ngrok");
+ngrok.connect({addr: 8080, authtoken_from_env: true}).then((url) => {
+  console.log(`Ingress established at: ${url}`);
 });
 ```
 
@@ -87,6 +93,7 @@ npx degit github:ngrok/ngrok-js/examples/express express && cd express && npm i
 * [Winston](https://github.com/winstonjs/winston#readme) Logging - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-winston.js)
 
 ## Tunnel Types
+* ngrok.connect - [ngrok.connect Minimal Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-connect-minimal.js), [Full ngrok.connect Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-connect-full.js)
 * HTTP - [ngrok.listen Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-listen.js), [Minimal Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-http-minimum.js), [Full Configuration Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-http-full.js)
 * Labeled - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-labeled.js)
 * TCP - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-tcp.js)

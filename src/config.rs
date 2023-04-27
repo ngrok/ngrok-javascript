@@ -1,5 +1,8 @@
 use napi_derive::napi;
 
+/// Configuration object to pass to ngrok.connect()
+///
+/// @group Functions
 #[napi(object)]
 #[derive(Default)]
 pub struct Config {
@@ -114,10 +117,10 @@ pub struct Config {
     #[napi(js_name = "oidc_allow_emails", ts_type = "string|Array<string>")]
     pub oidc_allow_emails: Option<Vec<String>>,
     /// Returns log messages from the ngrok library.
-    #[napi(ts_type = "handler: (data: string) => void")]
+    #[napi(ts_type = "(data: string) => void")]
     pub on_log_event: Option<bool>,
     /// 'closed' - connection is lost, 'connected' - reconnected
-    #[napi(ts_type = "handler: (status: string) => void")]
+    #[napi(ts_type = "(status: string) => void")]
     pub on_status_change: Option<bool>,
     /// The port for the tunnel to forward to.
     /// Only used if addr is not defined.

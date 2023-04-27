@@ -15,4 +15,4 @@ async function create_tunnel() {
   console.log("Ingress established at:", tunnel.url());
   tunnel.forwardTcp("localhost:8081");
 }
-create_tunnel()
+create_tunnel();

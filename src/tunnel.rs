@@ -241,18 +241,26 @@ macro_rules! make_tunnel_type {
 
 make_tunnel_type! {
     /// An ngrok tunnel backing an HTTP endpoint.
+    ///
+    /// @group Tunnels
     NgrokHttpTunnel, HttpTunnel, common
 }
 make_tunnel_type! {
     /// An ngrok tunnel backing a TCP endpoint.
+    ///
+    /// @group Tunnels
     NgrokTcpTunnel, TcpTunnel, common
 }
 make_tunnel_type! {
     /// An ngrok tunnel bcking a TLS endpoint.
+    ///
+    /// @group Tunnels
     NgrokTlsTunnel, TlsTunnel, common
 }
 make_tunnel_type! {
     /// A labeled ngrok tunnel.
+    ///
+    /// @group Tunnels
     NgrokLabeledTunnel, LabeledTunnel, label
 }
 
