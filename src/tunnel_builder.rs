@@ -143,17 +143,25 @@ macro_rules! make_tunnel_builder {
 
 make_tunnel_builder! {
     /// An ngrok tunnel backing an HTTP endpoint.
+    ///
+    /// @group Tunnel Builders
     NgrokHttpTunnelBuilder, HttpTunnelBuilder, NgrokHttpTunnel, common
 }
 make_tunnel_builder! {
     /// An ngrok tunnel backing a TCP endpoint.
+    ///
+    /// @group Tunnel Builders
     NgrokTcpTunnelBuilder, TcpTunnelBuilder, NgrokTcpTunnel, common
 }
 make_tunnel_builder! {
     /// An ngrok tunnel backing a TLS endpoint.
+    ///
+    /// @group Tunnel Builders
     NgrokTlsTunnelBuilder, TlsTunnelBuilder, NgrokTlsTunnel, common
 }
 make_tunnel_builder! {
     /// A labeled ngrok tunnel.
+    ///
+    /// @group Tunnel Builders
     NgrokLabeledTunnelBuilder, LabeledTunnelBuilder, NgrokLabeledTunnel, label
 }

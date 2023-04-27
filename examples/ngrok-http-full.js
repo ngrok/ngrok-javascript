@@ -34,7 +34,10 @@ builder
     console.log("restart command");
   })
   .handleUpdateCommand((update) => {
-    console.log("update command, version:", update.version, "permitMajorVersion:", update.permitMajorVersion);
+    console.log(
+      "update command, version:", update.version,
+      "permitMajorVersion:", update.permitMajorVersion
+    );
   })
   .handleHeartbeat((latency) => {
     console.log("heartbeat, latency:", latency, "milliseconds");
