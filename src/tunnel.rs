@@ -36,7 +36,6 @@ lazy_static! {
 }
 
 /// Stores the tunnel and session references to be kept until explicit close.
-#[allow(dead_code)]
 struct Storage {
     tunnel: Arc<Mutex<dyn ExtendedTunnel>>,
     session: Arc<Mutex<Session>>,
@@ -286,7 +285,6 @@ pub async fn forward_pipe(id: &String, addr: String) -> Result<()> {
 }
 
 /// Delete any reference to the tunnel id
-#[allow(dead_code)]
 pub(crate) async fn get_url(id: &String) -> Option<String> {
     GLOBAL_TUNNELS
         .lock()
@@ -312,7 +310,6 @@ pub(crate) async fn remove_global_tunnel(id: &String) {
 }
 
 /// Close a tunnel with the given url, or all tunnels if no url is defined.
-#[allow(dead_code)]
 pub(crate) async fn close_url(url: Option<String>) -> Result<()> {
     let mut close_ids: Vec<String> = vec![];
     let tunnels = GLOBAL_TUNNELS.lock().await;

@@ -183,6 +183,86 @@ function consoleLog(level) {
   }, level);
 }
 
-module.exports.listenable = listenable;
-module.exports.listen = ngrokListen;
+// wrap connect with code to vectorize and split out functions
+const _connect = connect;
+async function ngrokConnect(config) {
+  if (Number.isInteger(config) || typeof config === 'string' || config instanceof String) {
+    address = String(config);
+    if (!address.includes(":")) {
+      address = `localhost:${address}`;
+    }
+    config = {addr: address};
+  }
+  // Convert addr to string to allow for numeric port numbers
+  const addr = config["addr"];
+  if (Number.isInteger(addr)) config["addr"] = "localhost:" + String(config["addr"]);
+  // convert scalar values to arrays to meet what napi-rs expects
+  ["auth", "basic_auth", "ip_restriction.allow_cidrs", "ip_restriction.deny_cidrs", "labels",
+      "oauth.allow_domains", "oauth.allow_emails" , "oauth.scopes", "oidc.scopes", "oidc.allow_domains", "oidc.allow_emails",
+      "request_header.add", "request_header.remove", "response_header.add", "response_header.remove", "schemes"].forEach((key) => {
+    vectorize(config, key);
+  });
+  // convert dotted values to underscores for backwards compatibility
+  ["ip_restriction.allow_cidrs", "ip_restriction.deny_cidrs", "oauth.allow_domains", "oauth.allow_emails", "oauth.scopes",
+      "oauth.provider", "oidc.client_id", "oidc.client_secret", "oidc.scopes", "oidc.issuer_url", "oidc.allow_domains",
+      "oidc.allow_emails", "request_header.add", "request_header.remove", "response_header.add", "response_header.remove",
+      "verify_webhook.provider", "verify_webhook.secret"].forEach((key) => {
+    undot(config, key);
+  });
+  // break out the logging callback function to meet what napi-rs expects
+  var on_log_event;
+  if (config["onLogEvent"]) {
+    const onLogEvent = config.onLogEvent;
+    on_log_event = (level, target, message) => {
+      onLogEvent(`${level} ${target} - ${message}`);
+    }
+    config["onLogEvent"] = true;
+  }
+  // break out the status change callback functions to what napi-rs expects
+  var on_connection, on_disconnection;
+  if (config["onStatusChange"]) {
+    const onStatusChange = config.onStatusChange;
+    on_connection = (status, err) => {
+      onStatusChange(status);
+    }
+    on_disconnection = (addr, err) => {
+      onStatusChange("closed");
+    }
+    config["onStatusChange"] = true;
+  }
+  // call into rust
+  return await _connect(config, on_log_event, on_connection, on_disconnection);
+}
+
+function undot(config, dotKey) {
+  const noDotKey = dotKey.replace(".","_");
+  if (config[dotKey] == null) return; // no dotKey value, done
+  if (config[noDotKey] == null) {
+    // nothing at destination, just set and be done
+    config[noDotKey] = config[dotKey];
+    return;
+  }
+  if (config[dotKey] instanceof Array && config[noDotKey] instanceof Array) {
+    // merge arrays
+    for (const obj of config[dotKey]) {
+      config[noDotKey].push(obj);
+    }
+  }
+  // destination exists and is not an array, do nothing so noDotKey can take precedence
+}
+
+function vectorize(config, key) {
+  // backwards compatible keys are passed in, check the new style as well
+  const noDotKey = key.replace(".","_");
+  if (key != noDotKey) vectorize(config, noDotKey);
+
+  if (config[key] == null) return; // no value, done
+  if (!(config[key] instanceof Array)) {
+    config[key] = [config[key]];
+  }
+}
+
+module.exports.connect = ngrokConnect;;
 module.exports.consoleLog = consoleLog;
+module.exports.listen = ngrokListen;
+module.exports.listenable = listenable;
