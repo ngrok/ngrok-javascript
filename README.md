@@ -35,7 +35,7 @@ npm install @ngrok/ngrok
 
 # Documentation
 
-A quickstart guide and a full API reference are included in the [ngrok-js TypeScript API documentation](https://ngrok.github.io/ngrok-js/).
+A quickstart guide and a full API reference are included in the [ngrok-js API documentation](https://ngrok.github.io/ngrok-js/).
 
 # Quickstart
 
