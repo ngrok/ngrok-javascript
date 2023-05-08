@@ -185,7 +185,7 @@ export function authtoken(authtoken: string): Promise<void>
 /**
  * The builder for an ngrok session.
  *
- * @group Sessions
+ * @group Tunnel and Sessions
  */
 export class NgrokSessionBuilder {
   /** Create a new session builder */
@@ -323,7 +323,7 @@ export class NgrokSessionBuilder {
 /**
  * An ngrok session.
  *
- * @group Sessions
+ * @group Tunnel and Sessions
  */
 export class NgrokSession {
   /** Start building a tunnel backing an HTTP endpoint. */
@@ -339,11 +339,7 @@ export class NgrokSession {
   /** Close the ngrok session. */
   close(): Promise<void>
 }
-/**
- * Container for UpdateRequest information.
- *
- * @group Sessions
- */
+/** Container for UpdateRequest information. */
 export class UpdateRequest {
   /** The version that the agent is requested to update to. */
   version: string
@@ -351,125 +347,15 @@ export class UpdateRequest {
   permitMajorVersion: boolean
 }
 /**
- *r" An ngrok tunnel backing an HTTP endpoint.
- *r"
- *r" @group Tunnels
+ * An ngrok tunnel.
+ *
+ * @group Tunnel and Sessions
  */
-export class NgrokHttpTunnel {
+export class NgrokTunnel {
   /** The URL that this tunnel backs. */
-  url(): string
+  url(): string | null
   /** The protocol of the endpoint that this tunnel backs. */
-  proto(): string
-  /** Returns a tunnel's unique ID. */
-  id(): string
-  /**
-   * Returns a human-readable string presented in the ngrok dashboard
-   * and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
-   * [TcpTunnelBuilder::forwards_to], etc. to set this value
-   * explicitly.
-   */
-  forwardsTo(): string
-  /** Returns the arbitrary metadata string for this tunnel. */
-  metadata(): string
-  /** Forward incoming tunnel connections to the provided TCP address. */
-  forwardTcp(addr: string): Promise<void>
-  /**
-   * Forward incoming tunnel connections to the provided file socket path.
-   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-   */
-  forwardPipe(addr: string): Promise<void>
-  /**
-   * Close the tunnel.
-   *
-   * This is an RPC call that must be `.await`ed.
-   * It is equivalent to calling `Session::close_tunnel` with this
-   * tunnel's ID.
-   */
-  close(): Promise<void>
-}
-/**
- *r" An ngrok tunnel backing a TCP endpoint.
- *r"
- *r" @group Tunnels
- */
-export class NgrokTcpTunnel {
-  /** The URL that this tunnel backs. */
-  url(): string
-  /** The protocol of the endpoint that this tunnel backs. */
-  proto(): string
-  /** Returns a tunnel's unique ID. */
-  id(): string
-  /**
-   * Returns a human-readable string presented in the ngrok dashboard
-   * and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
-   * [TcpTunnelBuilder::forwards_to], etc. to set this value
-   * explicitly.
-   */
-  forwardsTo(): string
-  /** Returns the arbitrary metadata string for this tunnel. */
-  metadata(): string
-  /** Forward incoming tunnel connections to the provided TCP address. */
-  forwardTcp(addr: string): Promise<void>
-  /**
-   * Forward incoming tunnel connections to the provided file socket path.
-   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-   */
-  forwardPipe(addr: string): Promise<void>
-  /**
-   * Close the tunnel.
-   *
-   * This is an RPC call that must be `.await`ed.
-   * It is equivalent to calling `Session::close_tunnel` with this
-   * tunnel's ID.
-   */
-  close(): Promise<void>
-}
-/**
- *r" An ngrok tunnel bcking a TLS endpoint.
- *r"
- *r" @group Tunnels
- */
-export class NgrokTlsTunnel {
-  /** The URL that this tunnel backs. */
-  url(): string
-  /** The protocol of the endpoint that this tunnel backs. */
-  proto(): string
-  /** Returns a tunnel's unique ID. */
-  id(): string
-  /**
-   * Returns a human-readable string presented in the ngrok dashboard
-   * and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
-   * [TcpTunnelBuilder::forwards_to], etc. to set this value
-   * explicitly.
-   */
-  forwardsTo(): string
-  /** Returns the arbitrary metadata string for this tunnel. */
-  metadata(): string
-  /** Forward incoming tunnel connections to the provided TCP address. */
-  forwardTcp(addr: string): Promise<void>
-  /**
-   * Forward incoming tunnel connections to the provided file socket path.
-   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-   */
-  forwardPipe(addr: string): Promise<void>
-  /**
-   * Close the tunnel.
-   *
-   * This is an RPC call that must be `.await`ed.
-   * It is equivalent to calling `Session::close_tunnel` with this
-   * tunnel's ID.
-   */
-  close(): Promise<void>
-}
-/**
- *r" A labeled ngrok tunnel.
- *r"
- *r" @group Tunnels
- */
-export class NgrokLabeledTunnel {
+  proto(): string | null
   /** The labels this tunnel was started with. */
   labels(): Record<string, string>
   /** Returns a tunnel's unique ID. */
@@ -556,7 +442,7 @@ export class NgrokHttpTunnelBuilder {
   /** Tunnel-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
-  listen(bind?: boolean | undefined | null): Promise<NgrokHttpTunnel>
+  listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -586,7 +472,7 @@ export class NgrokTcpTunnelBuilder {
   /** Tunnel-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
-  listen(bind?: boolean | undefined | null): Promise<NgrokTcpTunnel>
+  listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -620,7 +506,7 @@ export class NgrokTlsTunnelBuilder {
   /** Tunnel-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
-  listen(bind?: boolean | undefined | null): Promise<NgrokTlsTunnel>
+  listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -648,19 +534,23 @@ export class NgrokLabeledTunnelBuilder {
   /** Tunnel-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
-  listen(bind?: boolean | undefined | null): Promise<NgrokLabeledTunnel>
+  listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
   /** Add a label, value pair for this tunnel. */
   label(label: string, value: string): this
 }
-/** Generate, or convert a given tunnel, into one that can be passed into net.Server.listen(). */
-export function listenable(
-  tunnel?: NgrokHttpTunnel | NgrokTcpTunnel | NgrokTlsTunnel | NgrokLabeledTunnel
-): NgrokHttpTunnel | NgrokTcpTunnel | NgrokTlsTunnel | NgrokLabeledTunnel;
-/** Start the given net.Server listening to a generated, or passed in, tunnel. */
+/**
+ * Get a listenable ngrok tunnel, suitable for passing to net.Server.listen().
+ * Uses the NGROK_AUTHTOKEN environment variable to authenticate.
+ */
+export function listenable(): NgrokTunnel;
+/**
+ * Start the given net.Server listening to a generated, or passed in, tunnel.
+ * Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new tunnel is created.
+ */
 export function listen(
   server: import("net").Server,
-  tunnel?: NgrokHttpTunnel | NgrokTcpTunnel | NgrokTlsTunnel | NgrokLabeledTunnel
-): NgrokHttpTunnel | NgrokTcpTunnel | NgrokTlsTunnel | NgrokLabeledTunnel;
+  tunnel?: NgrokTunnel
+): NgrokTunnel;
 /**
  * Register a console.log callback for ngrok INFO logging.
  * Optionally set the logging level to one of ERROR, WARN, INFO, DEBUG, or TRACE.

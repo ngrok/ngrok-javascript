@@ -65,7 +65,7 @@ pub async fn authtoken(authtoken: String) {
 
 /// The builder for an ngrok session.
 ///
-/// @group Sessions
+/// @group Tunnel and Sessions
 #[napi]
 #[allow(dead_code)]
 #[derive(Default)]
@@ -394,7 +394,7 @@ impl NgrokSessionBuilder {
 
 /// An ngrok session.
 ///
-/// @group Sessions
+/// @group Tunnel and Sessions
 #[napi(custom_finalize)]
 pub(crate) struct NgrokSession {
     #[allow(dead_code)]
@@ -468,8 +468,6 @@ impl ObjectFinalize for NgrokSession {
 }
 
 /// Container for UpdateRequest information.
-///
-/// @group Sessions
 #[derive(Clone)]
 #[napi]
 pub struct UpdateRequest {

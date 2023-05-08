@@ -252,7 +252,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { connect, disconnect, kill, loggingCallback, authtoken, NgrokSessionBuilder, NgrokSession, UpdateRequest, NgrokHttpTunnel, NgrokTcpTunnel, NgrokTlsTunnel, NgrokLabeledTunnel, NgrokHttpTunnelBuilder, NgrokTcpTunnelBuilder, NgrokTlsTunnelBuilder, NgrokLabeledTunnelBuilder } = nativeBinding
+const { connect, disconnect, kill, loggingCallback, authtoken, NgrokSessionBuilder, NgrokSession, UpdateRequest, NgrokTunnel, NgrokHttpTunnelBuilder, NgrokTcpTunnelBuilder, NgrokTlsTunnelBuilder, NgrokLabeledTunnelBuilder } = nativeBinding
 
 module.exports.connect = connect
 module.exports.disconnect = disconnect
@@ -262,10 +262,7 @@ module.exports.authtoken = authtoken
 module.exports.NgrokSessionBuilder = NgrokSessionBuilder
 module.exports.NgrokSession = NgrokSession
 module.exports.UpdateRequest = UpdateRequest
-module.exports.NgrokHttpTunnel = NgrokHttpTunnel
-module.exports.NgrokTcpTunnel = NgrokTcpTunnel
-module.exports.NgrokTlsTunnel = NgrokTlsTunnel
-module.exports.NgrokLabeledTunnel = NgrokLabeledTunnel
+module.exports.NgrokTunnel = NgrokTunnel
 module.exports.NgrokHttpTunnelBuilder = NgrokHttpTunnelBuilder
 module.exports.NgrokTcpTunnelBuilder = NgrokTcpTunnelBuilder
 module.exports.NgrokTlsTunnelBuilder = NgrokTlsTunnelBuilder
