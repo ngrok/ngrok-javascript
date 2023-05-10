@@ -26,6 +26,7 @@ use crate::{
         NgrokLabeledTunnel,
         NgrokTcpTunnel,
         NgrokTlsTunnel,
+        NgrokTunnel,
     },
 };
 
@@ -59,7 +60,7 @@ macro_rules! make_tunnel_builder {
 
             /// Begin listening for new connections on this tunnel.
             #[napi]
-            pub async fn listen(&self, _bind: Option<bool>) -> Result<$tunnel> {
+            pub async fn listen(&self, _bind: Option<bool>) -> Result<NgrokTunnel> {
                 let session = self.session.lock().clone();
                 let tun = self.tunnel_builder.lock().clone();
                 let result = tun
@@ -69,7 +70,7 @@ macro_rules! make_tunnel_builder {
 
                 // create the wrapping tunnel object via its async new()
                 match result {
-                    Ok(raw_tun) => Ok($tunnel::new(session, raw_tun).await),
+                    Ok(raw_tun) => Ok($tunnel::new_tunnel(session, raw_tun).await),
                     Err(val) => Err(val),
                 }
             }

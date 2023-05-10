@@ -50,26 +50,34 @@ pub trait ExtendedTunnel: Tunnel {
     async fn fwd_pipe(&mut self, addr: String) -> core::result::Result<(), io::Error>;
 }
 
+/// An ngrok tunnel.
+///
+/// @group Tunnel and Sessions
+#[napi(custom_finalize)]
+#[allow(dead_code)]
+pub(crate) struct NgrokTunnel {
+    id: String,
+    forwards_to: String,
+    metadata: String,
+    url: Option<String>,
+    proto: Option<String>,
+    session: Session,
+    labels: HashMap<String, String>,
+}
+
 macro_rules! make_tunnel_type {
     // the common (non-labeled) branch
     ($(#[$outer:meta])* $wrapper:ident, $tunnel:tt, common) => {
 
         $(#[$outer])*
-        #[napi(custom_finalize)]
         #[allow(dead_code)]
         pub(crate) struct $wrapper {
-            id: String,
-            forwards_to: String,
-            metadata: String,
-            url: String,
-            proto: String,
-            session: Session,
         }
 
         #[napi]
         #[allow(dead_code)]
         impl $wrapper {
-            pub(crate) async fn new(session: Session, raw_tunnel: $tunnel) -> Self {
+            pub(crate) async fn new_tunnel(session: Session, raw_tunnel: $tunnel) -> NgrokTunnel {
                 let id = raw_tunnel.id().to_string();
                 let forwards_to = raw_tunnel.forwards_to().to_string();
                 let metadata = raw_tunnel.metadata().to_string();
@@ -83,26 +91,15 @@ macro_rules! make_tunnel_type {
                     url: Some(url.clone()),
                 }));
                 // create the user-facing object
-                $wrapper {
+                NgrokTunnel {
                     id,
                     forwards_to,
                     metadata,
-                    url,
-                    proto,
+                    url: Some(url),
+                    proto: Some(proto),
                     session,
+                    labels: HashMap::new(),
                 }
-            }
-
-            /// The URL that this tunnel backs.
-            #[napi]
-            pub fn url(&self) -> String {
-                self.url.clone()
-            }
-
-            /// The protocol of the endpoint that this tunnel backs.
-            #[napi]
-            pub fn proto(&self) -> String {
-                self.proto.clone()
             }
         }
 
@@ -111,21 +108,14 @@ macro_rules! make_tunnel_type {
 
     // the labeled branch
     ($(#[$outer:meta])* $wrapper:ident, $tunnel:tt, label) => {
-        $(#[$outer])*
-        #[napi(custom_finalize)]
         #[allow(dead_code)]
         pub(crate) struct $wrapper {
-            id: String,
-            forwards_to: String,
-            metadata: String,
-            labels: HashMap<String,String>,
-            session: Session,
         }
 
         #[napi]
         #[allow(dead_code)]
         impl $wrapper {
-            pub(crate) async fn new(session: Session, raw_tunnel: $tunnel) -> Self {
+            pub(crate) async fn new_tunnel(session: Session, raw_tunnel: $tunnel) -> NgrokTunnel {
                 let id = raw_tunnel.id().to_string();
                 let forwards_to = raw_tunnel.forwards_to().to_string();
                 let metadata = raw_tunnel.metadata().to_string();
@@ -138,19 +128,15 @@ macro_rules! make_tunnel_type {
                     url: None,
                 }));
                 // create the user-facing object
-                $wrapper {
+                NgrokTunnel {
                     id,
                     forwards_to,
                     metadata,
-                    labels,
+                    url: None,
+                    proto: None,
                     session,
+                    labels,
                 }
-            }
-
-            /// The labels this tunnel was started with.
-            #[napi]
-            pub fn labels(&self) -> HashMap<String, String> {
-                self.labels.clone()
             }
         }
 
@@ -168,75 +154,95 @@ macro_rules! make_tunnel_type {
                 self.forward_pipe(addr).await
             }
         }
-
-        #[napi]
-        #[allow(dead_code)]
-        impl $wrapper {
-            /// Returns a tunnel's unique ID.
-            #[napi]
-            pub fn id(&self) -> String {
-                self.id.clone()
-            }
-
-            /// Returns a human-readable string presented in the ngrok dashboard
-            /// and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
-            /// [TcpTunnelBuilder::forwards_to], etc. to set this value
-            /// explicitly.
-            #[napi]
-            pub fn forwards_to(&self) -> String {
-                self.forwards_to.clone()
-            }
-
-            /// Returns the arbitrary metadata string for this tunnel.
-            #[napi]
-            pub fn metadata(&self) -> String {
-                self.metadata.clone()
-            }
-
-            /// Forward incoming tunnel connections to the provided TCP address.
-            #[napi]
-            pub async fn forward_tcp(&self, addr: String) -> Result<()> {
-                forward_tcp(&self.id, addr).await
-            }
-
-            /// Forward incoming tunnel connections to the provided file socket path.
-            /// On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-            /// On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-            #[napi]
-            pub async fn forward_pipe(&self, addr: String) -> Result<()> {
-                forward_pipe(&self.id, addr).await
-            }
-
-            /// Close the tunnel.
-            ///
-            /// This is an RPC call that must be `.await`ed.
-            /// It is equivalent to calling `Session::close_tunnel` with this
-            /// tunnel's ID.
-            #[napi]
-            pub async fn close(&self) -> Result<()> {
-                debug!("{} closing, id: {}", stringify!($wrapper), self.id);
-
-                // we may not be able to lock our reference to the tunnel due to the forward_* calls which
-                // continuously accept-loop while the tunnel is active, so calling close on the Session.
-                let res = self.session.close_tunnel(self.id.clone())
-                    .await
-                    .map_err(|e| napi_err(format!("error closing tunnel: {e:?}")));
-
-                // drop our internal reference to the tunnel after awaiting close
-                GLOBAL_TUNNELS.lock().await.remove(&self.id);
-
-                res
-            }
-        }
-
-        #[allow(unused_mut)]
-        impl ObjectFinalize for $wrapper {
-            fn finalize(mut self, _env: Env) -> Result<()> {
-                debug!("{} finalize, id: {}", stringify!($wrapper), self.id);
-                Ok(())
-            }
-        }
     };
+}
+
+#[napi]
+#[allow(dead_code)]
+impl NgrokTunnel {
+    /// The URL that this tunnel backs.
+    #[napi]
+    pub fn url(&self) -> Option<String> {
+        self.url.clone()
+    }
+
+    /// The protocol of the endpoint that this tunnel backs.
+    #[napi]
+    pub fn proto(&self) -> Option<String> {
+        self.proto.clone()
+    }
+
+    /// The labels this tunnel was started with.
+    #[napi]
+    pub fn labels(&self) -> HashMap<String, String> {
+        self.labels.clone()
+    }
+
+    /// Returns a tunnel's unique ID.
+    #[napi]
+    pub fn id(&self) -> String {
+        self.id.clone()
+    }
+
+    /// Returns a human-readable string presented in the ngrok dashboard
+    /// and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
+    /// [TcpTunnelBuilder::forwards_to], etc. to set this value
+    /// explicitly.
+    #[napi]
+    pub fn forwards_to(&self) -> String {
+        self.forwards_to.clone()
+    }
+
+    /// Returns the arbitrary metadata string for this tunnel.
+    #[napi]
+    pub fn metadata(&self) -> String {
+        self.metadata.clone()
+    }
+
+    /// Forward incoming tunnel connections to the provided TCP address.
+    #[napi]
+    pub async fn forward_tcp(&self, addr: String) -> Result<()> {
+        forward_tcp(&self.id, addr).await
+    }
+
+    /// Forward incoming tunnel connections to the provided file socket path.
+    /// On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
+    /// On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
+    #[napi]
+    pub async fn forward_pipe(&self, addr: String) -> Result<()> {
+        forward_pipe(&self.id, addr).await
+    }
+
+    /// Close the tunnel.
+    ///
+    /// This is an RPC call that must be `.await`ed.
+    /// It is equivalent to calling `Session::close_tunnel` with this
+    /// tunnel's ID.
+    #[napi]
+    pub async fn close(&self) -> Result<()> {
+        debug!("{} closing, id: {}", stringify!($wrapper), self.id);
+
+        // we may not be able to lock our reference to the tunnel due to the forward_* calls which
+        // continuously accept-loop while the tunnel is active, so calling close on the Session.
+        let res = self
+            .session
+            .close_tunnel(self.id.clone())
+            .await
+            .map_err(|e| napi_err(format!("error closing tunnel: {e:?}")));
+
+        // drop our internal reference to the tunnel after awaiting close
+        GLOBAL_TUNNELS.lock().await.remove(&self.id);
+
+        res
+    }
+}
+
+#[allow(unused_mut)]
+impl ObjectFinalize for NgrokTunnel {
+    fn finalize(mut self, _env: Env) -> Result<()> {
+        debug!("{} finalize, id: {}", stringify!($wrapper), self.id);
+        Ok(())
+    }
 }
 
 make_tunnel_type! {
@@ -292,7 +298,7 @@ pub async fn forward_pipe(id: &String, addr: String) -> Result<()> {
     res
 }
 
-/// Delete any reference to the tunnel id
+/// Get url using the tunnel id
 pub(crate) async fn get_url(id: &String) -> Option<String> {
     GLOBAL_TUNNELS
         .lock()
