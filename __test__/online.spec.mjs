@@ -3,11 +3,14 @@
 import * as ngrok from "../index.js";
 import test from "ava";
 import axios, { AxiosError } from "axios";
+import axiosRetry from "axios-retry";
 import express from "express";
 import * as fs from "fs";
 import * as http from "http";
 import * as net from "net";
+import * as retry from "./retry-config.mjs";
 
+axiosRetry(axios, retry.retryConfig);
 const expected = "Hello";
 
 function createExpress() {

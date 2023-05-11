@@ -3,8 +3,11 @@
 import * as ngrok from "../index.js";
 import test from "ava";
 import axios, { AxiosError } from "axios";
+import axiosRetry from "axios-retry";
 import * as http from "http";
+import * as retry from "./retry-config.mjs";
 
+axiosRetry(axios, retry.retryConfig);
 const expected = "Hello";
 
 function createHttpServer() {

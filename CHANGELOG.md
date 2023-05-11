@@ -1,3 +1,8 @@
+## 0.4.0:
+
+* Move to a single tunnel type for simplicity
+* Documentation updates
+
 ## 0.3.0:
 
 * Added `ngrok.connect(Config)`, `ngrok.authtoken()`, and `ngrok.disconnect(url)`
