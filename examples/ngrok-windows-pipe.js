@@ -10,7 +10,7 @@ http
   .listen(PIPE);
 
 const ngrok = require("@ngrok/ngrok");
-ngrok.consoleLog(); // turn on debug logging
+ngrok.consoleLog(); // turn on info logging
 new ngrok.NgrokSessionBuilder()
   .authtokenFromEnv()
   .connect()

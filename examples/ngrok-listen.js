@@ -7,5 +7,5 @@ const server = require("http").createServer(function (req, res) {
 const ngrok = require("@ngrok/ngrok");
 
 ngrok.listen(server).then(() => {
-  console.log("Ingress establised at:", server.tunnel.url());
+  console.log("Ingress established at:", server.tunnel.url());
 });
