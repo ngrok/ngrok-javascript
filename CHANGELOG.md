@@ -1,3 +1,8 @@
+## 0.4.1:
+
+* Clean shutdown when run from npm
+* Unblock Svelte postinstall script
+
 ## 0.4.0:
 
 * Move to a single tunnel type for simplicity
