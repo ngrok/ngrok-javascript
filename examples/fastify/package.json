@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@ngrok/ngrok": "^0.2.0",
+    "@ngrok/ngrok": "^0.*",
     "fastify": "4.15.0"
   },
   "packageManager": "yarn@3.3.1"

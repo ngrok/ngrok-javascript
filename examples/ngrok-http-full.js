@@ -35,8 +35,10 @@ builder
   })
   .handleUpdateCommand((update) => {
     console.log(
-      "update command, version:", update.version,
-      "permitMajorVersion:", update.permitMajorVersion
+      "update command, version:",
+      update.version,
+      "permitMajorVersion:",
+      update.permitMajorVersion
     );
   })
   .handleHeartbeat((latency) => {

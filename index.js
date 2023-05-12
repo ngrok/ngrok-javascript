@@ -423,24 +423,26 @@ async function ngrokLinkPipe(tunnel, server) {
   return socket;
 }
 
+// protect against multiple calls, for instance from npm
+var sigintRan = false;
+
 function registerCleanup(tunnel, socket) {
   process.on("SIGINT", function () {
+    if (sigintRan) return;
+    sigintRan = true;
+
     if (process.listenerCount("SIGINT") > 1) {
       // user has registered a handler, abort this one
       return;
     }
     // close tunnel
     if (tunnel) {
-      tunnel.close().then(() => {
-        console.debug("ngrok closed tunnel: " + tunnel.id());
+      tunnel.close().catch((err) => {
+        console.error(`Error closing tunnel: ${err}`);
       });
     }
     // close webserver's socket
-    if (socket) {
-      socket.close(function () {
-        console.debug("ngrok closed socket");
-      });
-    }
+    if (socket) socket.close();
     // unregister any logging callback
     loggingCallback();
   });

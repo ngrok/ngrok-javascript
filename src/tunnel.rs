@@ -220,7 +220,7 @@ impl NgrokTunnel {
     /// tunnel's ID.
     #[napi]
     pub async fn close(&self) -> Result<()> {
-        debug!("{} closing, id: {}", stringify!($wrapper), self.id);
+        debug!("NgrokTunnel closing, id: {}", self.id);
 
         // we may not be able to lock our reference to the tunnel due to the forward_* calls which
         // continuously accept-loop while the tunnel is active, so calling close on the Session.
@@ -240,7 +240,7 @@ impl NgrokTunnel {
 #[allow(unused_mut)]
 impl ObjectFinalize for NgrokTunnel {
     fn finalize(mut self, _env: Env) -> Result<()> {
-        debug!("{} finalize, id: {}", stringify!($wrapper), self.id);
+        debug!("NgrokTunnel finalize, id: {}", self.id);
         Ok(())
     }
 }
