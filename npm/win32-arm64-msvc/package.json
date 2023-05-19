@@ -16,5 +16,5 @@
   "engines": {
     "node": ">= 10"
   },
-  "repository": "https://github.com/ngrok/ngrok-js"
+  "repository": "https://github.com/ngrok/ngrok-nodejs"
 }

@@ -8,11 +8,11 @@
 [npm-badge]: https://img.shields.io/npm/v/@ngrok/ngrok.svg
 [npm-url]: https://www.npmjs.com/package/@ngrok/ngrok
 [mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
-[mit-url]: https://github.com/ngrok/ngrok-rs/blob/main/LICENSE-MIT
+[mit-url]: https://github.com/ngrok/ngrok-rust/blob/main/LICENSE-MIT
 [apache-badge]: https://img.shields.io/badge/license-Apache_2.0-blue.svg
-[apache-url]: https://github.com/ngrok/ngrok-rs/blob/main/LICENSE-APACHE
-[ci-badge]: https://github.com/ngrok/ngrok-js/actions/workflows/ci.yml/badge.svg
-[ci-url]: https://github.com/ngrok/ngrok-js/actions/workflows/ci.yml
+[apache-url]: https://github.com/ngrok/ngrok-rust/blob/main/LICENSE-APACHE
+[ci-badge]: https://github.com/ngrok/ngrok-nodejs/actions/workflows/ci.yml/badge.svg
+[ci-url]: https://github.com/ngrok/ngrok-nodejs/actions/workflows/ci.yml
 
 **Note: This is beta-quality software. Interfaces may change without warning.**
 
@@ -35,15 +35,15 @@ npm install @ngrok/ngrok
 
 # Documentation
 
-A quickstart guide and a full API reference are included in the [ngrok-js API documentation](https://ngrok.github.io/ngrok-js/).
+A quickstart guide and a full API reference are included in the [ngrok-nodejs API documentation](https://ngrok.github.io/ngrok-nodejs/).
 
 # Quickstart
 
 After you've installed the package, you'll need an Auth Token. Retrieve one on the
 [Auth Token page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken)
 
-There are multiple examples in [the /examples directory](https://github.com/ngrok/ngrok-js/tree/main/examples).
-A minimal use-case looks like [the following](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-http-minimum.js):
+There are multiple examples in [the /examples directory](https://github.com/ngrok/ngrok-nodejs/tree/main/examples).
+A minimal use-case looks like [the following](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js):
 
 ```jsx
 var ngrok = require("@ngrok/ngrok");
@@ -56,7 +56,7 @@ async function create_tunnel() {
 }
 ```
 
-or [with the 'connect' convenience function](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-connect-minimal.js):
+or [with the 'connect' convenience function](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js):
 
 ```jsx
 const ngrok = require("@ngrok/ngrok");
@@ -69,36 +69,36 @@ ngrok.connect({addr: 8080, authtoken_from_env: true}).then((url) => {
 
 Degit can be used for cloning and running an example directory like this:
 ```bash
-npx degit github:ngrok/ngrok-js/examples/<example> <folder-name>
+npx degit github:ngrok/ngrok-nodejs/examples/<example> <folder-name>
 cd <folder-name>
 npm i
 ```
 For example:
 ```bash
-npx degit github:ngrok/ngrok-js/examples/express express && cd express && npm i
+npx degit github:ngrok/ngrok-nodejs/examples/express express && cd express && npm i
 ```
 
 
 ## Frameworks
-* [Express](https://expressjs.com/) - [Quickstart Example](https://github.com/ngrok/ngrok-js/blob/main/examples/express/ngrok-express-quickstart.js), [Configuration Example](https://github.com/ngrok/ngrok-js/blob/main/examples/express/ngrok-express.js)
-* [Fastify](https://www.fastify.io/) - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/fastify/ngrok-fastify.js)
-* [Hapi](https://hapi.dev/) - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/hapi/ngrok-hapi.js)
-* [Koa](https://koajs.com/) - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/koa/ngrok-koa.js)
-* [Nest.js](https://nestjs.com/) - [Example main.ts](https://github.com/ngrok/ngrok-js/blob/main/examples/nestjs/src/main.ts)
-* [Next.js](https://nextjs.org/) - [Example next.config.js](https://github.com/ngrok/ngrok-js/blob/main/examples/nextjs/next.config.js) loading [ngrok.config.js](https://github.com/ngrok/ngrok-js/blob/main/examples/nextjs/ngrok.config.js)
-* [Remix](https://remix.run/) - [Example remix.config.js](https://github.com/ngrok/ngrok-js/blob/main/examples/remix/remix.config.js) loading [ngrok.config.js](https://github.com/ngrok/ngrok-js/blob/main/examples/remix/ngrok.config.js)
-* [Svelte](https://svelte.dev/) - [Example svelte.config.js](https://github.com/ngrok/ngrok-js/blob/main/examples/svelte/svelte.config.js) (works in vite.config.js too) loading [ngrok.config.cjs](https://github.com/ngrok/ngrok-js/blob/main/examples/svelte/ngrok.config.cjs)
-* [Typescript](https://www.typescriptlang.org/) - [Example ts-node](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-typescript.ts)
-* [Vue](https://vuejs.org/) - [Example vite.config.ts](https://github.com/ngrok/ngrok-js/blob/main/examples/vue/vite.config.ts) loading [ngrok.config.ts](https://github.com/ngrok/ngrok-js/blob/main/examples/vue/ngrok.config.ts)
-* [Winston](https://github.com/winstonjs/winston#readme) Logging - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-winston.js)
+* [Express](https://expressjs.com/) - [Quickstart Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/express/ngrok-express-quickstart.js), [Configuration Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/express/ngrok-express.js)
+* [Fastify](https://www.fastify.io/) - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/fastify/ngrok-fastify.js)
+* [Hapi](https://hapi.dev/) - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/hapi/ngrok-hapi.js)
+* [Koa](https://koajs.com/) - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/koa/ngrok-koa.js)
+* [Nest.js](https://nestjs.com/) - [Example main.ts](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/nestjs/src/main.ts)
+* [Next.js](https://nextjs.org/) - [Example next.config.js](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/nextjs/next.config.js) loading [ngrok.config.js](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/nextjs/ngrok.config.js)
+* [Remix](https://remix.run/) - [Example remix.config.js](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/remix/remix.config.js) loading [ngrok.config.js](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/remix/ngrok.config.js)
+* [Svelte](https://svelte.dev/) - [Example svelte.config.js](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/svelte/svelte.config.js) (works in vite.config.js too) loading [ngrok.config.cjs](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/svelte/ngrok.config.cjs)
+* [Typescript](https://www.typescriptlang.org/) - [Example ts-node](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-typescript.ts)
+* [Vue](https://vuejs.org/) - [Example vite.config.ts](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/vue/vite.config.ts) loading [ngrok.config.ts](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/vue/ngrok.config.ts)
+* [Winston](https://github.com/winstonjs/winston#readme) Logging - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-winston.js)
 
 ## Tunnel Types
-* ngrok.connect - [ngrok.connect Minimal Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-connect-minimal.js), [Full ngrok.connect Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-connect-full.js)
-* HTTP - [ngrok.listen Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-listen.js), [Minimal Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-http-minimum.js), [Full Configuration Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-http-full.js)
-* Labeled - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-labeled.js)
-* TCP - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-tcp.js)
-* TLS - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-tls.js)
-* Windows Pipe - [Example](https://github.com/ngrok/ngrok-js/blob/main/examples/ngrok-windows-pipe.js)
+* ngrok.connect - [ngrok.connect Minimal Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js), [Full ngrok.connect Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-full.js)
+* HTTP - [ngrok.listen Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-listen.js), [Minimal Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js), [Full Configuration Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-full.js)
+* Labeled - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-labeled.js)
+* TCP - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-tcp.js)
+* TLS - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-tls.js)
+* Windows Pipe - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-windows-pipe.js)
 
 # Async Programming
 
@@ -135,7 +135,7 @@ Pre-built binaries are provided on NPM for the following platforms:
 | FreeBSD    |      |  ✓  |         |     |
 | Android    |      |     |    ✓    |  ✓  |
 
-ngrok-js, and [ngrok-rs](https://github.com/ngrok/ngrok-rs/) which it depends on, are open source, so it may be possible to build them for other platforms.
+ngrok-nodejs, and [ngrok-rust](https://github.com/ngrok/ngrok-rust/) which it depends on, are open source, so it may be possible to build them for other platforms.
 
 * Windows-aarch64 will be supported after the next release of [Ring](https://github.com/briansmith/ring/issues/1167).
 

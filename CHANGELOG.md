@@ -1,3 +1,8 @@
+## 0.5.0:
+
+* Add `NgrokSession.clientInfo()`
+* Rename to `ngrok-nodejs`
+
 ## 0.4.1:
 
 * Clean shutdown when run from npm
@@ -20,8 +25,8 @@
 
 ## 0.1.1:
 
-* Bump `ngrok-rs` to `0.11.3`.
-* Migrate `ca_cert` to the upstream call in `ngrok-rs`.
+* Bump `ngrok-rust` to `0.11.3`.
+* Migrate `ca_cert` to the upstream call in `ngrok-rust`.
 
 ## 0.1.0:
 
