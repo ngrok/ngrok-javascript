@@ -387,6 +387,7 @@ test("connect heartbeat callbacks", async (t) => {
   var conn_addr, disconn_addr, test_latency;
   const builder = new ngrok.NgrokSessionBuilder();
   builder
+    .clientInfo("connect_heartbeat_callbacks", "1.2.3")
     .handleHeartbeat((latency) => {
       test_latency = latency;
     })
