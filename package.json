@@ -1,6 +1,6 @@
 {
   "name": "@ngrok/ngrok",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -53,5 +53,5 @@
   },
   "packageManager": "yarn@3.3.1",
   "description": "The ngrok agent in library form, suitable for integrating directly into your NodeJS application.",
-  "repository": "https://github.com/ngrok/ngrok-js"
+  "repository": "https://github.com/ngrok/ngrok-nodejs"
 }

@@ -1,6 +1,6 @@
 {
   "name": "@ngrok/ngrok-linux-x64-gnu",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "os": [
     "linux"
   ],
@@ -16,7 +16,7 @@
   "engines": {
     "node": ">= 10"
   },
-  "repository": "https://github.com/ngrok/ngrok-js",
+  "repository": "https://github.com/ngrok/ngrok-nodejs",
   "libc": [
     "glibc"
   ]
