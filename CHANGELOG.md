@@ -1,3 +1,7 @@
+## 0.5.1:
+
+* `consoleLog` return signature
+
 ## 0.5.0:
 
 * Add `NgrokSession.clientInfo()`

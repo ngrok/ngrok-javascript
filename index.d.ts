@@ -564,4 +564,4 @@ export function listen(server: import("net").Server, tunnel?: NgrokTunnel): Ngro
  * Register a console.log callback for ngrok INFO logging.
  * Optionally set the logging level to one of ERROR, WARN, INFO, DEBUG, or TRACE.
  */
-export function consoleLog(level?: String);
+export function consoleLog(level?: String): void;
