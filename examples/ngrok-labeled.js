@@ -17,6 +17,7 @@ console.log("Node.js web server at", UNIX_SOCKET, "is running..");
 
 // setup ngrok
 const ngrok = require("@ngrok/ngrok");
+ngrok.consoleLog("INFO");
 builder = new ngrok.NgrokSessionBuilder();
 builder.authtokenFromEnv().metadata("Online in One Line");
 
@@ -31,3 +32,12 @@ builder.connect().then((session) => {
       tunnel.forwardPipe(UNIX_SOCKET);
     });
 });
+
+/*
+ngrok.connect({
+    addr: "pipe:" + UNIX_SOCKET,
+    authtoken_from_env: true,
+    labels: "edge:edghts_<edge_id>",
+    proto: "labeled",
+});
+*/
