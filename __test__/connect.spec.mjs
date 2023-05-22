@@ -4,6 +4,7 @@ import * as ngrok from "../index.js";
 import test from "ava";
 import axios, { AxiosError } from "axios";
 import axiosRetry from "axios-retry";
+import * as fs from "fs";
 import * as http from "http";
 import * as retry from "./retry-config.mjs";
 
@@ -114,4 +115,43 @@ test("connect vectorize", async (t) => {
   });
   t.is("true", response.headers["x-res-yup"]);
   t.is("true2", response.headers["x-res-yup2"]);
+});
+
+test("connect tcp tunnel", async (t) => {
+  const httpServer = await makeHttp();
+  const url = await ngrok.connect({
+    addr: httpServer.listenTo,
+    authtoken_from_env: true,
+    proto: "tcp",
+    forwards_to: "tcp forwards to",
+    metadata: "tcp metadata",
+  });
+
+  t.truthy(url);
+  
+  await validateShutdown(t, httpServer, url.replace("tcp:", "http:"));
+});
+
+test("connect tls tunnel", async (t) => {
+  const httpServer = await makeHttp();
+  const url = await ngrok.connect({
+    addr: httpServer.listenTo,
+    authtoken_from_env: true,
+    proto: "tls",
+    forwards_to: "tls forwards to",
+    metadata: "tls metadata",
+    crt: fs.readFileSync("examples/domain.crt", 'utf8'), 
+    key: fs.readFileSync("examples/domain.key", 'utf8'),
+  });
+
+  t.truthy(url);  
+
+  const error = await t.throwsAsync(
+    async () => {
+      await axios.get(url.replace("tls:", "https:"));
+    },
+    { instanceOf: AxiosError }
+  );
+  t.truthy(error.message.endsWith("signed certificate"), error.message);
+  await shutdown(url, httpServer.socket);
 });

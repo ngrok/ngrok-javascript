@@ -47,7 +47,7 @@
     "docs": "mv trailer.d.ts trailer.d.hidden; mv examples .examples; npx typedoc index.d.ts --navigation.includeGroups; mv .examples examples; mv trailer.d.hidden trailer.d.ts",
     "prepublishOnly": "napi prepublish -t npm",
     "prettier": "prettier --write .",
-    "test": "ava",
+    "test": "tsc --strict index.d.ts && ava",
     "universal": "napi universal",
     "version": "napi version"
   },

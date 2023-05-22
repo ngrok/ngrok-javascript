@@ -267,15 +267,15 @@ test("tls tunnel", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
   const tunnel = await session
     .tlsEndpoint()
-    .forwardsTo("tcp forwards to")
-    .metadata("tcp metadata")
+    .forwardsTo("tls forwards to")
+    .metadata("tls metadata")
     .termination(fs.readFileSync("examples/domain.crt"), fs.readFileSync("examples/domain.key"))
     .listen();
 
   t.truthy(tunnel.id());
   t.truthy(tunnel.url());
-  t.is("tcp forwards to", tunnel.forwardsTo());
-  t.is("tcp metadata", tunnel.metadata());
+  t.is("tls forwards to", tunnel.forwardsTo());
+  t.is("tls metadata", tunnel.metadata());
 
   tunnel.forwardTcp(httpServer.listenTo);
   const error = await t.throwsAsync(
