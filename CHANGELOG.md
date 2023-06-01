@@ -1,3 +1,7 @@
+## 0.5.2:
+
+* Cleanly return from a tunnel forward call after a `session.close()`
+
 ## 0.5.1:
 
 * `consoleLog` return signature
