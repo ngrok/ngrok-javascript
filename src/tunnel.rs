@@ -1,5 +1,7 @@
+use core::result::Result as CoreResult;
 use std::{
     collections::HashMap,
+    error::Error,
     io,
     sync::Arc,
 };
@@ -10,6 +12,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use ngrok::{
     prelude::*,
+    session::ConnectError,
     tunnel::{
         HttpTunnel,
         LabeledTunnel,
@@ -46,8 +49,8 @@ struct Storage {
 /// a proxy trait without generics which can be the dyn type stored in the global map.
 #[async_trait]
 pub trait ExtendedTunnel: Tunnel {
-    async fn fwd_tcp(&mut self, addr: String) -> core::result::Result<(), io::Error>;
-    async fn fwd_pipe(&mut self, addr: String) -> core::result::Result<(), io::Error>;
+    async fn fwd_tcp(&mut self, addr: String) -> CoreResult<(), io::Error>;
+    async fn fwd_pipe(&mut self, addr: String) -> CoreResult<(), io::Error>;
 }
 
 /// An ngrok tunnel.
@@ -147,10 +150,10 @@ macro_rules! make_tunnel_type {
     ($wrapper:ident, $tunnel:tt) => {
         #[async_trait]
         impl ExtendedTunnel for $tunnel {
-            async fn fwd_tcp(&mut self, addr: String) -> core::result::Result<(), io::Error> {
+            async fn fwd_tcp(&mut self, addr: String) -> CoreResult<(), io::Error> {
                 self.forward_tcp(addr).await
             }
-            async fn fwd_pipe(&mut self, addr: String) -> core::result::Result<(), io::Error> {
+            async fn fwd_pipe(&mut self, addr: String) -> CoreResult<(), io::Error> {
                 self.forward_pipe(addr).await
             }
         }
@@ -278,10 +281,10 @@ pub async fn forward_tcp(id: &String, addr: String) -> Result<()> {
         .lock()
         .await
         .fwd_tcp(addr)
-        .await
-        .map_err(|e| napi_err(format!("cannot forward tcp: {e:?}")));
+        .await;
+
     debug!("forward_tcp returning");
-    res
+    canceled_is_ok(res)
 }
 
 pub async fn forward_pipe(id: &String, addr: String) -> Result<()> {
@@ -292,10 +295,29 @@ pub async fn forward_pipe(id: &String, addr: String) -> Result<()> {
         .lock()
         .await
         .fwd_pipe(addr)
-        .await
-        .map_err(|e| napi_err(format!("cannot forward pipe: {e:?}")));
+        .await;
+
     debug!("forward_pipe returning");
-    res
+    canceled_is_ok(res)
+}
+
+fn canceled_is_ok(input: CoreResult<(), io::Error>) -> Result<()> {
+    match input {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            if let Some(source) = e
+                .source()
+                .and_then(|s| s.downcast_ref::<Arc<ConnectError>>())
+            {
+                if let ConnectError::Canceled = **source {
+                    debug!("Reconnect was canceled, session is closing, returning Ok");
+                    return Ok(());
+                }
+            }
+
+            Err(napi_err(format!("error forwarding: {e:?}")))
+        }
+    }
 }
 
 /// Get url using the tunnel id

@@ -479,7 +479,7 @@ impl NgrokSession {
         session
             .close()
             .await
-            .map_err(|e| napi_err(format!("failed to close tunnel, {e:?}")))
+            .map_err(|e| napi_err(format!("failed to close session, {e:?}")))
     }
 }
 
