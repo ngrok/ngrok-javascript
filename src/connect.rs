@@ -146,7 +146,10 @@ async fn async_connect(s_builder: NgrokSessionBuilder, config: Config) -> Result
         _ => return Err(napi_err(format!("unhandled protocol {proto}"))),
     };
 
-    let url = tunnel::get_url(&id).await.unwrap_or(id.clone());
+    let url = tunnel::get_tunnel(id.clone())
+        .await
+        .and_then(|t| t.url())
+        .unwrap_or(id.clone());
 
     // move forwarding to another task
     if let Some(addr) = config.addr {

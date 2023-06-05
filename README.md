@@ -80,6 +80,7 @@ npx degit github:ngrok/ngrok-nodejs/examples/express express && cd express && np
 
 
 ## Frameworks
+* [AWS App Runner](https://aws.amazon.com/apprunner/) - See the [ngrok SDK Serverless Example](https://github.com/ngrok/ngrok-sdk-serverless-example) repository
 * [Express](https://expressjs.com/) - [Quickstart Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/express/ngrok-express-quickstart.js), [Configuration Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/express/ngrok-express.js)
 * [Fastify](https://www.fastify.io/) - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/fastify/ngrok-fastify.js)
 * [Hapi](https://hapi.dev/) - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/hapi/ngrok-hapi.js)

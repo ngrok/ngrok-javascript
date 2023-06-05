@@ -79,6 +79,11 @@ test("https tunnel", async (t) => {
   t.truthy(tunnel.url().startsWith("https://"), tunnel.url());
   t.is("http forwards to", tunnel.forwardsTo());
   t.is("http metadata", tunnel.metadata());
+  const tunnel_list = await session.tunnels();
+  t.is(1, tunnel_list.length)
+  t.is(tunnel.id(), tunnel_list[0].id());
+  t.is(tunnel.url(), tunnel_list[0].url());
+
 
   await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url());
 });
@@ -348,6 +353,11 @@ test("tcp multipass", async (t) => {
   tunnel2.forwardTcp(httpServer.listenTo);
   tunnel3.forwardTcp(httpServer.listenTo);
   tunnel4.forwardTcp(httpServer.listenTo);
+
+  t.is(2, (await session1.tunnels()).length)
+  t.is(2, (await session2.tunnels()).length)
+  t.truthy((await ngrok.tunnels()).length >= 4)
+  t.is(tunnel3.url(), (await ngrok.getTunnel(tunnel3.id())).url())
 
   await validateHttpRequest(t, tunnel1.url());
   await validateHttpRequest(t, tunnel2.url());

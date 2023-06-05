@@ -182,6 +182,10 @@ export function kill(): Promise<void>
 export function loggingCallback(callback?: (level: string, target: string, message: string) => void, level?: string): void
 /** Set the default auth token to use for any future sessions. */
 export function authtoken(authtoken: string): Promise<void>
+/** Retrieve a list of non-closed tunnels, in no particular order. */
+export function tunnels(): Promise<Array<NgrokTunnel>>
+/** Retrieve tunnel using the id */
+export function getTunnel(id: string): Promise<NgrokTunnel | null>
 /**
  * The builder for an ngrok session.
  *
@@ -346,6 +350,8 @@ export class NgrokSession {
   tlsEndpoint(): NgrokTlsTunnelBuilder
   /** Start building a labeled tunnel. */
   labeledTunnel(): NgrokLabeledTunnelBuilder
+  /** Retrieve a list of this session's non-closed tunnels, in no particular order. */
+  tunnels(): Promise<Array<NgrokTunnel>>
   /** Close a tunnel with the given ID. */
   closeTunnel(id: string): Promise<void>
   /** Close the ngrok session. */

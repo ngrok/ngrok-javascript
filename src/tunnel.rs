@@ -41,8 +41,17 @@ lazy_static! {
 /// Stores the tunnel and session references to be kept until explicit close.
 struct Storage {
     tunnel: Arc<Mutex<dyn ExtendedTunnel>>,
-    session: Arc<Mutex<Session>>,
+    session: Session,
+    tun_meta: Arc<TunnelMetadata>,
+}
+
+struct TunnelMetadata {
+    id: String,
+    forwards_to: String,
+    metadata: String,
     url: Option<String>,
+    proto: Option<String>,
+    labels: HashMap<String, String>,
 }
 
 /// The TunnelExt cannot be turned into an object since it contains generics, so implementing
@@ -58,20 +67,14 @@ pub trait ExtendedTunnel: Tunnel {
 /// @group Tunnel and Sessions
 #[napi(custom_finalize)]
 #[allow(dead_code)]
-pub(crate) struct NgrokTunnel {
-    id: String,
-    forwards_to: String,
-    metadata: String,
-    url: Option<String>,
-    proto: Option<String>,
+pub struct NgrokTunnel {
     session: Session,
-    labels: HashMap<String, String>,
+    tun_meta: Arc<TunnelMetadata>,
 }
 
 macro_rules! make_tunnel_type {
     // the common (non-labeled) branch
     ($(#[$outer:meta])* $wrapper:ident, $tunnel:tt, common) => {
-
         $(#[$outer])*
         #[allow(dead_code)]
         pub(crate) struct $wrapper {
@@ -82,27 +85,24 @@ macro_rules! make_tunnel_type {
         impl $wrapper {
             pub(crate) async fn new_tunnel(session: Session, raw_tunnel: $tunnel) -> NgrokTunnel {
                 let id = raw_tunnel.id().to_string();
-                let forwards_to = raw_tunnel.forwards_to().to_string();
-                let metadata = raw_tunnel.metadata().to_string();
-                let url = raw_tunnel.url().to_string();
-                let proto = raw_tunnel.proto().to_string();
-                info!("Created tunnel {id:?} with url {url:?}");
-                // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
-                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Storage {
-                    tunnel: Arc::new(Mutex::new(raw_tunnel)),
-                    session: Arc::new(Mutex::new(session.clone())),
-                    url: Some(url.clone()),
-                }));
-                // create the user-facing object
-                NgrokTunnel {
-                    id,
-                    forwards_to,
-                    metadata,
-                    url: Some(url),
-                    proto: Some(proto),
-                    session,
+                let tun_meta = Arc::new(TunnelMetadata {
+                    id: id.clone(),
+                    forwards_to: raw_tunnel.forwards_to().to_string(),
+                    metadata: raw_tunnel.metadata().to_string(),
+                    url: Some(raw_tunnel.url().to_string()),
+                    proto: Some(raw_tunnel.proto().to_string()),
                     labels: HashMap::new(),
-                }
+                });
+                info!("Created tunnel {id:?} with url {:?}", raw_tunnel.url());
+                // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
+                let storage = Arc::new(Storage {
+                    tunnel: Arc::new(Mutex::new(raw_tunnel)),
+                    session,
+                    tun_meta,
+                });
+                GLOBAL_TUNNELS.lock().await.insert(id, storage.clone());
+                // create the user-facing object
+                NgrokTunnel::from_storage(&storage)
             }
         }
 
@@ -120,26 +120,24 @@ macro_rules! make_tunnel_type {
         impl $wrapper {
             pub(crate) async fn new_tunnel(session: Session, raw_tunnel: $tunnel) -> NgrokTunnel {
                 let id = raw_tunnel.id().to_string();
-                let forwards_to = raw_tunnel.forwards_to().to_string();
-                let metadata = raw_tunnel.metadata().to_string();
-                let labels = raw_tunnel.labels().clone();
-                info!("Created tunnel {id:?} with labels {labels:?}");
-                // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
-                GLOBAL_TUNNELS.lock().await.insert(id.clone(), Arc::new(Storage {
-                    tunnel: Arc::new(Mutex::new(raw_tunnel)),
-                    session: Arc::new(Mutex::new(session.clone())),
-                    url: None,
-                }));
-                // create the user-facing object
-                NgrokTunnel {
-                    id,
-                    forwards_to,
-                    metadata,
+                let tun_meta = Arc::new(TunnelMetadata {
+                    id: id.clone(),
+                    forwards_to: raw_tunnel.forwards_to().to_string(),
+                    metadata: raw_tunnel.metadata().to_string(),
                     url: None,
                     proto: None,
+                    labels: raw_tunnel.labels().clone(),
+                });
+                info!("Created tunnel {id:?} with labels {:?}", tun_meta.labels);
+                // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
+                let storage = Arc::new(Storage {
+                    tunnel: Arc::new(Mutex::new(raw_tunnel)),
                     session,
-                    labels,
-                }
+                    tun_meta,
+                });
+                GLOBAL_TUNNELS.lock().await.insert(id, storage.clone());
+                // create the user-facing object
+                NgrokTunnel::from_storage(&storage)
             }
         }
 
@@ -163,28 +161,37 @@ macro_rules! make_tunnel_type {
 #[napi]
 #[allow(dead_code)]
 impl NgrokTunnel {
+    /// Create NgrokTunnel from Storage
+    fn from_storage(storage: &Arc<Storage>) -> NgrokTunnel {
+        // create the user-facing object
+        NgrokTunnel {
+            session: storage.session.clone(),
+            tun_meta: storage.tun_meta.clone(),
+        }
+    }
+
     /// The URL that this tunnel backs.
     #[napi]
     pub fn url(&self) -> Option<String> {
-        self.url.clone()
+        self.tun_meta.url.clone()
     }
 
     /// The protocol of the endpoint that this tunnel backs.
     #[napi]
     pub fn proto(&self) -> Option<String> {
-        self.proto.clone()
+        self.tun_meta.proto.clone()
     }
 
     /// The labels this tunnel was started with.
     #[napi]
     pub fn labels(&self) -> HashMap<String, String> {
-        self.labels.clone()
+        self.tun_meta.labels.clone()
     }
 
     /// Returns a tunnel's unique ID.
     #[napi]
     pub fn id(&self) -> String {
-        self.id.clone()
+        self.tun_meta.id.clone()
     }
 
     /// Returns a human-readable string presented in the ngrok dashboard
@@ -193,19 +200,19 @@ impl NgrokTunnel {
     /// explicitly.
     #[napi]
     pub fn forwards_to(&self) -> String {
-        self.forwards_to.clone()
+        self.tun_meta.forwards_to.clone()
     }
 
     /// Returns the arbitrary metadata string for this tunnel.
     #[napi]
     pub fn metadata(&self) -> String {
-        self.metadata.clone()
+        self.tun_meta.metadata.clone()
     }
 
     /// Forward incoming tunnel connections to the provided TCP address.
     #[napi]
     pub async fn forward_tcp(&self, addr: String) -> Result<()> {
-        forward_tcp(&self.id, addr).await
+        forward_tcp(&self.tun_meta.id, addr).await
     }
 
     /// Forward incoming tunnel connections to the provided file socket path.
@@ -213,7 +220,7 @@ impl NgrokTunnel {
     /// On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
     #[napi]
     pub async fn forward_pipe(&self, addr: String) -> Result<()> {
-        forward_pipe(&self.id, addr).await
+        forward_pipe(&self.tun_meta.id, addr).await
     }
 
     /// Close the tunnel.
@@ -223,18 +230,18 @@ impl NgrokTunnel {
     /// tunnel's ID.
     #[napi]
     pub async fn close(&self) -> Result<()> {
-        debug!("NgrokTunnel closing, id: {}", self.id);
+        debug!("NgrokTunnel closing, id: {}", self.tun_meta.id);
 
         // we may not be able to lock our reference to the tunnel due to the forward_* calls which
         // continuously accept-loop while the tunnel is active, so calling close on the Session.
         let res = self
             .session
-            .close_tunnel(self.id.clone())
+            .close_tunnel(self.tun_meta.id.clone())
             .await
             .map_err(|e| napi_err(format!("error closing tunnel: {e:?}")));
 
         // drop our internal reference to the tunnel after awaiting close
-        GLOBAL_TUNNELS.lock().await.remove(&self.id);
+        GLOBAL_TUNNELS.lock().await.remove(&self.tun_meta.id);
 
         res
     }
@@ -243,7 +250,7 @@ impl NgrokTunnel {
 #[allow(unused_mut)]
 impl ObjectFinalize for NgrokTunnel {
     fn finalize(mut self, _env: Env) -> Result<()> {
-        debug!("NgrokTunnel finalize, id: {}", self.id);
+        debug!("NgrokTunnel finalize, id: {}", self.tun_meta.id);
         Ok(())
     }
 }
@@ -320,15 +327,6 @@ fn canceled_is_ok(input: CoreResult<(), io::Error>) -> Result<()> {
     }
 }
 
-/// Get url using the tunnel id
-pub(crate) async fn get_url(id: &String) -> Option<String> {
-    GLOBAL_TUNNELS
-        .lock()
-        .await
-        .get(id)
-        .and_then(|s| s.url.clone())
-}
-
 async fn get_storage_by_id(id: &String) -> Result<Arc<Storage>> {
     // we must clone the Arc before any locking so there is a local reference
     // to the mutex to unlock if the tunnel wrapper struct is dropped.
@@ -351,12 +349,10 @@ pub(crate) async fn close_url(url: Option<String>) -> Result<()> {
     let tunnels = GLOBAL_TUNNELS.lock().await;
     for (id, storage) in tunnels.iter() {
         debug!("tunnel: {}", id);
-        if url.as_ref().is_none() || url == storage.url {
+        if url.as_ref().is_none() || url == storage.tun_meta.url {
             debug!("closing tunnel: {}", id);
             storage
                 .session
-                .lock()
-                .await
                 .close_tunnel(id)
                 .await
                 .map_err(|e| napi_err(format!("error closing tunnel: {e:?}")))?;
@@ -370,4 +366,36 @@ pub(crate) async fn close_url(url: Option<String>) -> Result<()> {
         remove_global_tunnel(&id).await;
     }
     Ok(())
+}
+
+/// Make a list of all tunnels by iterating over the global tunnel map and creating an NgrokTunnel from each.
+pub(crate) async fn list_tunnels(session_id: Option<String>) -> Vec<NgrokTunnel> {
+    let mut tunnels: Vec<NgrokTunnel> = vec![];
+    for (_, storage) in GLOBAL_TUNNELS.lock().await.iter() {
+        // filter by session_id, if provided
+        if let Some(session_id) = session_id.as_ref() {
+            if session_id.ne(&storage.session.id()) {
+                continue;
+            }
+        }
+        // create a new NgrokTunnel from the storage
+        tunnels.push(NgrokTunnel::from_storage(storage));
+    }
+    tunnels
+}
+
+/// Retrieve a list of non-closed tunnels, in no particular order.
+#[napi]
+pub async fn tunnels() -> Vec<NgrokTunnel> {
+    list_tunnels(None).await
+}
+
+/// Retrieve tunnel using the id
+#[napi]
+pub async fn get_tunnel(id: String) -> Option<NgrokTunnel> {
+    GLOBAL_TUNNELS
+        .lock()
+        .await
+        .get(&id)
+        .map(NgrokTunnel::from_storage)
 }
