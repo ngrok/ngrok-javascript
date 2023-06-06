@@ -12,7 +12,7 @@ serde = { version = "1.0.149", features = ["derive"] }
 serde_json = "1.0.89"
 thiserror = "1.0.37"
 base64 = "0.13.1"
-tokio = { version = "1.23.0", features = ["io-util", "net", "sync", "time", "rt"] }
+tokio = { version = "1.28.2", features = ["io-util", "net", "sync", "time", "rt"] }
 tracing = "0.1.37"
 async-rustls = { version = "0.3.0" }
 tokio-util = { version = "0.7.4", features = ["compat"] }
@@ -31,10 +31,10 @@ hostname = "0.3.1"
 regex = "1.7.3"
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = "0.45.0"
+windows-sys = "0.48.0"
 
 [dev-dependencies]
-tokio = { version = "1.23.0", features = ["full"] }
+tokio = { version = "1.28.2", features = ["full"] }
 anyhow = "1.0.66"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 reqwest = "0.11.13"
