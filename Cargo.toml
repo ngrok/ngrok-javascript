@@ -14,18 +14,20 @@ lazy_static = "1.4.0"
 # Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
 napi = { version = "2.12.1", default-features = false, features = ["napi4", "tokio_rt"] }
 napi-derive = "2.12.1"
-#ngrok = { version = "=0.12.3" }
-ngrok = { path = "ngrok/" }
+ngrok = { version = "0.12.3" }
+#ngrok = { path = "ngrok/" }
+mio = { version = "=0.8.6" }
 parking_lot = "0.12.1"
 rustls-pemfile = "1.0.1"
-tokio = { version = "1.28.2", features = ["sync"] }
+tokio = { version = "1.23.0", features = ["sync"] }
+#tokio = { version = "1.28.2", features = ["sync"] }
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 
-[target.'cfg(windows)'.dependencies]
-windows = "=0.48.0"
-windows-sys = "=0.48.0"
-windows-targets = "=0.48.0"
+#[target.'cfg(windows)'.dependencies]
+#windows = "=0.48.0"
+#windows-sys = "=0.48.0"
+#windows-targets = "=0.48.0"
 
 [build-dependencies]
 napi-build = "2.0.1"
