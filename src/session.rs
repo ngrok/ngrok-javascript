@@ -35,7 +35,11 @@ use tracing::{
 
 use crate::{
     napi_err,
-    tunnel::remove_global_tunnel,
+    tunnel::{
+        list_tunnels,
+        remove_global_tunnel,
+        NgrokTunnel,
+    },
     tunnel_builder::{
         NgrokHttpTunnelBuilder,
         NgrokLabeledTunnelBuilder,
@@ -406,7 +410,7 @@ impl NgrokSessionBuilder {
             .connect()
             .await
             .map(|s| {
-                info!("Session created");
+                info!("Session created {:?}", s.id());
                 NgrokSession {
                     raw_session: Arc::new(SyncMutex::new(s)),
                 }
@@ -453,6 +457,13 @@ impl NgrokSession {
     pub fn labeled_tunnel(&self) -> NgrokLabeledTunnelBuilder {
         let session = self.raw_session.lock().clone();
         NgrokLabeledTunnelBuilder::new(session.clone(), session.labeled_tunnel())
+    }
+
+    /// Retrieve a list of this session's non-closed tunnels, in no particular order.
+    #[napi]
+    pub async fn tunnels(&self) -> Vec<NgrokTunnel> {
+        let session_id = self.raw_session.lock().id();
+        list_tunnels(Some(session_id)).await
     }
 
     /// Close a tunnel with the given ID.
