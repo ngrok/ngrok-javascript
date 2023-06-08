@@ -83,7 +83,7 @@ test("https tunnel", async (t) => {
   t.is(1, tunnel_list.length)
   t.is(tunnel.id(), tunnel_list[0].id());
   t.is(tunnel.url(), tunnel_list[0].url());
-
+  t.is(tunnel.id(), (await ngrok.getTunnelByUrl(tunnel.url())).id());
 
   await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url());
 });

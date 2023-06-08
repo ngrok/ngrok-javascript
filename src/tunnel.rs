@@ -369,7 +369,10 @@ pub(crate) async fn close_url(url: Option<String>) -> Result<()> {
 }
 
 /// Make a list of all tunnels by iterating over the global tunnel map and creating an NgrokTunnel from each.
-pub(crate) async fn list_tunnels(session_id: Option<String>) -> Vec<NgrokTunnel> {
+pub(crate) async fn list_tunnels(
+    session_id: Option<String>,
+    url: Option<String>,
+) -> Vec<NgrokTunnel> {
     let mut tunnels: Vec<NgrokTunnel> = vec![];
     for (_, storage) in GLOBAL_TUNNELS.lock().await.iter() {
         // filter by session_id, if provided
@@ -377,6 +380,10 @@ pub(crate) async fn list_tunnels(session_id: Option<String>) -> Vec<NgrokTunnel>
             if session_id.ne(&storage.session.id()) {
                 continue;
             }
+        }
+        // filter by url, if provided
+        if url.is_some() && url.ne(&storage.tun_meta.url) {
+            continue;
         }
         // create a new NgrokTunnel from the storage
         tunnels.push(NgrokTunnel::from_storage(storage));
@@ -387,7 +394,7 @@ pub(crate) async fn list_tunnels(session_id: Option<String>) -> Vec<NgrokTunnel>
 /// Retrieve a list of non-closed tunnels, in no particular order.
 #[napi]
 pub async fn tunnels() -> Vec<NgrokTunnel> {
-    list_tunnels(None).await
+    list_tunnels(None, None).await
 }
 
 /// Retrieve tunnel using the id
@@ -398,4 +405,10 @@ pub async fn get_tunnel(id: String) -> Option<NgrokTunnel> {
         .await
         .get(&id)
         .map(NgrokTunnel::from_storage)
+}
+
+/// Retrieve tunnel using the url
+#[napi]
+pub async fn get_tunnel_by_url(url: String) -> Option<NgrokTunnel> {
+    list_tunnels(None, Some(url)).await.into_iter().next()
 }

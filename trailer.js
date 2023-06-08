@@ -5,6 +5,7 @@
 const net = require("net");
 const fs = require("fs");
 const os = require("os");
+const path = require("path");
 
 // wrap listen with the bind code for passing to net.Server.listen()
 NgrokHttpTunnelBuilder.prototype._listen = NgrokHttpTunnelBuilder.prototype.listen;
@@ -117,26 +118,52 @@ async function ngrokLinkTcp(tunnel, server) {
   return socket;
 }
 
-async function ngrokLinkPipe(tunnel, server) {
+function generatePipeFilename(tunnel, server) {
   var proposed = "tun-" + tunnel.id() + ".sock";
+
+  // windows leaves little choice
   if (platform == "win32") {
-    proposed = "\\\\.\\pipe\\" + proposed;
+    return "\\\\.\\pipe\\" + proposed;
   }
-  var filename;
+
+  // try to make a directory in the current working directory
+  const dir = ".ngrok";
   try {
-    fs.accessSync(process.cwd(), fs.constants.W_OK);
-    filename = proposed;
+    fs.mkdirSync(dir);
   } catch (err) {
-    console.debug("Cannot write to: " + process.cwd());
-    // try tmp. allow any exception to propagate
-    fs.accessSync(os.tmpdir(), fs.constants.W_OK);
-    filename = os.tmpdir() + proposed;
+    // move on
+  }
+  try {
+    fs.accessSync(dir, fs.constants.W_OK);
+    return dir + path.sep + proposed;
+  } catch (err) {
+    // move on
   }
 
-  if (!filename) {
-    throw new Error("no writeable directory found");
+  // try the OS temp directory, being careful not to exceed the maximum path length for unix sockets
+  // https://linux.die.net/man/7/unix
+  // https://unix.stackexchange.com/a/367012
+  if (os.tmpdir().length < 90) {
+    try {
+      fs.accessSync(os.tmpdir(), fs.constants.W_OK);
+      filepath = os.tmpdir() + path.sep + proposed;
+      if (filepath.length > 100) {
+        // truncate
+        filepath = filepath.substring(0, 100);
+      }
+      return filepath;
+    } catch (err) {
+      // move on
+    }
   }
 
+  // fallback to current working directory. allow any exception to propagate
+  fs.accessSync(process.cwd(), fs.constants.W_OK);
+  return proposed;
+}
+
+async function ngrokLinkPipe(tunnel, server) {
+  var filename = generatePipeFilename(tunnel);
   // begin listening
   const socket = await asyncListen(server, { path: filename });
   // tighten permissions
@@ -188,6 +215,7 @@ function consoleLog(level) {
 // wrap connect with code to vectorize and split out functions
 const _connect = connect;
 async function ngrokConnect(config) {
+  if (config == undefined) config = 80;
   if (Number.isInteger(config) || typeof config === "string" || config instanceof String) {
     address = String(config);
     if (!address.includes(":")) {

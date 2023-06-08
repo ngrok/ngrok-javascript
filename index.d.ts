@@ -186,6 +186,8 @@ export function authtoken(authtoken: string): Promise<void>
 export function tunnels(): Promise<Array<NgrokTunnel>>
 /** Retrieve tunnel using the id */
 export function getTunnel(id: string): Promise<NgrokTunnel | null>
+/** Retrieve tunnel using the url */
+export function getTunnelByUrl(url: string): Promise<NgrokTunnel | null>
 /**
  * The builder for an ngrok session.
  *
