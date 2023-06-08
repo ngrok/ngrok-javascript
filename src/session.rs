@@ -463,7 +463,7 @@ impl NgrokSession {
     #[napi]
     pub async fn tunnels(&self) -> Vec<NgrokTunnel> {
         let session_id = self.raw_session.lock().id();
-        list_tunnels(Some(session_id)).await
+        list_tunnels(Some(session_id), None).await
     }
 
     /// Close a tunnel with the given ID.
