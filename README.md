@@ -50,7 +50,7 @@ A quickstart guide and a full API reference are included in the [ngrok-nodejs AP
 After you've installed the package, you'll need an Auth Token. Retrieve one on the
 [Auth Token page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken)
 
-A minimal code block [using the 'connect' convenience function](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js), with `authtoken_from_env: true` to use an Auth Token from the `NGROK_AUTHTOKEN` environment variable, and making a connection to `localhost` port `8080`:
+Here is a minimal code block [using the 'connect' convenience function](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js), with `authtoken_from_env: true` to use an Auth Token from the `NGROK_AUTHTOKEN` environment variable, and making a connection to `localhost` port `8080`:
 
 ```jsx
 const ngrok = require("@ngrok/ngrok");
@@ -66,19 +66,19 @@ There are many more examples in [the /examples directory](https://github.com/ngr
 
 To use most features of ngrok, you need to obtain an Auth Token. You can get an Auth Token by signing up for free at [ngrok.com](https://dashboard.ngrok.com/signup) and then retrieving it from the [Auth Token page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken). Once you have an Auth Token, you can reference it in several ways.
 
-You can set the authtoken in the environment variable `NGROK_AUTHTOKEN` and then pass `authtoken_from_env: true` to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method:
+You can set the authtoken in the environment variable `NGROK_AUTHTOKEN` and then pass `authtoken_from_env: true` to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) function:
 
 ```jsx
 await ngrok.connect({authtoken_from_env: true, ...});
 ```
 
-You can also set the default Auth Token to use for all connections by calling the [authtoken](https://ngrok.github.io/ngrok-nodejs/functions/authtoken.html) method:
+You can also set the default Auth Token to use for all connections by calling the [authtoken](https://ngrok.github.io/ngrok-nodejs/functions/authtoken.html) function:
 
 ```jsx
 await ngrok.authtoken(token);
 ```
 
-Or the Auth Token can be passed directly to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method:
+Or the Auth Token can be passed directly to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) function:
 
 ```jsx
 await ngrok.connect({authtoken: token, ...});
@@ -86,15 +86,15 @@ await ngrok.connect({authtoken: token, ...});
 
 ## Connection
 
-The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method is the most common way to use this library. It will start an ngrok session if it is not already running, and then establish a tunnel to the specified address. The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method returns a promise that resolves to the public URL of the tunnel.
+The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) function is the most common way to use this library. It will start an ngrok session if it is not already running, and then establish a tunnel to the specified address. The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) function returns a promise that resolves to the public URL of the tunnel.
 
-With just an integer, the `connect` method will forward to `localhost` on the specified port:
+With just an integer, the `connect` function will forward to `localhost` on the specified port:
 
 ```jsx
 const url = await ngrok.connect(4242);
 ```
 
-Or more options can be passed to the `connect` method to customize the connection:
+Or more options can be passed to the `connect` function to customize the connection:
 
 ```jsx
 const url = await ngrok.connect({addr: 8080, basic_auth: "ngrok:online1line"});
@@ -125,10 +125,10 @@ await tunnel.close();
 
 ## Listing Tunnels
 
-To list all current non-closed tunnels use the [tunnels](https://ngrok.github.io/ngrok-nodejs/functions/tunnels.html) function:
+To list all current non-closed tunnels use the [listTunnels](https://ngrok.github.io/ngrok-nodejs/functions/listTunnels.html) function:
 
 ```jsx
-const tunnels = await ngrok.tunnels();
+const tunnels = await ngrok.listTunnels();
 ```
 
 # Full Configuration

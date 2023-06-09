@@ -36,8 +36,8 @@ use tracing::{
 use crate::{
     napi_err,
     tunnel::{
-        list_tunnels,
         remove_global_tunnel,
+        search_tunnels,
         NgrokTunnel,
     },
     tunnel_builder::{
@@ -461,9 +461,9 @@ impl NgrokSession {
 
     /// Retrieve a list of this session's non-closed tunnels, in no particular order.
     #[napi]
-    pub async fn tunnels(&self) -> Vec<NgrokTunnel> {
+    pub async fn list_tunnels(&self) -> Vec<NgrokTunnel> {
         let session_id = self.raw_session.lock().id();
-        list_tunnels(Some(session_id), None).await
+        search_tunnels(Some(session_id), None).await
     }
 
     /// Close a tunnel with the given ID.
