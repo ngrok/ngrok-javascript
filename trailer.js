@@ -1,5 +1,5 @@
 //
-// javascript trailer
+// javascript trailer!
 //
 
 const net = require("net");
