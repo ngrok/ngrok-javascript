@@ -1,3 +1,9 @@
+## 0.6.0:
+
+* Add ngrok.tunnels() and session.tunnels()
+* Add ngrok.getTunnelByUrl(url)
+* More strategies around unix socket placement
+
 ## 0.5.2:
 
 * Cleanly return from a tunnel forward call after a `session.close()`
