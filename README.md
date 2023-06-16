@@ -14,8 +14,6 @@
 [ci-badge]: https://github.com/ngrok/ngrok-nodejs/actions/workflows/ci.yml/badge.svg
 [ci-url]: https://github.com/ngrok/ngrok-nodejs/actions/workflows/ci.yml
 
-**Note: This is beta-quality software. Interfaces may change without warning.**
-
 [ngrok](https://ngrok.com) is a globally distributed reverse proxy commonly used for quickly getting a public URL to a
 service running inside a private network, such as on your local laptop. The ngrok agent is usually
 deployed inside a private network and is used to communicate with the ngrok cloud service.
@@ -24,33 +22,23 @@ This is the ngrok agent in library form, suitable for integrating directly into 
 applications. This allows you to quickly build ngrok into your application with no separate process
 to manage.
 
-# Installation
-
-The published library is available on
-[npm](https://www.npmjs.com/package/@ngrok/ngrok).
-
-```shell
-npm install @ngrok/ngrok
-```
-
-To verify that the library is correctly installed use the following code, which forwards to `localhost` port `80`:
-```jsx
-const ngrok = require("@ngrok/ngrok");
-(async function() {
-  console.log( await ngrok.connect() );
-})();
-```
-
 # Documentation
 
 A quickstart guide and a full API reference are included in the [ngrok-nodejs API documentation](https://ngrok.github.io/ngrok-nodejs/).
 
 # Quickstart
 
-After you've installed the package, you'll need an Auth Token. Retrieve one on the
-[Auth Token page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken)
+1. Install the `ngrok-nodejs` package from
+[npm](https://www.npmjs.com/package/@ngrok/ngrok):
 
-Here is a minimal code block [using the 'connect' convenience function](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js), with `authtoken_from_env: true` to use an Auth Token from the `NGROK_AUTHTOKEN` environment variable, and making a connection to `localhost` port `8080`:
+```shell
+npm install @ngrok/ngrok
+```
+
+2. After you've installed the package, you'll need an authtoken. Retrieve one on the
+[authtoken page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken)
+
+3. Add the following code block using the [connect method](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js) to expose your nodejs application at port `8080` on `localhost`:
 
 ```jsx
 const ngrok = require("@ngrok/ngrok");
@@ -60,57 +48,77 @@ const ngrok = require("@ngrok/ngrok");
 })();
 ```
 
-There are many more examples in [the /examples directory](https://github.com/ngrok/ngrok-nodejs/tree/main/examples).
+You can find more examples in [the /examples directory](https://github.com/ngrok/ngrok-nodejs/tree/main/examples).
 
 ## Authorization
 
-To use most features of ngrok, you need to obtain an Auth Token. You can get an Auth Token by signing up for free at [ngrok.com](https://dashboard.ngrok.com/signup) and then retrieving it from the [Auth Token page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken). Once you have an Auth Token, you can reference it in several ways.
+To use most of ngrok's features, you'll need an authtoken. To obtain one, sign up for free at [ngrok.com](https://dashboard.ngrok.com/signup) and retrieve it from the [authtoken page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken). Once you have copied your authtoken, you can reference it in several ways.
 
-You can set the authtoken in the environment variable `NGROK_AUTHTOKEN` and then pass `authtoken_from_env: true` to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) function:
+You can set it in the `NGROK_AUTHTOKEN` environment variable and pass `authtoken_from_env: true` to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method:
 
 ```jsx
 await ngrok.connect({authtoken_from_env: true, ...});
 ```
 
-You can also set the default Auth Token to use for all connections by calling the [authtoken](https://ngrok.github.io/ngrok-nodejs/functions/authtoken.html) function:
-
-```jsx
-await ngrok.authtoken(token);
-```
-
-Or the Auth Token can be passed directly to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) function:
+Or pass the authtoken directly to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method:
 
 ```jsx
 await ngrok.connect({authtoken: token, ...});
 ```
 
+Or set it for all connections with the [authtoken](https://ngrok.github.io/ngrok-nodejs/functions/authtoken.html) method:
+
+```jsx
+await ngrok.authtoken(token);
+```
+
 ## Connection
 
-The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) function is the most common way to use this library. It will start an ngrok session if it is not already running, and then establish a tunnel to the specified address. The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) function returns a promise that resolves to the public URL of the tunnel.
+The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method is the easiest way to start an ngrok session and establish a tunnel to a specified address. The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method returns a promise that resolves to the public URL of the tunnel.
 
-With just an integer, the `connect` function will forward to `localhost` on the specified port:
+With no arguments the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method will start an HTTP tunnel to `localhost` port `80`:
+
+```jsx
+const ngrok = require("@ngrok/ngrok");
+(async function() {
+  console.log( await ngrok.connect() );
+})();
+```
+
+You can pass the port number to forward on `localhost`:
 
 ```jsx
 const url = await ngrok.connect(4242);
 ```
 
-Or more options can be passed to the `connect` function to customize the connection:
+Or you can specify the host and port via a string:
+
+```jsx
+const url = await ngrok.connect("localhost:4242");
+```
+
+More options can be passed to the `connect` method to customize the connection:
 
 ```jsx
 const url = await ngrok.connect({addr: 8080, basic_auth: "ngrok:online1line"});
 const url = await ngrok.connect({addr: 8080, oauth_provider: "google", oauth_allow_domains: "example.com"});
+```
+
+The (optional) `proto` parameter is the tunnel type, which defaults to `http`. To create a TCP tunnel:
+
+```jsx
 const url = await ngrok.connect({proto: 'tcp', addr: 25565});
 ```
 
 ## Disconnection
 
-To close a tunnel use the [disconnect](https://ngrok.github.io/ngrok-nodejs/functions/disconnect.html) function with the URL of the tunnel to close:
+To close a tunnel use the [disconnect](https://ngrok.github.io/ngrok-nodejs/functions/disconnect.html) method with the `url` of the tunnel to close:
 
 ```jsx
 await ngrok.disconnect(url);
 ```
 
-Or omit the URL to close all tunnels:
+Or omit the `url` to close all tunnels:
 
 ```jsx
 await ngrok.disconnect();
@@ -125,7 +133,7 @@ await tunnel.close();
 
 ## Listing Tunnels
 
-To list all current non-closed tunnels use the [listTunnels](https://ngrok.github.io/ngrok-nodejs/functions/listTunnels.html) function:
+To list all current non-closed tunnels use the [listTunnels](https://ngrok.github.io/ngrok-nodejs/functions/listTunnels.html) method:
 
 ```jsx
 const tunnels = await ngrok.listTunnels();
@@ -133,7 +141,7 @@ const tunnels = await ngrok.listTunnels();
 
 # Full Configuration
 
-The [Config](https://ngrok.github.io/ngrok-nodejs/interfaces/Config.html) interface shows all the available options, or refer to this example of [all the possible configuration items ngrok.connect](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-full.js):
+This example shows [all the possible configuration items of ngrok.connect](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-full.js):
 
 ```jsx
 const url = await ngrok.connect({
@@ -176,6 +184,8 @@ const url = await ngrok.connect({
 });
 ```
 
+The [Config](https://ngrok.github.io/ngrok-nodejs/interfaces/Config.html) interface also shows all the available options.
+
 # Examples
 
 Degit can be used for cloning and running an example directory like this:
@@ -215,7 +225,7 @@ npx degit github:ngrok/ngrok-nodejs/examples/express express && cd express && np
 
 For more control over Sessions and Tunnels, the builder classes can be used.
 
-A minimal builder use-case looks like [the following](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js):
+A minimal example using the build class looks like [the following](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js):
 
 ```jsx
 async function create_tunnel() {
