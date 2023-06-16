@@ -43,7 +43,7 @@ npm install @ngrok/ngrok
 ```jsx
 const ngrok = require("@ngrok/ngrok");
 (async function() {
-  const url = await ngrok.connect({ addr: 8080, authtoken_from_env: true })
+  const url = await ngrok.connect({ addr: 8080, authtoken_from_env: true });
   console.log(`Ingress established at: ${url}`);
 })();
 ```
@@ -225,7 +225,7 @@ npx degit github:ngrok/ngrok-nodejs/examples/express express && cd express && np
 
 For more control over Sessions and Tunnels, the builder classes can be used.
 
-A minimal example using the build class looks like [the following](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js):
+A minimal example using the builder class looks like [the following](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js):
 
 ```jsx
 async function create_tunnel() {
