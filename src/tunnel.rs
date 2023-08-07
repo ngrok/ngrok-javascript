@@ -393,7 +393,7 @@ pub(crate) async fn search_tunnels(
 
 /// Retrieve a list of non-closed tunnels, in no particular order.
 #[napi]
-pub async fn list_tunnels() -> Vec<NgrokTunnel> {
+pub async fn tunnels() -> Vec<NgrokTunnel> {
     search_tunnels(None, None).await
 }
 

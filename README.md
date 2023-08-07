@@ -14,6 +14,8 @@
 [ci-badge]: https://github.com/ngrok/ngrok-nodejs/actions/workflows/ci.yml/badge.svg
 [ci-url]: https://github.com/ngrok/ngrok-nodejs/actions/workflows/ci.yml
 
+**Note: This is beta-quality software. Interfaces may change without warning.**
+
 [ngrok](https://ngrok.com) is a globally distributed reverse proxy commonly used for quickly getting a public URL to a
 service running inside a private network, such as on your local laptop. The ngrok agent is usually
 deployed inside a private network and is used to communicate with the ngrok cloud service.
@@ -133,10 +135,10 @@ await tunnel.close();
 
 ## Listing Tunnels
 
-To list all current non-closed tunnels use the [listTunnels](https://ngrok.github.io/ngrok-nodejs/functions/listTunnels.html) method:
+To list all current non-closed tunnels use the [tunnels](https://ngrok.github.io/ngrok-nodejs/functions/tunnels.html) method:
 
 ```jsx
-const tunnels = await ngrok.listTunnels();
+const tunnels = await ngrok.tunnels();
 ```
 
 # Full Configuration
