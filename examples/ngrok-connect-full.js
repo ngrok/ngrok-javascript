@@ -19,8 +19,8 @@ console.log(`Node.js web server at ${UNIX_SOCKET} is running..`);
 const ngrok = require("@ngrok/ngrok");
 ngrok.consoleLog("INFO"); // turn on info logging
 
-ngrok
-  .connect({
+(async function() {
+  const url = await ngrok.connect({
     // session configuration
     addr: `pipe:${UNIX_SOCKET}`,
     // addr: `localhost:8080`,
@@ -35,30 +35,29 @@ ngrok
     circuit_breaker: 0.1,
     compression: true,
     // domain: "<domain>",
-    "ip_restriction.allow_cidrs": ["0.0.0.0/0"],
-    "ip_restriction.deny_cidrs": ["10.1.1.1/32"],
+    ip_restriction_allow_cidrs: ["0.0.0.0/0"],
+    ip_restriction_deny_cidrs: ["10.1.1.1/32"],
     metadata: "example tunnel metadata from nodejs",
     // mutual_tls_cas: [fs.readFileSync('ca.crt', 'utf8')],
-    // "oauth.provider": "google",
-    // "oauth.allow_domains": ["<domain>"],
-    // "oauth.allow_emails": ["<email>"],
-    // "oauth.scopes": ["<scope>"],
-    // "oidc.issuer_url": "<url>",
-    // "oidc.client_id": "<id>",
-    // "oidc.client_secret": "<secret>",
-    // "oidc.allow_domains": ["<domain>"],
-    // "oidc.allow_emails": ["<email>"],
-    // "oidc.scopes": ["<scope>"],
+    // oauth_provider: "google",
+    // oauth_allow_domains: ["<domain>"],
+    // oauth_allow_emails: ["<email>"],
+    // oauth_scopes: ["<scope>"],
+    // oidc_issuer_url: "<url>",
+    // oidc_client_id: "<id>",
+    // oidc_client_secret: "<secret>",
+    // oidc_allow_domains: ["<domain>"],
+    // oidc_allow_emails: ["<email>"],
+    // oidc_scopes": ["<scope>"],
     proxy_proto: "", // One of: "", "1", "2"
-    "request_header.remove": ["X-Req-Nope"],
-    "response_header.remove": ["X-Res-Nope"],
-    "request_header.add": ["X-Req-Yup:true"],
-    "response_header.add": ["X-Res-Yup:true"],
+    request_header_remove: ["X-Req-Nope"],
+    response_header_remove: ["X-Res-Nope"],
+    request_header_add: ["X-Req-Yup:true"],
+    response_header_add: ["X-Res-Yup:true"],
     schemes: ["HTTPS"],
-    // "verify_webhook.provider": "twilio",
-    // "verify_webhook.secret": "asdf",
+    // verify_webhook_provider: "twilio",
+    // verify_webhook_secret: "asdf",
     // websocket_tcp_converter: true,
-  })
-  .then((url) => {
-    console.log(`Ingress established at: ${url}`);
   });
+  console.log(`Ingress established at: ${url}`);
+})();
