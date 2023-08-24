@@ -30,8 +30,8 @@ use tracing::{
 };
 
 use crate::{
-    napi_err,
     connect::PIPE_PREFIX,
+    napi_err,
 };
 
 lazy_static! {
