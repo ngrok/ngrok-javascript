@@ -13,6 +13,6 @@ async function create_tunnel() {
   const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
   const tunnel = await session.httpEndpoint().listen();
   console.log("Ingress established at:", tunnel.url());
-  tunnel.forwardTcp("localhost:8081");
+  tunnel.forward("localhost:8081");
 }
 create_tunnel();

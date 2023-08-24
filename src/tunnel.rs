@@ -29,7 +29,10 @@ use tracing::{
     info,
 };
 
-use crate::napi_err;
+use crate::{
+    napi_err,
+    connect::PIPE_PREFIX,
+};
 
 lazy_static! {
     // tunnel references to be kept until explicit close to prevent nodejs gc from dropping them.
@@ -209,18 +212,12 @@ impl NgrokTunnel {
         self.tun_meta.metadata.clone()
     }
 
-    /// Forward incoming tunnel connections to the provided TCP address.
+    /// Forward incoming tunnel connections. This can be either a TCP address or a file socket path.
+    /// For file socket paths on Linux/Darwin, addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
+    ///     On Windows, addr can be a named pipe, e.e. "\\\\.\\pipe\\an_ngrok_pipe
     #[napi]
-    pub async fn forward_tcp(&self, addr: String) -> Result<()> {
-        forward_tcp(&self.tun_meta.id, addr).await
-    }
-
-    /// Forward incoming tunnel connections to the provided file socket path.
-    /// On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-    /// On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
-    #[napi]
-    pub async fn forward_pipe(&self, addr: String) -> Result<()> {
-        forward_pipe(&self.tun_meta.id, addr).await
+    pub async fn forward(&self, addr: String) -> Result<()> {
+        forward(&self.tun_meta.id, addr).await
     }
 
     /// Close the tunnel.
@@ -280,31 +277,33 @@ make_tunnel_type! {
     NgrokLabeledTunnel, LabeledTunnel, label
 }
 
-pub async fn forward_tcp(id: &String, addr: String) -> Result<()> {
-    info!("Tunnel {id:?} TCP forwarding to {addr:?}");
-    let res = get_storage_by_id(id)
-        .await?
-        .tunnel
-        .lock()
-        .await
-        .fwd_tcp(addr)
-        .await;
+pub async fn forward(id: &String, addr: String) -> Result<()> {
+    let tun = &get_storage_by_id(id).await?.tunnel;
+    let is_pipe =
+        addr.starts_with(PIPE_PREFIX) || addr.starts_with("unix:") || addr.starts_with("tun-");
 
-    debug!("forward_tcp returning");
-    canceled_is_ok(res)
-}
+    let res = if is_pipe {
+        let mut tun_addr = addr.clone();
+        tun_addr = tun_addr
+            .strip_prefix(PIPE_PREFIX)
+            .unwrap_or(&tun_addr)
+            .to_string()
+            .strip_prefix("unix:")
+            .unwrap_or(&tun_addr)
+            .to_string();
 
-pub async fn forward_pipe(id: &String, addr: String) -> Result<()> {
-    info!("Tunnel {id:?} Pipe forwarding to {addr:?}");
-    let res = get_storage_by_id(id)
-        .await?
-        .tunnel
-        .lock()
-        .await
-        .fwd_pipe(addr)
-        .await;
+        info!("Tunnel {id:?} Pipe forwarding to {tun_addr:?}");
+        tun.lock().await.fwd_pipe(tun_addr).await
+    } else {
+        info!("Tunnel {id:?} TCP forwarding to {addr:?}");
+        tun.lock().await.fwd_tcp(addr).await
+    };
 
-    debug!("forward_pipe returning");
+    if is_pipe {
+        debug!("forward_pipe returning");
+    } else {
+        debug!("forward_tcp returning");
+    }
     canceled_is_ok(res)
 }
 

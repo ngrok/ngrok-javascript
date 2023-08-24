@@ -23,6 +23,8 @@ lazy_static! {
     pub(crate) static ref SESSION: Mutex<Option<NgrokSession>> = Mutex::new(None);
 }
 
+pub(crate) const PIPE_PREFIX: &str = "pipe:";
+
 /// Single string configuration
 macro_rules! plumb {
     ($builder:tt, $config:tt, $name:tt) => {
@@ -153,13 +155,7 @@ async fn async_connect(s_builder: NgrokSessionBuilder, config: Config) -> Result
 
     // move forwarding to another task
     if let Some(addr) = config.addr {
-        tokio::spawn(async move {
-            if addr.starts_with("pipe:") {
-                tunnel::forward_pipe(&id, addr.clone().split_off(5)).await
-            } else {
-                tunnel::forward_tcp(&id, addr).await
-            }
-        });
+        tokio::spawn(async move { tunnel::forward(&id, addr).await });
     }
 
     Ok(url)

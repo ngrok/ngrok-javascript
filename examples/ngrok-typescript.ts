@@ -60,7 +60,7 @@ async function standardConfig() {
   const tunnel = await session.httpEndpoint().listen();
   console.log("Ingress established at:", tunnel.url());
   httpServer.listen(8081);
-  tunnel.forwardTcp("localhost:8081");
+  tunnel.forward("localhost:8081");
 
   // unregister logging callback
   ngrok.loggingCallback();

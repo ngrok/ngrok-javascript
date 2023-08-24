@@ -28,7 +28,7 @@ new ngrok.NgrokSessionBuilder()
       .httpEndpoint()
       .listen()
       .then((tunnel) => {
-        tunnel.forwardTcp("localhost:8081").await;
+        tunnel.forward("localhost:8081").await;
         console.log("tunnel: " + tunnel.url() + " id: " + tunnel.id());
         setTimeout(function () {
           console.log("\n\n=====> running gc");

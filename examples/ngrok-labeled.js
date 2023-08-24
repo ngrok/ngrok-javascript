@@ -29,7 +29,7 @@ builder.connect().then((session) => {
     .listen()
     .then((tunnel) => {
       console.log("Ingress established at: " + JSON.stringify(tunnel.labels()));
-      tunnel.forwardPipe(UNIX_SOCKET);
+      tunnel.forward(UNIX_SOCKET);
     });
 });
 

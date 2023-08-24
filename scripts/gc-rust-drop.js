@@ -28,7 +28,7 @@ new ngrok.NgrokSessionBuilder()
       .httpEndpoint()
       .listen()
       .then((tunnel) => {
-        tunnel.forwardTcp("localhost:8081").await;
+        tunnel.forward("localhost:8081").await;
         const tun_id = tunnel.id();
         console.log("tunnel: " + tunnel.url() + " id: " + tun_id);
         console.log("\n\n=====> nulling tunnel");

@@ -20,6 +20,6 @@ new ngrok.NgrokSessionBuilder()
       .listen()
       .then((tunnel) => {
         console.log("Ingress established at:", tunnel.url());
-        tunnel.forwardPipe(PIPE);
+        tunnel.forward(PIPE);
       });
   });
