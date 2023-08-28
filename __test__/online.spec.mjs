@@ -165,7 +165,7 @@ test("oauth", async (t) => {
 
   const response = await axios.get(tunnel.url());
   t.not(expected, response.data);
-  t.truthy(response.data.includes("google-site-verification"));
+  t.truthy(response.data.includes("accounts.google.com"));
   await shutdown(tunnel, httpServer.socket);
 });
 

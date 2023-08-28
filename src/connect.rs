@@ -271,6 +271,12 @@ fn set_defaults(config: &mut Config) {
             config.addr.replace("80".to_string());
         }
     }
+    if let Some(addr) = &config.addr {
+        if addr.parse::<i32>().is_ok() {
+            // the string is a number, interpret it as a port
+            config.addr.replace(format!("localhost:{addr}"));
+        }
+    }
 }
 
 /// Warn about unused configuration values
