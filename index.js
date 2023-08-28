@@ -490,7 +490,7 @@ async function ngrokConnect(config) {
   if (config == undefined) config = 80;
   if (Number.isInteger(config) || typeof config === "string" || config instanceof String) {
     address = String(config);
-    if (!address.includes(":")) {
+    if (Number.isInteger(config) && !address.includes(":")) {
       address = `localhost:${address}`;
     }
     config = { addr: address };

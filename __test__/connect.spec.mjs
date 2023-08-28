@@ -68,6 +68,28 @@ test("connect number", async (t) => {
   await validateShutdown(t, httpServer, url);
 });
 
+test("connect port string", async (t) => {
+  ngrok.consoleLog();
+  const httpServer = await makeHttp();
+  ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
+  const url = await ngrok.connect(httpServer.listenTo.split(":")[1]);
+
+  t.truthy(url);
+  t.truthy(url.startsWith("https://"), url);
+  await validateShutdown(t, httpServer, url);
+});
+
+test("connect addr port string", async (t) => {
+  ngrok.consoleLog();
+  const httpServer = await makeHttp();
+  ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
+  const url = await ngrok.connect({'addr':httpServer.listenTo.split(":")[1]});
+
+  t.truthy(url);
+  t.truthy(url.startsWith("https://"), url);
+  await validateShutdown(t, httpServer, url);
+});
+
 test("connect string", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
