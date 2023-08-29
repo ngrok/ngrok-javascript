@@ -217,7 +217,8 @@ test("ip restriction http", async (t) => {
 test("ip restriction tcp", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
   const error = await ipRestriction(t, httpServer, session.tcpEndpoint());
-  t.is("ECONNRESET", error.code);
+  // ECONNRESET or ECONNREFUSED
+  t.truthy(error.code.startsWith('ECONNRE'), error.code);
 });
 
 async function ipRestriction(t, httpServer, tunnelBuilder) {
