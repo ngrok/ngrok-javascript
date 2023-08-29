@@ -101,7 +101,7 @@ test("pipe socket", async (t) => {
   const [httpServer, session] = await makeHttpAndSession(true);
   const tunnel = await session.httpEndpoint().listen();
   t.truthy(httpServer.listenTo.startsWith("tun-"), httpServer.listenTo);
-  tunnel.forward(httpServer.listenTo);
+  tunnel.forward('unix:' + httpServer.listenTo);
   const response = await validateHttpRequest(t, tunnel.url());
   await shutdown(tunnel, httpServer.socket);
 });
@@ -217,7 +217,8 @@ test("ip restriction http", async (t) => {
 test("ip restriction tcp", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
   const error = await ipRestriction(t, httpServer, session.tcpEndpoint());
-  t.is("ECONNRESET", error.code);
+  // ECONNRESET or ECONNREFUSED
+  t.truthy(error.code.startsWith('ECONNRE'), error.code);
 });
 
 async function ipRestriction(t, httpServer, tunnelBuilder) {
@@ -378,10 +379,9 @@ test("pipe multipass", async (t) => {
   const tunnel4 = await session2.tcpEndpoint().listen();
   const socket = await ngrok.listen(httpServer, tunnel1);
 
-  tunnel1.forward(socket.path);
-  tunnel2.forward(socket.path);
-  tunnel3.forward(socket.path);
-  tunnel4.forward(socket.path);
+  tunnel2.forward("unix:" + socket.path);
+  tunnel3.forward("unix:" + socket.path);
+  tunnel4.forward("unix:" + socket.path);
 
   await validateHttpRequest(t, tunnel1.url());
   await validateHttpRequest(t, tunnel2.url());

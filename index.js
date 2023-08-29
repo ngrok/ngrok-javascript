@@ -17,7 +17,7 @@ function isMusl() {
   // For Node 10
   if (!process.report || typeof process.report.getReport !== 'function') {
     try {
-      const lddPath = require('child_process').execSync('which ldd').toString().trim()
+      const lddPath = require('child_process').execSync('which ldd').toString().trim();
       return readFileSync(lddPath, 'utf8').includes('musl')
     } catch (e) {
       return true
@@ -447,7 +447,8 @@ async function ngrokLinkPipe(tunnel, server) {
     console.debug("Cannot change permissions of file: " + filename);
   }
   // forward tunnel
-  tunnel.forward(filename);
+  const proto = platform == "win32" ? 'pipe:' : 'unix:';
+  tunnel.forward(proto + filename);
   socket.path = filename; // surface to caller
 
   return socket;
