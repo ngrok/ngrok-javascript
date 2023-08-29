@@ -16,7 +16,7 @@ const start = async () => {
     // Establish ingress
     const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
     const tunnel = await session.httpEndpoint().listen();
-    tunnel.forwardTcp(`localhost:${port}`);
+    tunnel.forward(`localhost:${port}`);
     fastify.log.info(`Ingress established at: ${tunnel.url()}`);
   } catch (err) {
     fastify.log.error(err);

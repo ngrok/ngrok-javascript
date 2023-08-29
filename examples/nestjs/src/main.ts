@@ -12,6 +12,6 @@ async function bootstrap() {
   const session = await new NgrokSessionBuilder().authtokenFromEnv().connect();
   const tunnel = await session.httpEndpoint().listen();
   new Logger('main').log(`Ingress established at ${tunnel.url()}`);
-  tunnel.forwardTcp(`localhost:${port}`);
+  tunnel.forward(`localhost:${port}`);
 }
 bootstrap();

@@ -17,7 +17,7 @@ async function setup() {
   const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
   const tunnel = await session.httpEndpoint().listen();
   console.log(`Forwarding to: ${host}:${port} from ingress at: ${tunnel.url()}`);
-  tunnel.forwardTcp(`${host}:${port}`);
+  tunnel.forward(`${host}:${port}`);
 }
 
 if (makeTunnel) setup();

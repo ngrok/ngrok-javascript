@@ -35,6 +35,6 @@ builder.connect().then((session) => {
     .listen()
     .then((tunnel) => {
       console.log("Ingress established at:", tunnel.url());
-      tunnel.forwardPipe(UNIX_SOCKET);
+      tunnel.forward(UNIX_SOCKET);
     });
 });

@@ -24,7 +24,7 @@ const init = async () => {
   const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
   const tunnel = await session.httpEndpoint().listen();
   console.log(`Ingress established at: ${tunnel.url()}`);
-  tunnel.forwardTcp(`localhost:${port}`);
+  tunnel.forward(`localhost:${port}`);
 };
 
 process.on("unhandledRejection", (err) => {

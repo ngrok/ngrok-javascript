@@ -389,14 +389,12 @@ export class NgrokTunnel {
   forwardsTo(): string
   /** Returns the arbitrary metadata string for this tunnel. */
   metadata(): string
-  /** Forward incoming tunnel connections to the provided TCP address. */
-  forwardTcp(addr: string): Promise<void>
   /**
-   * Forward incoming tunnel connections to the provided file socket path.
-   * On Linux/Darwin addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-   * On Windows addr can be a named pipe, e.e. "\\.\pipe\an_ngrok_pipe"
+   * Forward incoming tunnel connections. This can be either a TCP address or a file socket path.
+   * For file socket paths on Linux/Darwin, addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
+   *     On Windows, addr can be a named pipe, e.e. "\\\\.\\pipe\\an_ngrok_pipe
    */
-  forwardPipe(addr: string): Promise<void>
+  forward(addr: string): Promise<void>
   /**
    * Close the tunnel.
    *

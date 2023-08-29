@@ -39,7 +39,7 @@ function defineTunnelHandle(tunnel, socket) {
   Object.defineProperty(tunnel, "handle", {
     get: function () {
       // turn on forwarding now that it has been requested
-      tunnel.forwardTcp("localhost:" + socket.address().port);
+      tunnel.forward("localhost:" + socket.address().port);
       return socket._handle;
     },
   });
@@ -114,7 +114,7 @@ async function ngrokLinkTcp(tunnel, server) {
   // random local port
   const socket = await asyncListen(server, { host: "localhost", port: 0 });
   // forward to socket
-  tunnel.forwardTcp("localhost:" + socket.address().port);
+  tunnel.forward("localhost:" + socket.address().port);
   return socket;
 }
 
@@ -175,7 +175,8 @@ async function ngrokLinkPipe(tunnel, server) {
     console.debug("Cannot change permissions of file: " + filename);
   }
   // forward tunnel
-  tunnel.forwardPipe(filename);
+  const proto = platform == "win32" ? 'pipe:' : 'unix:';
+  tunnel.forward(proto + filename);
   socket.path = filename; // surface to caller
 
   return socket;
