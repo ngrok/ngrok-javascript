@@ -417,5 +417,27 @@ test("session ca_cert", async (t) => {
     },
     { instanceOf: Error }
   );
-  t.truthy(error.message.includes("certificate"), error.message);
+  t.truthy(error.message.includes("tls"), error.message);
+});
+
+test("session incorrect authtoken", async (t) => {
+  const builder = new ngrok.NgrokSessionBuilder();
+  const error = await t.throwsAsync(
+    async () => {
+      await builder.authtoken('badtoken').connect();
+    },
+    { instanceOf: Error }
+  );
+  t.is('ERR_NGROK_105', error.error_code);
+});
+
+test("tunnel invalid domain", async (t) => {
+  const session = await makeSession();
+  const error = await t.throwsAsync(
+    async () => {
+      await session.httpEndpoint().domain("1.21 gigawatts").listen();
+    },
+    { instanceOf: Error }
+  );
+  t.is('ERR_NGROK_326', error.error_code);
 });

@@ -20,7 +20,7 @@ use parking_lot::Mutex;
 use tracing::debug;
 
 use crate::{
-    napi_err,
+    napi_ngrok_err,
     tunnel::{
         NgrokHttpTunnel,
         NgrokLabeledTunnel,
@@ -66,7 +66,7 @@ macro_rules! make_tunnel_builder {
                 let result = tun
                     .listen()
                     .await
-                    .map_err(|e| napi_err(format!("failed to start tunnel: {e:?}")));
+                    .map_err(|e| napi_ngrok_err("failed to start tunnel", &e));
 
                 // create the wrapping tunnel object via its async new()
                 match result {
