@@ -279,6 +279,10 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
+// wrap connect with the code for extending exception with error code
+NgrokSessionBuilder.prototype._connect = NgrokSessionBuilder.prototype.connect;
+NgrokSessionBuilder.prototype.connect = ngrokSessionConnect;
+
 // wrap listen with the bind code for passing to net.Server.listen()
 NgrokHttpTunnelBuilder.prototype._listen = NgrokHttpTunnelBuilder.prototype.listen;
 NgrokTcpTunnelBuilder.prototype._listen = NgrokTcpTunnelBuilder.prototype.listen;
@@ -290,17 +294,42 @@ NgrokTcpTunnelBuilder.prototype.listen = ngrokBind;
 NgrokTlsTunnelBuilder.prototype.listen = ngrokBind;
 NgrokLabeledTunnelBuilder.prototype.listen = ngrokBind;
 
+// Wrap session connect to fill in exception's error_code
+async function ngrokSessionConnect() {
+  try {
+    return await this._connect();
+  } catch (err) {
+    populateErrorCode(err);
+    throw err
+  }
+}
+
 // Begin listening for new connections on this tunnel,
 // and bind to a local socket so this tunnel can be
 // passed into net.Server.listen().
 async function ngrokBind(bind) {
-  const tunnel = await this._listen();
-  if (bind !== false) {
-    const socket = await randomTcpSocket();
-    tunnel.socket = socket;
-    defineTunnelHandle(tunnel, socket);
+  try {
+    const tunnel = await this._listen();
+    if (bind !== false) {
+      const socket = await randomTcpSocket();
+      tunnel.socket = socket;
+      defineTunnelHandle(tunnel, socket);
+    }
+    return tunnel;
+  } catch (err) {
+    populateErrorCode(err);
+    throw err
   }
-  return tunnel;
+}
+
+function populateErrorCode(err) {
+  if (err.message) {
+    const regex = /error_code: (ERR_NGROK_\d+)$/;
+    const error_code = err.message.match(regex);
+    if (error_code && error_code.length > 1) {
+      err.error_code = error_code[1];
+    }
+  }
 }
 
 // add a 'handle' getter to the tunnel so it can be
@@ -565,7 +594,12 @@ async function ngrokConnect(config) {
     config["onStatusChange"] = true;
   }
   // call into rust
-  return await _connect(config, on_log_event, on_connection, on_disconnection);
+  try {
+    return await _connect(config, on_log_event, on_connection, on_disconnection);
+  } catch (err) {
+    populateErrorCode(err);
+    throw err
+  }
 }
 
 function undot(config, dotKey) {

@@ -32,6 +32,7 @@ use tracing::{
 use crate::{
     connect::PIPE_PREFIX,
     napi_err,
+    napi_ngrok_err,
 };
 
 pub(crate) const UNIX_PREFIX: &str = "unix:";
@@ -237,7 +238,7 @@ impl NgrokTunnel {
             .session
             .close_tunnel(self.tun_meta.id.clone())
             .await
-            .map_err(|e| napi_err(format!("error closing tunnel: {e:?}")));
+            .map_err(|e| napi_ngrok_err("error closing tunnel", &e));
 
         // drop our internal reference to the tunnel after awaiting close
         GLOBAL_TUNNELS.lock().await.remove(&self.tun_meta.id);
@@ -348,7 +349,7 @@ pub(crate) async fn close_url(url: Option<String>) -> Result<()> {
                 .session
                 .close_tunnel(id)
                 .await
-                .map_err(|e| napi_err(format!("error closing tunnel: {e:?}")))?;
+                .map_err(|e| napi_ngrok_err("error closing tunnel", &e))?;
             close_ids.push(id.clone());
         }
     }

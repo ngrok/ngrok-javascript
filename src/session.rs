@@ -34,7 +34,7 @@ use tracing::{
 };
 
 use crate::{
-    napi_err,
+    napi_ngrok_err,
     tunnel::{
         remove_global_tunnel,
         search_tunnels,
@@ -415,7 +415,7 @@ impl NgrokSessionBuilder {
                     raw_session: Arc::new(SyncMutex::new(s)),
                 }
             })
-            .map_err(|e| napi_err(format!("failed to connect session, {e:?}")))
+            .map_err(|e| napi_ngrok_err("failed to connect session", &e))
     }
 }
 
@@ -474,7 +474,7 @@ impl NgrokSession {
         let res = session
             .close_tunnel(id.clone())
             .await
-            .map_err(|e| napi_err(format!("failed to close tunnel, {e:?}")));
+            .map_err(|e| napi_ngrok_err("failed to close tunnel", &e));
 
         if res.is_ok() {
             // remove our reference to allow it to drop
@@ -490,7 +490,7 @@ impl NgrokSession {
         session
             .close()
             .await
-            .map_err(|e| napi_err(format!("failed to close session, {e:?}")))
+            .map_err(|e| napi_ngrok_err("failed to close session", &e))
     }
 }
 

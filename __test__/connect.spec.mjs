@@ -177,3 +177,16 @@ test("connect tls tunnel", async (t) => {
   t.truthy(error.message.endsWith("signed certificate"), error.message);
   await shutdown(url, httpServer.socket);
 });
+
+// serial to not run into double error on a session issue
+test.serial("connect bad domain", async (t) => {
+  const httpServer = await makeHttp();
+  ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
+  const error = await t.throwsAsync(
+    async () => {
+      await ngrok.connect({addr: httpServer.listenTo, domain: '1.21 gigawatts'});
+    },
+    { instanceOf: Error }
+  );
+  t.is("ERR_NGROK_326", error.error_code, error.message);
+});
