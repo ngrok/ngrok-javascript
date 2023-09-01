@@ -22,13 +22,13 @@ NgrokTcpTunnelBuilder.prototype.listen = ngrokBind;
 NgrokTlsTunnelBuilder.prototype.listen = ngrokBind;
 NgrokLabeledTunnelBuilder.prototype.listen = ngrokBind;
 
-// Wrap session connect to fill in exception's error_code
+// Wrap session connect to fill in exception's errorCode
 async function ngrokSessionConnect() {
   try {
     return await this._connect();
   } catch (err) {
     populateErrorCode(err);
-    throw err
+    throw err;
   }
 }
 
@@ -46,16 +46,16 @@ async function ngrokBind(bind) {
     return tunnel;
   } catch (err) {
     populateErrorCode(err);
-    throw err
+    throw err;
   }
 }
 
 function populateErrorCode(err) {
   if (err.message) {
     const regex = /error_code: (ERR_NGROK_\d+)$/;
-    const error_code = err.message.match(regex);
-    if (error_code && error_code.length > 1) {
-      err.error_code = error_code[1];
+    const errorCode = err.message.match(regex);
+    if (errorCode && errorCode.length > 1) {
+      err.errorCode = errorCode[1];
     }
   }
 }
@@ -204,7 +204,7 @@ async function ngrokLinkPipe(tunnel, server) {
     console.debug("Cannot change permissions of file: " + filename);
   }
   // forward tunnel
-  const proto = platform == "win32" ? 'pipe:' : 'unix:';
+  const proto = platform == "win32" ? "pipe:" : "unix:";
   tunnel.forward(proto + filename);
   socket.path = filename; // surface to caller
 
@@ -326,7 +326,7 @@ async function ngrokConnect(config) {
     return await _connect(config, on_log_event, on_connection, on_disconnection);
   } catch (err) {
     populateErrorCode(err);
-    throw err
+    throw err;
   }
 }
 

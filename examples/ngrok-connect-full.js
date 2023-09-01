@@ -19,7 +19,7 @@ console.log(`Node.js web server at ${UNIX_SOCKET} is running..`);
 const ngrok = require("@ngrok/ngrok");
 ngrok.consoleLog("INFO"); // turn on info logging
 
-(async function() {
+(async function () {
   const url = await ngrok.connect({
     // session configuration
     addr: `pipe:${UNIX_SOCKET}`,

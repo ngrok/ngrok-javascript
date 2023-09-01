@@ -83,7 +83,7 @@ test("connect addr port string", async (t) => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const url = await ngrok.connect({'addr':httpServer.listenTo.split(":")[1]});
+  const url = await ngrok.connect({ addr: httpServer.listenTo.split(":")[1] });
 
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
@@ -150,7 +150,7 @@ test("connect tcp tunnel", async (t) => {
   });
 
   t.truthy(url);
-  
+
   await validateShutdown(t, httpServer, url.replace("tcp:", "http:"));
 });
 
@@ -162,11 +162,11 @@ test("connect tls tunnel", async (t) => {
     proto: "tls",
     forwards_to: "tls forwards to",
     metadata: "tls metadata",
-    crt: fs.readFileSync("examples/domain.crt", 'utf8'), 
-    key: fs.readFileSync("examples/domain.key", 'utf8'),
+    crt: fs.readFileSync("examples/domain.crt", "utf8"),
+    key: fs.readFileSync("examples/domain.key", "utf8"),
   });
 
-  t.truthy(url);  
+  t.truthy(url);
 
   const error = await t.throwsAsync(
     async () => {
@@ -184,9 +184,9 @@ test.serial("connect bad domain", async (t) => {
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
   const error = await t.throwsAsync(
     async () => {
-      await ngrok.connect({addr: httpServer.listenTo, domain: '1.21 gigawatts'});
+      await ngrok.connect({ addr: httpServer.listenTo, domain: "1.21 gigawatts" });
     },
     { instanceOf: Error }
   );
-  t.is("ERR_NGROK_326", error.error_code, error.message);
+  t.is("ERR_NGROK_326", error.errorCode, error.message);
 });
