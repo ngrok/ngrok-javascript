@@ -80,7 +80,7 @@ test("https tunnel", async (t) => {
   t.is("http forwards to", tunnel.forwardsTo());
   t.is("http metadata", tunnel.metadata());
   const tunnel_list = await session.tunnels();
-  t.is(1, tunnel_list.length)
+  t.is(1, tunnel_list.length);
   t.is(tunnel.id(), tunnel_list[0].id());
   t.is(tunnel.url(), tunnel_list[0].url());
   t.is(tunnel.id(), (await ngrok.getTunnelByUrl(tunnel.url())).id());
@@ -101,7 +101,7 @@ test("pipe socket", async (t) => {
   const [httpServer, session] = await makeHttpAndSession(true);
   const tunnel = await session.httpEndpoint().listen();
   t.truthy(httpServer.listenTo.startsWith("tun-"), httpServer.listenTo);
-  tunnel.forward('unix:' + httpServer.listenTo);
+  tunnel.forward("unix:" + httpServer.listenTo);
   const response = await validateHttpRequest(t, tunnel.url());
   await shutdown(tunnel, httpServer.socket);
 });
@@ -218,7 +218,7 @@ test("ip restriction tcp", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
   const error = await ipRestriction(t, httpServer, session.tcpEndpoint());
   // ECONNRESET or ECONNREFUSED
-  t.truthy(error.code.startsWith('ECONNRE'), error.code);
+  t.truthy(error.code.startsWith("ECONNRE"), error.code);
 });
 
 async function ipRestriction(t, httpServer, tunnelBuilder) {
@@ -355,10 +355,10 @@ test("tcp multipass", async (t) => {
   tunnel3.forward(httpServer.listenTo);
   tunnel4.forward(httpServer.listenTo);
 
-  t.is(2, (await session1.tunnels()).length)
-  t.is(2, (await session2.tunnels()).length)
-  t.truthy((await ngrok.tunnels()).length >= 4)
-  t.is(tunnel3.url(), (await ngrok.getTunnel(tunnel3.id())).url())
+  t.is(2, (await session1.tunnels()).length);
+  t.is(2, (await session2.tunnels()).length);
+  t.truthy((await ngrok.tunnels()).length >= 4);
+  t.is(tunnel3.url(), (await ngrok.getTunnel(tunnel3.id())).url());
 
   await validateHttpRequest(t, tunnel1.url());
   await validateHttpRequest(t, tunnel2.url());
@@ -424,11 +424,11 @@ test("session incorrect authtoken", async (t) => {
   const builder = new ngrok.NgrokSessionBuilder();
   const error = await t.throwsAsync(
     async () => {
-      await builder.authtoken('badtoken').connect();
+      await builder.authtoken("badtoken").connect();
     },
     { instanceOf: Error }
   );
-  t.is('ERR_NGROK_105', error.error_code);
+  t.is("ERR_NGROK_105", error.errorCode);
 });
 
 test("tunnel invalid domain", async (t) => {
@@ -439,5 +439,5 @@ test("tunnel invalid domain", async (t) => {
     },
     { instanceOf: Error }
   );
-  t.is('ERR_NGROK_326', error.error_code);
+  t.is("ERR_NGROK_326", error.errorCode);
 });
