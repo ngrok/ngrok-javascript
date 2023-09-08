@@ -3,6 +3,7 @@ use std::{
     collections::HashMap,
     error::Error,
     io,
+    io::ErrorKind,
     sync::Arc,
 };
 
@@ -16,10 +17,8 @@ use ngrok::{
     tunnel::{
         HttpTunnel,
         LabeledTunnel,
-        ProtoTunnel,
         TcpTunnel,
         TlsTunnel,
-        UrlTunnel,
     },
     Session,
 };
@@ -28,6 +27,7 @@ use tracing::{
     debug,
     info,
 };
+use url::Url;
 
 use crate::{
     connect::PIPE_PREFIX,
@@ -154,11 +154,15 @@ macro_rules! make_tunnel_type {
     ($wrapper:ident, $tunnel:tt) => {
         #[async_trait]
         impl ExtendedTunnel for $tunnel {
+            #[allow(deprecated)]
             async fn fwd_tcp(&mut self, addr: String) -> CoreResult<(), io::Error> {
-                self.forward_tcp(addr).await
+                self.forward(Url::parse(format!("tcp://{addr}").as_str())
+                .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?).await
             }
+            #[allow(deprecated)]
             async fn fwd_pipe(&mut self, addr: String) -> CoreResult<(), io::Error> {
-                self.forward_pipe(addr).await
+                self.forward(Url::parse(format!("unix:{addr}").as_str())
+                .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?).await
             }
         }
     };

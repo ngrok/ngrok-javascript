@@ -34,6 +34,7 @@ use tracing::{
 };
 
 use crate::{
+    napi_err,
     napi_ngrok_err,
     tunnel::{
         remove_global_tunnel,
@@ -88,11 +89,11 @@ impl NgrokSessionBuilder {
     #[napi(constructor)]
     pub fn new() -> Self {
         NgrokSessionBuilder {
-            raw_builder: Arc::new(SyncMutex::new(Session::builder().client_info(
-                CLIENT_TYPE,
-                VERSION,
-                None::<String>,
-            ))),
+            raw_builder: Arc::new(SyncMutex::new(
+                Session::builder()
+                    .client_info(CLIENT_TYPE, VERSION, None::<String>)
+                    .clone(),
+            )),
             ..Default::default()
         }
     }
@@ -109,7 +110,7 @@ impl NgrokSessionBuilder {
     #[napi]
     pub fn authtoken(&mut self, authtoken: String) -> &Self {
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().authtoken(authtoken);
+        builder.authtoken(authtoken);
         self.auth_token_set = true;
         self
     }
@@ -119,7 +120,7 @@ impl NgrokSessionBuilder {
     #[napi]
     pub fn authtoken_from_env(&mut self) -> &Self {
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().authtoken_from_env();
+        builder.authtoken_from_env();
         self.auth_token_set = true;
         self
     }
@@ -141,7 +142,7 @@ impl NgrokSessionBuilder {
         comments: Option<String>,
     ) -> &Self {
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().client_info(client_type, version, comments);
+        builder.client_info(client_type, version, comments);
         self
     }
 
@@ -153,12 +154,12 @@ impl NgrokSessionBuilder {
     ///
     /// [heartbeat_interval parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#heartbeat_interval
     #[napi]
-    pub fn heartbeat_interval(&mut self, heartbeat_interval: u32) -> &Self {
+    pub fn heartbeat_interval(&mut self, heartbeat_interval: u32) -> Result<&Self> {
         let mut builder = self.raw_builder.lock();
-        *builder = builder
-            .clone()
-            .heartbeat_interval(Duration::new(heartbeat_interval.into(), 0));
-        self
+        builder
+            .heartbeat_interval(Duration::new(heartbeat_interval.into(), 0))
+            .map_err(|e| napi_err(format!("{e}")))?;
+        Ok(self)
     }
 
     /// Configures the duration to wait for a response to a heartbeat before
@@ -169,12 +170,12 @@ impl NgrokSessionBuilder {
     ///
     /// [heartbeat_tolerance parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#heartbeat_tolerance
     #[napi]
-    pub fn heartbeat_tolerance(&mut self, heartbeat_tolerance: u32) -> &Self {
+    pub fn heartbeat_tolerance(&mut self, heartbeat_tolerance: u32) -> Result<&Self> {
         let mut builder = self.raw_builder.lock();
-        *builder = builder
-            .clone()
-            .heartbeat_tolerance(Duration::new(heartbeat_tolerance.into(), 0));
-        self
+        builder
+            .heartbeat_tolerance(Duration::new(heartbeat_tolerance.into(), 0))
+            .map_err(|e| napi_err(format!("{e}")))?;
+        Ok(self)
     }
 
     /// Configures the opaque, machine-readable metadata string for this session.
@@ -188,7 +189,7 @@ impl NgrokSessionBuilder {
     #[napi]
     pub fn metadata(&mut self, metadata: String) -> &Self {
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().metadata(metadata);
+        builder.metadata(metadata);
         self
     }
 
@@ -199,10 +200,12 @@ impl NgrokSessionBuilder {
     ///
     /// [server_addr parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#server_addr
     #[napi]
-    pub fn server_addr(&mut self, addr: String) -> &Self {
+    pub fn server_addr(&mut self, addr: String) -> Result<&Self> {
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().server_addr(addr);
-        self
+        builder
+            .server_addr(addr)
+            .map_err(|e| napi_err(format!("{e}")))?;
+        Ok(self)
     }
 
     /// Configures the TLS certificate used to connect to the ngrok service while
@@ -217,7 +220,7 @@ impl NgrokSessionBuilder {
     #[napi]
     pub fn ca_cert(&mut self, cert_bytes: Uint8Array) -> &Self {
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().ca_cert(Bytes::from(cert_bytes.to_vec()));
+        builder.ca_cert(Bytes::from(cert_bytes.to_vec()));
         self
     }
 
@@ -249,8 +252,11 @@ impl NgrokSessionBuilder {
         // clone for move to connector function
         let connect_handler = self.connect_handler.clone();
         let disconnect_handler = self.disconnect_handler.clone();
-        *builder = builder.clone().connector(
-            move |addr: String, tls_config: Arc<ClientConfig>, err: Option<AcceptError>| {
+        builder.connector(
+            move |host: String,
+                  port: u16,
+                  tls_config: Arc<ClientConfig>,
+                  err: Option<AcceptError>| {
                 // clone for async move out of environment
                 let conn_tsfn = connect_handler.clone();
                 let disconn_tsfn = disconnect_handler.clone();
@@ -263,21 +269,21 @@ impl NgrokSessionBuilder {
                                 .clone()
                                 .lock()
                                 .await
-                                .call_async(vec![addr.clone(), err.to_string()])
+                                .call_async(vec![format!("{host}:{port}"), err.to_string()])
                                 .await
                                 .map_err(|_e| ConnectError::Canceled)?;
 
                             if let Some(reconnect) = resp {
                                 if !reconnect {
-                                    info!("Aborting connection to {addr}");
-                                    println!("Aborting connection to {addr}"); // still shown if this takes down the process
+                                    info!("Aborting connection to {host}:{port}");
+                                    println!("Aborting connection to {host}:{port}"); // still shown if this takes down the process
                                     return Err(ConnectError::Canceled);
                                 }
                             }
                         };
                     }
                     // call the upstream connector
-                    let res = default_connect(addr, tls_config, err).await;
+                    let res = default_connect(host, port, tls_config, err).await;
 
                     // call connect handler
                     if let Some(handler) = conn_tsfn {
@@ -317,9 +323,7 @@ impl NgrokSessionBuilder {
         let tsfn = create_tsfn(env, handler);
         // register stop handler
         let mut builder = self.raw_builder.lock();
-        *builder = builder
-            .clone()
-            .handle_stop_command(move |_req| call_tsfn(tsfn.clone(), vec![()]));
+        builder.handle_stop_command(move |_req| call_tsfn(tsfn.clone(), vec![()]));
         self
     }
 
@@ -340,9 +344,7 @@ impl NgrokSessionBuilder {
         let tsfn = create_tsfn(env, handler);
         // register restart handler
         let mut builder = self.raw_builder.lock();
-        *builder = builder
-            .clone()
-            .handle_restart_command(move |_req| call_tsfn(tsfn.clone(), vec![()]));
+        builder.handle_restart_command(move |_req| call_tsfn(tsfn.clone(), vec![()]));
         self
     }
 
@@ -363,7 +365,7 @@ impl NgrokSessionBuilder {
         let tsfn = create_tsfn(env, handler);
         // register update handler
         let mut builder = self.raw_builder.lock();
-        *builder = builder.clone().handle_update_command(move |req: Update| {
+        builder.handle_update_command(move |req: Update| {
             let update = UpdateRequest {
                 version: req.version,
                 permit_major_version: req.permit_major_version,
@@ -385,14 +387,12 @@ impl NgrokSessionBuilder {
 
         // register heartbeat handler
         let mut builder = self.raw_builder.lock();
-        *builder = builder
-            .clone()
-            .handle_heartbeat(move |latency: Option<Duration>| {
-                call_tsfn(
-                    tsfn.clone(),
-                    vec![latency.map(|d| u32::try_from(d.as_millis()).ok())],
-                )
-            });
+        builder.handle_heartbeat(move |latency: Option<Duration>| {
+            call_tsfn(
+                tsfn.clone(),
+                vec![latency.map(|d| u32::try_from(d.as_millis()).ok())],
+            )
+        });
         self
     }
 
@@ -403,7 +403,7 @@ impl NgrokSessionBuilder {
         // set default auth token if it exists
         let default_auth_token = AUTH_TOKEN.lock().await;
         if default_auth_token.is_some() && !self.auth_token_set {
-            builder = builder.authtoken(default_auth_token.as_ref().unwrap());
+            builder.authtoken(default_auth_token.as_ref().unwrap());
         }
         // connect to ngrok
         builder

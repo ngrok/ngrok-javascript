@@ -54,7 +54,7 @@ macro_rules! make_tunnel_builder {
             #[napi]
             pub fn metadata(&mut self, metadata: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();
-                *builder = builder.clone().metadata(metadata);
+                builder.metadata(metadata);
                 self
             }
 
@@ -95,7 +95,7 @@ macro_rules! make_tunnel_builder {
             #[napi]
             pub fn allow_cidr(&mut self, cidr: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();
-                *builder = builder.clone().allow_cidr(cidr);
+                builder.allow_cidr(cidr);
                 self
             }
             /// Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
@@ -103,14 +103,14 @@ macro_rules! make_tunnel_builder {
             #[napi]
             pub fn deny_cidr(&mut self, cidr: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();
-                *builder = builder.clone().deny_cidr(cidr);
+                builder.deny_cidr(cidr);
                 self
             }
             /// The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using.
             #[napi]
             pub fn proxy_proto(&mut self, proxy_proto: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();
-                *builder = builder.clone().proxy_proto(
+                builder.proxy_proto(
                     ProxyProto::from_str(proxy_proto.as_str())
                         .unwrap_or_else(|_| panic!("Unknown proxy protocol: {:?}", proxy_proto)),
                 );
@@ -121,7 +121,7 @@ macro_rules! make_tunnel_builder {
             #[napi]
             pub fn forwards_to(&mut self, forwards_to: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();
-                *builder = builder.clone().forwards_to(forwards_to);
+                builder.forwards_to(forwards_to);
                 self
             }
         }
@@ -135,7 +135,7 @@ macro_rules! make_tunnel_builder {
             #[napi]
             pub fn label(&mut self, label: String, value: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();
-                *builder = builder.clone().label(label, value);
+                builder.label(label, value);
                 self
             }
         }
