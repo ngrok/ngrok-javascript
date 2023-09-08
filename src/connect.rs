@@ -23,8 +23,6 @@ lazy_static! {
     pub(crate) static ref SESSION: Mutex<Option<NgrokSession>> = Mutex::new(None);
 }
 
-pub(crate) const PIPE_PREFIX: &str = "pipe:";
-
 /// Single string configuration
 macro_rules! plumb {
     ($builder:tt, $config:tt, $name:tt) => {
@@ -260,7 +258,11 @@ fn set_defaults(config: &mut Config) {
     }
     if config.addr.is_none() {
         if let Some(port) = &config.port {
-            config.addr.replace(port.to_string());
+            if let Some(host) = &config.host {
+                config.addr.replace(format!("tcp://{host}:{port}"));
+            } else {
+                config.addr.replace(format!("tcp://localhost:{port}"));
+            }
         } else if let Some(host) = &config.host {
             config.addr.replace(host.clone());
         } else {
@@ -270,7 +272,7 @@ fn set_defaults(config: &mut Config) {
     if let Some(addr) = &config.addr {
         if addr.parse::<i32>().is_ok() {
             // the string is a number, interpret it as a port
-            config.addr.replace(format!("localhost:{addr}"));
+            config.addr.replace(format!("tcp://localhost:{addr}"));
         }
     }
 }

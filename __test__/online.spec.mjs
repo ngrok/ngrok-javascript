@@ -97,7 +97,7 @@ test("http tunnel", async (t) => {
   await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url());
 });
 
-test("pipe socket", async (t) => {
+test("unix socket", async (t) => {
   const [httpServer, session] = await makeHttpAndSession(true);
   const tunnel = await session.httpEndpoint().listen();
   t.truthy(httpServer.listenTo.startsWith("tun-"), httpServer.listenTo);
@@ -115,6 +115,21 @@ test("gzip tunnel", async (t) => {
   const response = await axios.get(tunnel.url(), { decompress: false });
   t.is("gzip", response.headers["content-encoding"]);
   await shutdown(tunnel, httpServer.socket);
+});
+
+test("tls backend", async (t) => {
+  const session = await makeSession();
+  const tunnel = await session.httpEndpoint().listenAndForward("https://dashboard.ngrok.com");
+
+  const error = await t.throwsAsync(
+    async () => {
+      await axios.get(tunnel.url());
+    },
+    { instanceOf: AxiosError }
+  );
+  t.is(421, error.response.status);
+  t.truthy(error.response.headers["ngrok-trace-id"]);
+  await tunnel.close();
 });
 
 test("http headers", async (t) => {
@@ -342,6 +357,29 @@ test.serial("console log", async (t) => {
   ngrok.loggingCallback();
 });
 
+test("listen and forward multipass", async (t) => {
+  const [httpServer, session1] = await makeHttpAndSession();
+  const session2 = await makeSession();
+  const url = "tcp://" + httpServer.listenTo;
+  const tunnel1 = await session1.httpEndpoint().listenAndForward(url);
+  const tunnel2 = await session1.httpEndpoint().listenAndForward(url);
+  const tunnel3 = await session2.httpEndpoint().listenAndForward(url);
+  const tunnel4 = await session2.tcpEndpoint().listenAndForward(url);
+
+  t.is(2, (await session1.tunnels()).length);
+  t.is(2, (await session2.tunnels()).length);
+  t.truthy((await ngrok.tunnels()).length >= 4);
+  t.is(tunnel3.url(), (await ngrok.getTunnel(tunnel3.id())).url());
+
+  await validateHttpRequest(t, tunnel1.url());
+  await validateHttpRequest(t, tunnel2.url());
+  await validateHttpRequest(t, tunnel3.url());
+  await validateHttpRequest(t, tunnel4.url().replace("tcp:", "http:"));
+  await shutdown(tunnel1, httpServer.socket);
+  await tunnel2.close();
+  await session2.close();
+});
+
 test("tcp multipass", async (t) => {
   const [httpServer, session1] = await makeHttpAndSession();
   const session2 = await makeSession();
@@ -369,7 +407,7 @@ test("tcp multipass", async (t) => {
   await session2.close();
 });
 
-test("pipe multipass", async (t) => {
+test("unix multipass", async (t) => {
   const httpServer = createHttpServer();
   const session1 = await makeSession();
   const session2 = await makeSession();
