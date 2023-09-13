@@ -63,7 +63,7 @@ struct TunnelMetadata {
 /// The TunnelExt cannot be turned into an object since it contains generics, so implementing
 /// a proxy trait without generics which can be the dyn type stored in the global map.
 #[async_trait]
-pub trait ExtendedTunnel: Tunnel {
+pub trait ExtendedTunnel: Send {
     async fn fwd_tcp(&mut self, addr: String) -> CoreResult<(), io::Error>;
     async fn fwd_pipe(&mut self, addr: String) -> CoreResult<(), io::Error>;
 }
