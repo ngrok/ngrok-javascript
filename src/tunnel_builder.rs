@@ -95,6 +95,12 @@ macro_rules! make_tunnel_builder {
                     Err(val) => Err(val),
                 }
             }
+
+            /// Begin listening for new connections on this tunnel and forwarding them to the given server.
+            #[napi(ts_args_type = "server: any")]
+            pub async fn listen_and_serve(&self, server: String) -> Result<NgrokTunnel> {
+                Err(napi_err(format!("listen_and_serve implemented in wrapper, {server}")))
+            }
         }
 
         impl ObjectFinalize for $wrapper {

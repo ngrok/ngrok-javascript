@@ -106,6 +106,14 @@ test("unix socket", async (t) => {
   await shutdown(tunnel, httpServer.socket);
 });
 
+test("listen_and_serve", async (t) => {
+  const httpServer = await createHttpServer();
+  const session = await makeSession();
+  const tunnel = await session.httpEndpoint().listenAndServe(httpServer);
+  await validateHttpRequest(t, tunnel.url());
+  await shutdown(tunnel, tunnel.socket);
+});
+
 test("gzip tunnel", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
   const tunnel = await session.httpEndpoint().compression().listen();
