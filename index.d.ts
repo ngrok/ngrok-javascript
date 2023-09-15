@@ -395,6 +395,8 @@ export class NgrokTunnel {
    *     On Windows, addr can be a named pipe, e.e. "\\\\.\\pipe\\an_ngrok_pipe
    */
   forward(addr: string): Promise<void>
+  /** Wait for the forwarding task to exit. */
+  join(): Promise<void>
   /**
    * Close the tunnel.
    *
@@ -461,6 +463,10 @@ export class NgrokHttpTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<NgrokTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given server. */
+  listenAndServe(server: any): Promise<NgrokTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -491,6 +497,10 @@ export class NgrokTcpTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<NgrokTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given server. */
+  listenAndServe(server: any): Promise<NgrokTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -525,6 +535,10 @@ export class NgrokTlsTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<NgrokTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given server. */
+  listenAndServe(server: any): Promise<NgrokTunnel>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
    * Call multiple times to add additional CIDR ranges.
@@ -553,6 +567,10 @@ export class NgrokLabeledTunnelBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this tunnel. */
   listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<NgrokTunnel>
+  /** Begin listening for new connections on this tunnel and forwarding them to the given server. */
+  listenAndServe(server: any): Promise<NgrokTunnel>
   /** Add a label, value pair for this tunnel. */
   label(label: string, value: string): this
 }

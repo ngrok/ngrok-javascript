@@ -22,6 +22,11 @@ NgrokTcpTunnelBuilder.prototype.listen = ngrokBind;
 NgrokTlsTunnelBuilder.prototype.listen = ngrokBind;
 NgrokLabeledTunnelBuilder.prototype.listen = ngrokBind;
 
+NgrokHttpTunnelBuilder.prototype.listenAndServe = listenAndServe;
+NgrokTcpTunnelBuilder.prototype.listenAndServe = listenAndServe;
+NgrokTlsTunnelBuilder.prototype.listenAndServe = listenAndServe;
+NgrokLabeledTunnelBuilder.prototype.listenAndServe = listenAndServe;
+
 // Wrap session connect to fill in exception's errorCode
 async function ngrokSessionConnect() {
   try {
@@ -48,6 +53,13 @@ async function ngrokBind(bind) {
     populateErrorCode(err);
     throw err;
   }
+}
+
+/// Begin listening for new connections on this tunnel and forwarding them to the given server.
+async function listenAndServe(server) {
+  const tunnel = await this._listen();
+  tunnel.socket = await ngrokListen(server, tunnel);
+  return tunnel;
 }
 
 function populateErrorCode(err) {

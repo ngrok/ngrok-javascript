@@ -3,15 +3,16 @@ use std::{
     collections::HashMap,
     error::Error,
     io,
-    io::ErrorKind,
     sync::Arc,
 };
 
 use async_trait::async_trait;
+use futures::prelude::*;
 use lazy_static::lazy_static;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use ngrok::{
+    forwarder::Forwarder,
     prelude::*,
     session::ConnectError,
     tunnel::{
@@ -22,7 +23,11 @@ use ngrok::{
     },
     Session,
 };
-use tokio::sync::Mutex;
+use regex::Regex;
+use tokio::{
+    sync::Mutex,
+    task::JoinHandle,
+};
 use tracing::{
     debug,
     info,
@@ -30,12 +35,13 @@ use tracing::{
 use url::Url;
 
 use crate::{
-    connect::PIPE_PREFIX,
     napi_err,
     napi_ngrok_err,
 };
 
+// no forward host section to allow for relative unix paths
 pub(crate) const UNIX_PREFIX: &str = "unix:";
+pub(crate) const TCP_PREFIX: &str = "tcp://";
 
 lazy_static! {
     // tunnel references to be kept until explicit close to prevent nodejs gc from dropping them.
@@ -46,7 +52,8 @@ lazy_static! {
 
 /// Stores the tunnel and session references to be kept until explicit close.
 struct Storage {
-    tunnel: Arc<Mutex<dyn ExtendedTunnel>>,
+    tunnel: Option<Arc<Mutex<dyn ExtendedTunnel>>>,
+    forwarder: Option<Arc<Mutex<dyn ExtendedForwarder>>>,
     session: Session,
     tun_meta: Arc<TunnelMetadata>,
 }
@@ -64,8 +71,11 @@ struct TunnelMetadata {
 /// a proxy trait without generics which can be the dyn type stored in the global map.
 #[async_trait]
 pub trait ExtendedTunnel: Send {
-    async fn fwd_tcp(&mut self, addr: String) -> CoreResult<(), io::Error>;
-    async fn fwd_pipe(&mut self, addr: String) -> CoreResult<(), io::Error>;
+    async fn fwd(&mut self, url: Url) -> CoreResult<(), io::Error>;
+}
+
+pub trait ExtendedForwarder: Send {
+    fn get_join(&mut self) -> &mut JoinHandle<CoreResult<(), io::Error>>;
 }
 
 /// An ngrok tunnel.
@@ -102,7 +112,31 @@ macro_rules! make_tunnel_type {
                 info!("Created tunnel {id:?} with url {:?}", raw_tunnel.url());
                 // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
                 let storage = Arc::new(Storage {
-                    tunnel: Arc::new(Mutex::new(raw_tunnel)),
+                    tunnel: Some(Arc::new(Mutex::new(raw_tunnel))),
+                    forwarder: None,
+                    session,
+                    tun_meta,
+                });
+                GLOBAL_TUNNELS.lock().await.insert(id, storage.clone());
+                // create the user-facing object
+                NgrokTunnel::from_storage(&storage)
+            }
+
+            pub(crate) async fn new_forwarder(session: Session, forwarder: Forwarder<$tunnel>) -> NgrokTunnel {
+                let id = forwarder.id().to_string();
+                let tun_meta = Arc::new(TunnelMetadata {
+                    id: id.clone(),
+                    forwards_to: forwarder.forwards_to().to_string(),
+                    metadata: forwarder.metadata().to_string(),
+                    url: Some(forwarder.url().to_string()),
+                    proto: Some(forwarder.proto().to_string()),
+                    labels: HashMap::new(),
+                });
+                info!("Created tunnel {id:?} with url {:?}", forwarder.url());
+                // keep a tunnel reference until an explicit call to close to prevent python gc dropping it
+                let storage = Arc::new(Storage {
+                    tunnel: None,
+                    forwarder: Some(Arc::new(Mutex::new(forwarder))),
                     session,
                     tun_meta,
                 });
@@ -137,7 +171,31 @@ macro_rules! make_tunnel_type {
                 info!("Created tunnel {id:?} with labels {:?}", tun_meta.labels);
                 // keep a tunnel reference until an explicit call to close to prevent nodejs gc dropping it
                 let storage = Arc::new(Storage {
-                    tunnel: Arc::new(Mutex::new(raw_tunnel)),
+                    tunnel: Some(Arc::new(Mutex::new(raw_tunnel))),
+                    forwarder: None,
+                    session,
+                    tun_meta,
+                });
+                GLOBAL_TUNNELS.lock().await.insert(id, storage.clone());
+                // create the user-facing object
+                NgrokTunnel::from_storage(&storage)
+            }
+
+            pub(crate) async fn new_forwarder(session: Session, forwarder: Forwarder<$tunnel>) -> NgrokTunnel {
+                let id = forwarder.id().to_string();
+                let tun_meta = Arc::new(TunnelMetadata {
+                    id: id.clone(),
+                    forwards_to: forwarder.forwards_to().to_string(),
+                    metadata: forwarder.metadata().to_string(),
+                    url: None,
+                    proto: None,
+                    labels: forwarder.labels().clone(),
+                });
+                info!("Created tunnel {id:?} with labels {:?}", tun_meta.labels);
+                // keep a tunnel reference until an explicit call to close to prevent python gc dropping it
+                let storage = Arc::new(Storage {
+                    tunnel: None,
+                    forwarder: Some(Arc::new(Mutex::new(forwarder))),
                     session,
                     tun_meta,
                 });
@@ -155,14 +213,14 @@ macro_rules! make_tunnel_type {
         #[async_trait]
         impl ExtendedTunnel for $tunnel {
             #[allow(deprecated)]
-            async fn fwd_tcp(&mut self, addr: String) -> CoreResult<(), io::Error> {
-                self.forward(Url::parse(format!("tcp://{addr}").as_str())
-                .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?).await
+            async fn fwd(&mut self, url: Url) -> CoreResult<(), io::Error> {
+                ngrok::prelude::TunnelExt::forward(self, url).await
             }
-            #[allow(deprecated)]
-            async fn fwd_pipe(&mut self, addr: String) -> CoreResult<(), io::Error> {
-                self.forward(Url::parse(format!("unix:{addr}").as_str())
-                .map_err(|e| io::Error::new(ErrorKind::InvalidInput, e))?).await
+        }
+
+        impl ExtendedForwarder for Forwarder<$tunnel> {
+            fn get_join(&mut self) -> &mut JoinHandle<CoreResult<(), io::Error>> {
+                self.join()
             }
         }
     };
@@ -227,6 +285,25 @@ impl NgrokTunnel {
         forward(&self.tun_meta.id, addr).await
     }
 
+    /// Wait for the forwarding task to exit.
+    #[napi]
+    pub async fn join(&self) -> Result<()> {
+        let id = self.tun_meta.id.clone();
+        let forwarder_option = &get_storage_by_id(&id).await?.forwarder;
+        if let Some(forwarder_mutex) = forwarder_option {
+            forwarder_mutex
+                .lock()
+                .await
+                .get_join()
+                .fuse()
+                .await
+                .map_err(|e| napi_err(format!("error on join: {e:?}")))?
+                .map_err(|e| napi_err(format!("error on join: {e:?}")))
+        } else {
+            Err(napi_err("Tunnel is not joinable"))
+        }
+    }
+
     /// Close the tunnel.
     ///
     /// This is an RPC call that must be `.await`ed.
@@ -284,26 +361,32 @@ make_tunnel_type! {
     NgrokLabeledTunnel, LabeledTunnel, label
 }
 
-pub async fn forward(id: &String, addr: String) -> Result<()> {
-    let tun = &get_storage_by_id(id).await?.tunnel;
-    let is_pipe =
-        addr.starts_with(PIPE_PREFIX) || addr.starts_with(UNIX_PREFIX) || addr.contains('/');
+pub async fn forward(id: &String, mut addr: String) -> Result<()> {
+    let tun_option = &get_storage_by_id(id).await?.tunnel;
+    if let Some(tun) = tun_option {
+        // if addr is not a full url, choose a default protocol
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^[a-z0-9\-\.]+:\d+$").unwrap();
+        }
+        if !addr.contains(':') || RE.find(&addr).is_some() {
+            if addr.contains('/') {
+                addr = format!("{UNIX_PREFIX}{addr}")
+            } else {
+                addr = format!("{TCP_PREFIX}{addr}")
+            }
+        }
+        // parse to a url
+        let url = Url::parse(addr.as_str())
+            .map_err(|e| napi_err(format!("Cannot parse address: {addr}, error: {e}")))?;
 
-    let res = if is_pipe {
-        let mut tun_addr: &str = addr.as_str();
-        // remove the "pipe:" and "unix:" prefix
-        tun_addr = tun_addr.strip_prefix(PIPE_PREFIX).unwrap_or(tun_addr);
-        tun_addr = tun_addr.strip_prefix(UNIX_PREFIX).unwrap_or(tun_addr);
+        info!("Tunnel {id:?} forwarding to {:?}", url.to_string());
+        let res = tun.lock().await.fwd(url).await;
 
-        info!("Tunnel {id:?} Pipe forwarding to {tun_addr:?}");
-        tun.lock().await.fwd_pipe(tun_addr.to_string()).await
+        debug!("forward returning");
+        canceled_is_ok(res)
     } else {
-        info!("Tunnel {id:?} TCP forwarding to {addr:?}");
-        tun.lock().await.fwd_tcp(addr).await
-    };
-
-    debug!("forward returning");
-    canceled_is_ok(res)
+        Err(napi_err("tunnel is not forwardable"))
+    }
 }
 
 fn canceled_is_ok(input: CoreResult<(), io::Error>) -> Result<()> {

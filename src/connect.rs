@@ -16,14 +16,13 @@ use crate::{
         NgrokSessionBuilder,
     },
     tunnel,
+    tunnel::TCP_PREFIX,
 };
 
 lazy_static! {
     // Save a user-facing NgrokSession to use for connect use cases
     pub(crate) static ref SESSION: Mutex<Option<NgrokSession>> = Mutex::new(None);
 }
-
-pub(crate) const PIPE_PREFIX: &str = "pipe:";
 
 /// Single string configuration
 macro_rules! plumb {
@@ -260,7 +259,11 @@ fn set_defaults(config: &mut Config) {
     }
     if config.addr.is_none() {
         if let Some(port) = &config.port {
-            config.addr.replace(port.to_string());
+            if let Some(host) = &config.host {
+                config.addr.replace(format!("{TCP_PREFIX}{host}:{port}"));
+            } else {
+                config.addr.replace(format!("{TCP_PREFIX}localhost:{port}"));
+            }
         } else if let Some(host) = &config.host {
             config.addr.replace(host.clone());
         } else {
@@ -270,7 +273,7 @@ fn set_defaults(config: &mut Config) {
     if let Some(addr) = &config.addr {
         if addr.parse::<i32>().is_ok() {
             // the string is a number, interpret it as a port
-            config.addr.replace(format!("localhost:{addr}"));
+            config.addr.replace(format!("{TCP_PREFIX}localhost:{addr}"));
         }
     }
 }
