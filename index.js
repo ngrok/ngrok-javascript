@@ -271,7 +271,7 @@ module.exports.NgrokTcpTunnelBuilder = NgrokTcpTunnelBuilder
 module.exports.NgrokTlsTunnelBuilder = NgrokTlsTunnelBuilder
 module.exports.NgrokLabeledTunnelBuilder = NgrokLabeledTunnelBuilder
 //
-// javascript trailer
+// javascript trailer!
 //
 
 const net = require("net");
