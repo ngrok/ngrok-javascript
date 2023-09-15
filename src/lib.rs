@@ -2,7 +2,7 @@ use napi::{
     Error,
     Status,
 };
-use ngrok::prelude::NgrokError;
+use ngrok::prelude::Error as NgrokError;
 
 pub mod config;
 pub mod connect;

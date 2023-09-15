@@ -9,7 +9,7 @@ impl NgrokTcpTunnelBuilder {
     #[napi]
     pub fn remote_addr(&mut self, remote_addr: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
-        *builder = builder.clone().remote_addr(remote_addr);
+        builder.remote_addr(remote_addr);
         self
     }
 }
