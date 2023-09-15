@@ -16,6 +16,7 @@ use crate::{
         NgrokSessionBuilder,
     },
     tunnel,
+    tunnel::TCP_PREFIX,
 };
 
 lazy_static! {
@@ -259,9 +260,9 @@ fn set_defaults(config: &mut Config) {
     if config.addr.is_none() {
         if let Some(port) = &config.port {
             if let Some(host) = &config.host {
-                config.addr.replace(format!("tcp://{host}:{port}"));
+                config.addr.replace(format!("{TCP_PREFIX}{host}:{port}"));
             } else {
-                config.addr.replace(format!("tcp://localhost:{port}"));
+                config.addr.replace(format!("{TCP_PREFIX}localhost:{port}"));
             }
         } else if let Some(host) = &config.host {
             config.addr.replace(host.clone());
@@ -272,7 +273,7 @@ fn set_defaults(config: &mut Config) {
     if let Some(addr) = &config.addr {
         if addr.parse::<i32>().is_ok() {
             // the string is a number, interpret it as a port
-            config.addr.replace(format!("tcp://localhost:{addr}"));
+            config.addr.replace(format!("{TCP_PREFIX}localhost:{addr}"));
         }
     }
 }
