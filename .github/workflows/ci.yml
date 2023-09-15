@@ -265,7 +265,7 @@ jobs:
         shell: bash
       - name: Test bindings
         # run full suite of online tests
-        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
+        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
   test-linux-x64-musl-binding:
     if: github.ref == 'refs/heads/main'
     name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
