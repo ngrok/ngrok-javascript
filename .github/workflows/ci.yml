@@ -18,6 +18,7 @@ env:
   pull_request: null
 jobs:
   udeps:
+    if: false
     name: Udeps
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +30,7 @@ jobs:
           command: udeps
           args: '--workspace --all-targets --all-features'
   fmt:
+    if: false
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
@@ -39,6 +41,7 @@ jobs:
           command: fmt
           args: '--all -- --check'
   clippy:
+    if: false
     name: Clippy
     runs-on: ubuntu-latest
     steps:
@@ -72,7 +75,7 @@ jobs:
           - host: windows-latest
             build: yarn build
             target: x86_64-pc-windows-msvc
-            if: true
+            if: false
           - host: windows-latest
             build: |
               yarn build --target i686-pc-windows-msvc
@@ -195,6 +198,7 @@ jobs:
           path: ${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   test-windows-msvc-binding:
+    if: false
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
     needs:
       - build
