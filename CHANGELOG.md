@@ -1,3 +1,8 @@
+## 0.7.0:
+
+- Add `listen_and_forward` and `listen_and_serve` to tunnel builders.
+- Update to latest version of underlying rust library, allowing TLS backends.
+
 ## 0.6.0:
 
 - Flattened `tunnel.forwardPipe()` and `tunnel.forwardTcp()` into `tunnel.forward()`. Determination will be made based on `addr` input.
