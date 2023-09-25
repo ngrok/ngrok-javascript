@@ -148,7 +148,7 @@ This example shows [all the possible configuration items of ngrok.connect](https
 ```jsx
 const url = await ngrok.connect({
   // session configuration
-  addr: `localhost:8080`, // or `8080` or `pipe:${UNIX_SOCKET}`
+  addr: `localhost:8080`, // or `8080` or `unix:${UNIX_SOCKET}`
   authtoken: "<authtoken>",
   authtoken_from_env: true,
   on_status_change: (addr, error) => {
