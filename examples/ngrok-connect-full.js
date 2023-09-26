@@ -22,7 +22,7 @@ ngrok.consoleLog("INFO"); // turn on info logging
 (async function () {
   const url = await ngrok.connect({
     // session configuration
-    addr: `pipe:${UNIX_SOCKET}`,
+    addr: `unix:${UNIX_SOCKET}`,
     // addr: `localhost:8080`,
     // authtoken: "<authtoken>",
     authtoken_from_env: true,

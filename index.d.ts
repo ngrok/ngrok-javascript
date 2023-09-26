@@ -11,7 +11,7 @@
 export interface Config {
   /**
    * Port, network address, or named pipe. Defaults to 80.
-   * Examples: "80", "localhost:8080", "pipe:/tmp/my.sock"
+   * Examples: "80", "localhost:8080", "unix:/tmp/my.sock", "pipe://./my-pipe"
    */
   addr?: number|string
   auth?: string|Array<string>

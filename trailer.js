@@ -216,8 +216,12 @@ async function ngrokLinkPipe(tunnel, server) {
     console.debug("Cannot change permissions of file: " + filename);
   }
   // forward tunnel
-  const proto = platform == "win32" ? "pipe:" : "unix:";
-  tunnel.forward(proto + filename);
+  var addr = "unix:" + filename;
+  if (platform == "win32") {
+    // convert pipe path to url
+    addr = "pipe:" + filename.replace("\\\\.\\pipe\\", "//./");
+  }
+  tunnel.forward(addr);
   socket.path = filename; // surface to caller
 
   return socket;

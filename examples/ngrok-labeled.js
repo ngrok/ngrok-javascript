@@ -35,7 +35,7 @@ builder.connect().then((session) => {
 
 /*
 ngrok.connect({
-    addr: "pipe:" + UNIX_SOCKET,
+    addr: "unix:" + UNIX_SOCKET,
     authtoken_from_env: true,
     labels: "edge:edghts_<edge_id>",
     proto: "labeled",
