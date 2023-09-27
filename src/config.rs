@@ -7,7 +7,7 @@ use napi_derive::napi;
 #[derive(Default)]
 pub struct Config {
     /// Port, network address, or named pipe. Defaults to 80.
-    /// Examples: "80", "localhost:8080", "pipe:/tmp/my.sock"
+    /// Examples: "80", "localhost:8080", "unix:/tmp/my.sock", "pipe://./my-pipe"
     #[napi(ts_type = "number|string")]
     pub addr: Option<String>,
     // Synonym for basic_auth
