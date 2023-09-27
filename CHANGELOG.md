@@ -1,3 +1,7 @@
+## 0.7.1:
+
+- Fix for windows pipe pathing.
+
 ## 0.7.0:
 
 - Add `listen_and_forward` and `listen_and_serve` to tunnel builders.
