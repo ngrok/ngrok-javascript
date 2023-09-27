@@ -240,6 +240,16 @@ async function create_tunnel() {
 
 See here for a [Full Configuration Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-full.js)
 
+## TLS Backends
+
+As of version `0.7.0` there is backend TLS connection support, validated by a filepath specified in the `SSL_CERT_FILE` environment variable, or falling back to the host OS installed trusted certificate authorities. So it is now possible to do this to connect:
+
+```jsx
+await ngrok.connect({ addr: "https://127.0.0.1:3000", authtoken_from_env: true });
+```
+
+If the service is using certs not trusted by the OS, such as self-signed certificates, add an environment variable like this before running: `SSL_CERT_FILE=/path/to/ca.crt`. Also the `request_header_add` option on connect may be useful for making the Host header match the cert.
+
 # Async Programming
 
 All methods return a `Promise` and are suitable for use in asynchronous

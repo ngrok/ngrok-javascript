@@ -317,6 +317,14 @@ test("tls tunnel", async (t) => {
   await shutdown(tunnel, httpServer.socket);
 });
 
+test("smoke", async (t) => {
+  const httpServer = await createHttpServer();
+  const socket = await ngrok.listen(httpServer);
+  const response = await axios.get(socket.tunnel.url());
+  t.is(200, response.status);
+  await shutdown(socket.tunnel, socket);
+});
+
 test("net listen", async (t) => {
   const httpServer = await createHttpServer();
   const socket = await ngrok.listen(httpServer);
