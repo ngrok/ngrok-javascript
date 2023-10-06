@@ -119,6 +119,9 @@ macro_rules! make_tunnel_builder {
         impl $wrapper {
             /// Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
             /// Call multiple times to add additional CIDR ranges.
+            /// See [IP restrictions] in the ngrok docs for additional details.
+            ///
+            /// [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
             #[napi]
             pub fn allow_cidr(&mut self, cidr: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();
@@ -127,6 +130,9 @@ macro_rules! make_tunnel_builder {
             }
             /// Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
             /// Call multiple times to add additional CIDR ranges.
+            /// See [IP restrictions] in the ngrok docs for additional details.
+            ///
+            /// [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
             #[napi]
             pub fn deny_cidr(&mut self, cidr: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();
@@ -158,7 +164,10 @@ macro_rules! make_tunnel_builder {
         #[napi]
         #[allow(dead_code)]
         impl $wrapper {
-            /// Add a label, value pair for this tunnel.
+            /// Add a label, value pair for this listener.
+            /// See [Using Labels] in the ngrok docs for additional details.
+            ///
+            /// [Using Labels]: https://ngrok.com/docs/guides/using-labels-within-ngrok/
             #[napi]
             pub fn label(&mut self, label: String, value: String) -> &Self {
                 let mut builder = self.tunnel_builder.lock();

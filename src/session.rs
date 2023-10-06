@@ -1,4 +1,5 @@
 use std::{
+    env,
     sync::Arc,
     time::Duration,
 };
@@ -121,7 +122,11 @@ impl NgrokSessionBuilder {
     pub fn authtoken_from_env(&mut self) -> &Self {
         let mut builder = self.raw_builder.lock();
         builder.authtoken_from_env();
-        self.auth_token_set = true;
+        if let Ok(token) = env::var("NGROK_AUTHTOKEN") {
+            if !token.is_empty() {
+                self.auth_token_set = true;
+            }
+        }
         self
     }
 
@@ -402,15 +407,18 @@ impl NgrokSessionBuilder {
         let mut builder = self.raw_builder.lock().clone();
         // set default auth token if it exists
         let default_auth_token = AUTH_TOKEN.lock().await;
+        let mut auth_token_set = self.auth_token_set;
         if default_auth_token.is_some() && !self.auth_token_set {
             builder.authtoken(default_auth_token.as_ref().unwrap());
+            auth_token_set = true;
         }
         // connect to ngrok
         builder
             .connect()
             .await
             .map(|s| {
-                info!("Session created {:?}", s.id());
+                let maybe_with = if auth_token_set { "with" } else { "without" };
+                info!("Session created {:?}, {maybe_with} auth token", s.id());
                 NgrokSession {
                     raw_session: Arc::new(SyncMutex::new(s)),
                 }

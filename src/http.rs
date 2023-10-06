@@ -15,7 +15,7 @@ use crate::tunnel_builder::NgrokHttpTunnelBuilder;
 #[allow(dead_code)]
 impl NgrokHttpTunnelBuilder {
     /// The scheme that this edge should use.
-    /// Defaults to [Scheme::HTTPS].
+    /// "HTTPS" or "HTTP", defaults to "HTTPS".
     #[napi]
     pub fn scheme(&mut self, scheme: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
@@ -25,7 +25,11 @@ impl NgrokHttpTunnelBuilder {
         );
         self
     }
-    /// The domain to request for this edge.
+    /// The domain to request for this edge, any valid domain or hostname that you have
+    /// previously registered with ngrok. If using a custom domain, this requires
+    /// registering in the [ngrok dashboard] and setting a DNS CNAME value.
+    ///
+    /// [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/domains
     #[napi]
     pub fn domain(&mut self, domain: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
@@ -33,6 +37,9 @@ impl NgrokHttpTunnelBuilder {
         self
     }
     /// Certificates to use for client authentication at the ngrok edge.
+    /// See [Mutual TLS] in the ngrok docs for additional details.
+    ///
+    /// [Mutual TLS]: https://ngrok.com/docs/cloud-edge/modules/mutual-tls/
     #[napi]
     pub fn mutual_tlsca(&mut self, mutual_tlsca: Uint8Array) -> &Self {
         let mut builder = self.tunnel_builder.lock();
@@ -40,6 +47,9 @@ impl NgrokHttpTunnelBuilder {
         self
     }
     /// Enable gzip compression for HTTP responses.
+    /// See [Compression] in the ngrok docs for additional details.
+    ///
+    /// [Compression]: https://ngrok.com/docs/cloud-edge/modules/compression/
     #[napi]
     pub fn compression(&mut self) -> &Self {
         let mut builder = self.tunnel_builder.lock();
@@ -55,6 +65,9 @@ impl NgrokHttpTunnelBuilder {
     }
     /// Reject requests when 5XX responses exceed this ratio.
     /// Disabled when 0.
+    /// See [Circuit Breaker] in the ngrok docs for additional details.
+    ///
+    /// [Circuit Breaker]: https://ngrok.com/docs/cloud-edge/modules/circuit-breaker/
     #[napi]
     pub fn circuit_breaker(&mut self, circuit_breaker: f64) -> &Self {
         let mut builder = self.tunnel_builder.lock();
@@ -62,28 +75,40 @@ impl NgrokHttpTunnelBuilder {
         self
     }
 
-    /// request_header adds a header to all requests to this edge.
+    /// Adds a header to all requests to this edge.
+    /// See [Request Headers] in the ngrok docs for additional details.
+    ///
+    /// [Request Headers]: https://ngrok.com/docs/cloud-edge/modules/request-headers/
     #[napi]
     pub fn request_header(&mut self, name: String, value: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
         builder.request_header(name, value);
         self
     }
-    /// response_header adds a header to all responses coming from this edge.
+    /// Adds a header to all responses coming from this edge.
+    /// See [Response Headers] in the ngrok docs for additional details.
+    ///
+    /// [Response Headers]: https://ngrok.com/docs/cloud-edge/modules/response-headers/
     #[napi]
     pub fn response_header(&mut self, name: String, value: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
         builder.response_header(name, value);
         self
     }
-    /// remove_request_header removes a header from requests to this edge.
+    /// Removes a header from requests to this edge.
+    /// See [Request Headers] in the ngrok docs for additional details.
+    ///
+    /// [Request Headers]: https://ngrok.com/docs/cloud-edge/modules/request-headers/
     #[napi]
     pub fn remove_request_header(&mut self, name: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
         builder.remove_request_header(name);
         self
     }
-    /// remove_response_header removes a header from responses from this edge.
+    /// Removes a header from responses from this edge.
+    /// See [Response Headers] in the ngrok docs for additional details.
+    ///
+    /// [Response Headers]: https://ngrok.com/docs/cloud-edge/modules/response-headers/
     #[napi]
     pub fn remove_response_header(&mut self, name: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
@@ -102,7 +127,9 @@ impl NgrokHttpTunnelBuilder {
 
     /// OAuth configuration.
     /// If not called, OAuth is disabled.
-    /// https://ngrok.com/docs/cloud-edge/modules/oauth/
+    /// See [OAuth] in the ngrok docs for additional details.
+    ///
+    /// [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
     #[napi]
     pub fn oauth(
         &mut self,
@@ -135,6 +162,9 @@ impl NgrokHttpTunnelBuilder {
 
     /// OIDC configuration.
     /// If not called, OIDC is disabled.
+    /// See [OpenID Connect] in the ngrok docs for additional details.
+    ///
+    /// [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
     #[napi]
     pub fn oidc(
         &mut self,
@@ -169,6 +199,9 @@ impl NgrokHttpTunnelBuilder {
 
     /// WebhookVerification configuration.
     /// If not called, WebhookVerification is disabled.
+    /// See [Webhook Verification] in the ngrok docs for additional details.
+    ///
+    /// [Webhook Verification]: https://ngrok.com/docs/cloud-edge/modules/webhook-verification/
     #[napi]
     pub fn webhook_verification(&mut self, provider: String, secret: String) -> &Self {
         let mut builder = self.tunnel_builder.lock();
