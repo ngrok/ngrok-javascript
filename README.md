@@ -112,6 +112,8 @@ The (optional) `proto` parameter is the tunnel type, which defaults to `http`. T
 const url = await ngrok.connect({proto: 'tcp', addr: 25565});
 ```
 
+See [Full Configuration](#full-configuration) for the list of possible configuration options.
+
 ## Disconnection
 
 To close a tunnel use the [disconnect](https://ngrok.github.io/ngrok-nodejs/functions/disconnect.html) method with the `url` of the tunnel to close:
@@ -248,7 +250,7 @@ As of version `0.7.0` there is backend TLS connection support, validated by a fi
 await ngrok.connect({ addr: "https://127.0.0.1:3000", authtoken_from_env: true });
 ```
 
-If the service is using certs not trusted by the OS, such as self-signed certificates, add an environment variable like this before running: `SSL_CERT_FILE=/path/to/ca.crt`. Also the `request_header_add` option on connect may be useful for making the Host header match the cert.
+If the service is using certs not trusted by the OS, such as self-signed certificates, add an environment variable like this before running: `SSL_CERT_FILE=/path/to/ca.crt`.
 
 # Async Programming
 
