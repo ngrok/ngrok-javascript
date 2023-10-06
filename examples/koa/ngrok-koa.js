@@ -7,6 +7,6 @@ app.use(async (ctx) => {
 });
 
 ngrok.listen(app).then((socket) => {
-  console.log(`Ingress established at: ${app.tunnel.url()}`);
+  console.log(`Ingress established at: ${app.listener.url()}`);
   console.log(`Koa listening on: ${socket.address()}`);
 });

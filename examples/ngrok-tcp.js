@@ -17,7 +17,7 @@ console.log("Node.js web server at", UNIX_SOCKET, "is running..");
 
 // setup ngrok
 const ngrok = require("@ngrok/ngrok");
-builder = new ngrok.NgrokSessionBuilder();
+builder = new ngrok.SessionBuilder();
 builder.authtokenFromEnv().metadata("Online in One Line");
 
 builder.connect().then((session) => {
@@ -28,10 +28,10 @@ builder.connect().then((session) => {
     // .forwardsTo("example nodejs")
     // .proxyProto("") // One of: "", "1", "2"
     // .remoteAddr("<n>.tcp.ngrok.io:<p>")
-    .metadata("example tunnel metadata from nodejs")
+    .metadata("example listener metadata from nodejs")
     .listen()
-    .then((tunnel) => {
-      console.log("Ingress established at:", tunnel.url());
-      tunnel.forward(UNIX_SOCKET);
+    .then((listener) => {
+      console.log("Ingress established at:", listener.url());
+      listener.forward(UNIX_SOCKET);
     });
 });

@@ -7,10 +7,10 @@ process.argv.forEach((item, index) => {
 });
 
 async function setup() {
-  const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
-  const tunnel = await session.httpEndpoint().listen();
-  console.log(`Forwarding to: localhost:${port} from ingress at: ${tunnel.url()}`);
-  tunnel.forward(`localhost:${port}`);
+  const session = await new ngrok.SessionBuilder().authtokenFromEnv().connect();
+  const listener = await session.httpEndpoint().listen();
+  console.log(`Forwarding to: localhost:${port} from ingress at: ${listener.url()}`);
+  listener.forward(`localhost:${port}`);
 }
 
 setup();

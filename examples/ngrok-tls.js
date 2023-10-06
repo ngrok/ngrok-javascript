@@ -17,7 +17,7 @@ console.log("Node.js web server at", UNIX_SOCKET, "is running..");
 
 // setup ngrok
 const ngrok = require("@ngrok/ngrok");
-builder = new ngrok.NgrokSessionBuilder();
+builder = new ngrok.SessionBuilder();
 builder.authtokenFromEnv().metadata("Online in One Line");
 
 builder.connect().then((session) => {
@@ -31,10 +31,10 @@ builder.connect().then((session) => {
     // .mutualTlsca(fs.readFileSync('ca.crt'))
     // .proxyProto("") // One of: "", "1", "2"
     .termination(fs.readFileSync("domain.crt"), fs.readFileSync("domain.key"))
-    .metadata("example tunnel metadata from nodejs")
+    .metadata("example listener metadata from nodejs")
     .listen()
-    .then((tunnel) => {
-      console.log("Ingress established at:", tunnel.url());
-      tunnel.forward(UNIX_SOCKET);
+    .then((listener) => {
+      console.log("Ingress established at:", listener.url());
+      listener.forward(UNIX_SOCKET);
     });
 });

@@ -1,4 +1,4 @@
-// to run a single ava test case use the match flag: yarn test -m 'https tunnel'
+// to run a single ava test case use the match flag: yarn test -m 'https listener'
 
 import * as ngrok from "../index.js";
 import test from "ava";
@@ -39,7 +39,7 @@ async function makeHttp(useUnixSocket) {
 }
 
 async function makeSession() {
-  const builder = new ngrok.NgrokSessionBuilder();
+  const builder = new ngrok.SessionBuilder();
   return await builder.authtokenFromEnv().metadata("session metadata").connect();
 }
 
@@ -54,90 +54,90 @@ async function validateHttpRequest(t, url, axiosConfig) {
   return response;
 }
 
-async function shutdown(tunnel, socket) {
-  await tunnel.close();
+async function shutdown(listener, socket) {
+  await listener.close();
   socket.close();
 }
 
-async function forwardValidateShutdown(t, httpServer, tunnel, url, axiosConfig) {
-  tunnel.forward(httpServer.listenTo);
+async function forwardValidateShutdown(t, httpServer, listener, url, axiosConfig) {
+  listener.forward(httpServer.listenTo);
   const response = await validateHttpRequest(t, url, axiosConfig);
-  await shutdown(tunnel, httpServer.socket);
+  await shutdown(listener, httpServer.socket);
   return response;
 }
 
-test("https tunnel", async (t) => {
+test("https listener", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session
+  const listener = await session
     .httpEndpoint()
     .forwardsTo("http forwards to")
     .metadata("http metadata")
     .listen();
 
-  t.truthy(tunnel.id());
-  t.truthy(tunnel.url());
-  t.truthy(tunnel.url().startsWith("https://"), tunnel.url());
-  t.is("http forwards to", tunnel.forwardsTo());
-  t.is("http metadata", tunnel.metadata());
-  const tunnel_list = await session.tunnels();
-  t.is(1, tunnel_list.length);
-  t.is(tunnel.id(), tunnel_list[0].id());
-  t.is(tunnel.url(), tunnel_list[0].url());
-  t.is(tunnel.id(), (await ngrok.getTunnelByUrl(tunnel.url())).id());
+  t.truthy(listener.id());
+  t.truthy(listener.url());
+  t.truthy(listener.url().startsWith("https://"), listener.url());
+  t.is("http forwards to", listener.forwardsTo());
+  t.is("http metadata", listener.metadata());
+  const listener_list = await session.listeners();
+  t.is(1, listener_list.length);
+  t.is(listener.id(), listener_list[0].id());
+  t.is(listener.url(), listener_list[0].url());
+  t.is(listener.id(), (await ngrok.getListenerByUrl(listener.url())).id());
 
-  await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url());
+  await forwardValidateShutdown(t, httpServer, listener, listener.url());
 });
 
-test("http tunnel", async (t) => {
+test("http listener", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session.httpEndpoint().scheme("hTtP").listen();
+  const listener = await session.httpEndpoint().scheme("hTtP").listen();
 
-  t.truthy(tunnel.url().startsWith("http://"), tunnel.url());
+  t.truthy(listener.url().startsWith("http://"), listener.url());
 
-  await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url());
+  await forwardValidateShutdown(t, httpServer, listener, listener.url());
 });
 
 test("unix socket", async (t) => {
   const [httpServer, session] = await makeHttpAndSession(true);
-  const tunnel = await session.httpEndpoint().listen();
+  const listener = await session.httpEndpoint().listen();
   t.truthy(httpServer.listenTo.startsWith("tun-"), httpServer.listenTo);
-  tunnel.forward("unix:" + httpServer.listenTo);
-  const response = await validateHttpRequest(t, tunnel.url());
-  await shutdown(tunnel, httpServer.socket);
+  listener.forward("unix:" + httpServer.listenTo);
+  const response = await validateHttpRequest(t, listener.url());
+  await shutdown(listener, httpServer.socket);
 });
 
 test("listen_and_serve", async (t) => {
   const httpServer = await createHttpServer();
   const session = await makeSession();
-  const tunnel = await session.httpEndpoint().listenAndServe(httpServer);
-  await validateHttpRequest(t, tunnel.url());
-  await shutdown(tunnel, tunnel.socket);
+  const listener = await session.httpEndpoint().listenAndServe(httpServer);
+  await validateHttpRequest(t, listener.url());
+  await shutdown(listener, listener.socket);
 });
 
-test("gzip tunnel", async (t) => {
+test("gzip listener", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session.httpEndpoint().compression().listen();
+  const listener = await session.httpEndpoint().compression().listen();
 
-  tunnel.forward(httpServer.listenTo);
+  listener.forward(httpServer.listenTo);
 
-  const response = await axios.get(tunnel.url(), { decompress: false });
+  const response = await axios.get(listener.url(), { decompress: false });
   t.is("gzip", response.headers["content-encoding"]);
-  await shutdown(tunnel, httpServer.socket);
+  await shutdown(listener, httpServer.socket);
 });
 
 test("tls backend", async (t) => {
   const session = await makeSession();
-  const tunnel = await session.httpEndpoint().listenAndForward("https://dashboard.ngrok.com");
+  const listener = await session.httpEndpoint().listenAndForward("https://dashboard.ngrok.com");
 
   const error = await t.throwsAsync(
     async () => {
-      await axios.get(tunnel.url());
+      await axios.get(listener.url());
     },
     { instanceOf: AxiosError }
   );
   t.is(421, error.response.status);
   t.truthy(error.response.headers["ngrok-trace-id"]);
-  await tunnel.close();
+  await listener.close();
 });
 
 test("http headers", async (t) => {
@@ -154,7 +154,7 @@ test("http headers", async (t) => {
   httpServer.listenTo = "localhost:" + httpServer.address().port;
 
   const session = await makeSession();
-  const tunnel = await session
+  const listener = await session
     .httpEndpoint()
     .requestHeader("foo", "bar")
     .removeRequestHeader("baz")
@@ -162,7 +162,7 @@ test("http headers", async (t) => {
     .removeResponseHeader("python")
     .listen();
 
-  const response = await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url(), {
+  const response = await forwardValidateShutdown(t, httpServer, listener, listener.url(), {
     headers: { baz: "req" },
   });
   t.is("eggs", response.headers["spam"]);
@@ -171,35 +171,35 @@ test("http headers", async (t) => {
 
 test("basic auth", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session.httpEndpoint().basicAuth("ngrok", "online1line").listen();
+  const listener = await session.httpEndpoint().basicAuth("ngrok", "online1line").listen();
 
-  tunnel.forward(httpServer.listenTo);
+  listener.forward(httpServer.listenTo);
 
-  const response = await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url(), {
+  const response = await forwardValidateShutdown(t, httpServer, listener, listener.url(), {
     auth: { username: "ngrok", password: "online1line" },
   });
 });
 
 test("oauth", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session.httpEndpoint().oauth("google").listen();
+  const listener = await session.httpEndpoint().oauth("google").listen();
 
-  tunnel.forward(httpServer.listenTo);
+  listener.forward(httpServer.listenTo);
 
-  const response = await axios.get(tunnel.url());
+  const response = await axios.get(listener.url());
   t.not(expected, response.data);
   t.truthy(response.data.includes("accounts.google.com"));
-  await shutdown(tunnel, httpServer.socket);
+  await shutdown(listener, httpServer.socket);
 });
 
 test("custom domain", async (t) => {
   const domain = "d" + Math.floor(Math.random() * 1000000) + ".ngrok.io";
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session.httpEndpoint().domain(domain).listen();
+  const listener = await session.httpEndpoint().domain(domain).listen();
 
-  t.is("https://" + domain, tunnel.url());
+  t.is("https://" + domain, listener.url());
 
-  await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url());
+  await forwardValidateShutdown(t, httpServer, listener, listener.url());
 });
 
 test("proxy proto", async (t) => {
@@ -218,17 +218,17 @@ test("proxy proto", async (t) => {
   const socket = await tcpServer.listen(0);
 
   const session = await makeSession();
-  const tunnel = await session.httpEndpoint().proxyProto("1").listen();
+  const listener = await session.httpEndpoint().proxyProto("1").listen();
 
-  tunnel.forward("localhost:" + socket.address().port);
+  listener.forward("localhost:" + socket.address().port);
 
   const error = await t.throwsAsync(
     async () => {
-      await axios.get(tunnel.url(), { timeout: 1000 });
+      await axios.get(listener.url(), { timeout: 1000 });
     },
     { instanceOf: AxiosError }
   );
-  await shutdown(tunnel, socket);
+  await shutdown(listener, socket);
 });
 
 test("ip restriction http", async (t) => {
@@ -244,122 +244,122 @@ test("ip restriction tcp", async (t) => {
   t.truthy(error.code.startsWith("ECONNRE"), error.code);
 });
 
-async function ipRestriction(t, httpServer, tunnelBuilder) {
-  const tunnel = await tunnelBuilder.allowCidr("127.0.0.1/32").denyCidr("0.0.0.0/0").listen();
+async function ipRestriction(t, httpServer, listenerBuilder) {
+  const listener = await listenerBuilder.allowCidr("127.0.0.1/32").denyCidr("0.0.0.0/0").listen();
 
-  tunnel.forward(httpServer.listenTo);
+  listener.forward(httpServer.listenTo);
   const error = await t.throwsAsync(
     async () => {
-      await axios.get(tunnel.url().replace("tcp:", "http:"));
+      await axios.get(listener.url().replace("tcp:", "http:"));
     },
     { instanceOf: AxiosError }
   );
-  await shutdown(tunnel, httpServer.socket);
+  await shutdown(listener, httpServer.socket);
   return error;
 }
 
 test("websocket conversion", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session.httpEndpoint().websocketTcpConversion().listen();
+  const listener = await session.httpEndpoint().websocketTcpConversion().listen();
 
-  tunnel.forward(httpServer.listenTo);
+  listener.forward(httpServer.listenTo);
 
   const error = await t.throwsAsync(
     async () => {
-      await axios.get(tunnel.url());
+      await axios.get(listener.url());
     },
     { instanceOf: AxiosError }
   );
   // ERR_NGROK_3206: Expected a websocket request with a "Connection: upgrade" header
   // but did not receive one.
   t.is("ERR_NGROK_3206", error.response.headers["ngrok-error-code"]);
-  await shutdown(tunnel, httpServer.socket);
+  await shutdown(listener, httpServer.socket);
 });
 
-test("tcp tunnel", async (t) => {
+test("tcp listener", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session
+  const listener = await session
     .tcpEndpoint()
     .forwardsTo("tcp forwards to")
     .metadata("tcp metadata")
     .listen();
 
-  t.truthy(tunnel.id());
-  t.truthy(tunnel.url());
-  t.is("tcp forwards to", tunnel.forwardsTo());
-  t.is("tcp metadata", tunnel.metadata());
+  t.truthy(listener.id());
+  t.truthy(listener.url());
+  t.is("tcp forwards to", listener.forwardsTo());
+  t.is("tcp metadata", listener.metadata());
 
-  await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url().replace("tcp:", "http:"));
+  await forwardValidateShutdown(t, httpServer, listener, listener.url().replace("tcp:", "http:"));
 });
 
-test("tls tunnel", async (t) => {
+test("tls listener", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session
+  const listener = await session
     .tlsEndpoint()
     .forwardsTo("tls forwards to")
     .metadata("tls metadata")
     .termination(fs.readFileSync("examples/domain.crt"), fs.readFileSync("examples/domain.key"))
     .listen();
 
-  t.truthy(tunnel.id());
-  t.truthy(tunnel.url());
-  t.is("tls forwards to", tunnel.forwardsTo());
-  t.is("tls metadata", tunnel.metadata());
+  t.truthy(listener.id());
+  t.truthy(listener.url());
+  t.is("tls forwards to", listener.forwardsTo());
+  t.is("tls metadata", listener.metadata());
 
-  tunnel.forward(httpServer.listenTo);
+  listener.forward(httpServer.listenTo);
   const error = await t.throwsAsync(
     async () => {
-      await axios.get(tunnel.url().replace("tls:", "https:"));
+      await axios.get(listener.url().replace("tls:", "https:"));
     },
     { instanceOf: AxiosError }
   );
   t.truthy(error.message.endsWith("signed certificate"), error.message);
-  await shutdown(tunnel, httpServer.socket);
+  await shutdown(listener, httpServer.socket);
 });
 
 test("smoke", async (t) => {
   const httpServer = await createHttpServer();
   const socket = await ngrok.listen(httpServer);
-  const response = await axios.get(socket.tunnel.url());
+  const response = await axios.get(socket.listener.url());
   t.is(200, response.status);
-  await shutdown(socket.tunnel, socket);
+  await shutdown(socket.listener, socket);
 });
 
 test("net listen", async (t) => {
   const httpServer = await createHttpServer();
   const socket = await ngrok.listen(httpServer);
-  const response = await validateHttpRequest(t, socket.tunnel.url());
-  await shutdown(socket.tunnel, socket);
+  const response = await validateHttpRequest(t, socket.listener.url());
+  await shutdown(socket.listener, socket);
 });
 
 test("net listenable", async (t) => {
   const httpServer = await createHttpServer();
-  const tunnel = await ngrok.listenable();
-  httpServer.listen(tunnel);
-  const response = await validateHttpRequest(t, tunnel.url());
-  await shutdown(tunnel, tunnel.handle);
+  const listener = await ngrok.listenable();
+  httpServer.listen(listener);
+  const response = await validateHttpRequest(t, listener.url());
+  await shutdown(listener, listener.handle);
 });
 
 test("express listen", async (t) => {
   const httpServer = await createExpress();
   const socket = await ngrok.listen(httpServer);
-  const response = await validateHttpRequest(t, socket.tunnel.url());
-  await shutdown(socket.tunnel, socket);
+  const response = await validateHttpRequest(t, socket.listener.url());
+  await shutdown(socket.listener, socket);
 });
 
 test("express listenable", async (t) => {
   const httpServer = await createExpress();
-  const tunnel = await ngrok.listenable();
-  httpServer.listen(tunnel);
-  const response = await validateHttpRequest(t, tunnel.url());
-  await shutdown(tunnel, tunnel.handle);
+  const listener = await ngrok.listenable();
+  httpServer.listen(listener);
+  const response = await validateHttpRequest(t, listener.url());
+  await shutdown(listener, listener.handle);
 });
 
 test("no bind", async (t) => {
   const httpServer = await createHttpServer();
   const session = await makeSession();
-  const tunnel = await session.httpEndpoint().listen(false);
-  t.is(undefined, tunnel.handle);
+  const listener = await session.httpEndpoint().listen(false);
+  t.is(undefined, listener.handle);
 });
 
 // run serially so other tests are not logging
@@ -367,8 +367,8 @@ test.serial("console log", async (t) => {
   // register logging callback
   ngrok.consoleLog();
   const [httpServer, session] = await makeHttpAndSession();
-  const tunnel = await session.httpEndpoint().listen();
-  await forwardValidateShutdown(t, httpServer, tunnel, tunnel.url());
+  const listener = await session.httpEndpoint().listen();
+  await forwardValidateShutdown(t, httpServer, listener, listener.url());
   // unregister the callback
   ngrok.loggingCallback();
 });
@@ -377,49 +377,49 @@ test("listen and forward multipass", async (t) => {
   const [httpServer, session1] = await makeHttpAndSession();
   const session2 = await makeSession();
   const url = "tcp://" + httpServer.listenTo;
-  const tunnel1 = await session1.httpEndpoint().listenAndForward(url);
-  const tunnel2 = await session1.httpEndpoint().listenAndForward(url);
-  const tunnel3 = await session2.httpEndpoint().listenAndForward(url);
-  const tunnel4 = await session2.tcpEndpoint().listenAndForward(url);
+  const listener1 = await session1.httpEndpoint().listenAndForward(url);
+  const listener2 = await session1.httpEndpoint().listenAndForward(url);
+  const listener3 = await session2.httpEndpoint().listenAndForward(url);
+  const listener4 = await session2.tcpEndpoint().listenAndForward(url);
 
-  t.is(2, (await session1.tunnels()).length);
-  t.is(2, (await session2.tunnels()).length);
-  t.truthy((await ngrok.tunnels()).length >= 4);
-  t.is(tunnel3.url(), (await ngrok.getTunnel(tunnel3.id())).url());
+  t.is(2, (await session1.listeners()).length);
+  t.is(2, (await session2.listeners()).length);
+  t.truthy((await ngrok.listeners()).length >= 4);
+  t.is(listener3.url(), (await ngrok.getListener(listener3.id())).url());
 
-  await validateHttpRequest(t, tunnel1.url());
-  await validateHttpRequest(t, tunnel2.url());
-  await validateHttpRequest(t, tunnel3.url());
-  await validateHttpRequest(t, tunnel4.url().replace("tcp:", "http:"));
-  await shutdown(tunnel1, httpServer.socket);
-  await tunnel2.close();
+  await validateHttpRequest(t, listener1.url());
+  await validateHttpRequest(t, listener2.url());
+  await validateHttpRequest(t, listener3.url());
+  await validateHttpRequest(t, listener4.url().replace("tcp:", "http:"));
+  await shutdown(listener1, httpServer.socket);
+  await listener2.close();
   await session2.close();
 });
 
 test("tcp multipass", async (t) => {
   const [httpServer, session1] = await makeHttpAndSession();
   const session2 = await makeSession();
-  const tunnel1 = await session1.httpEndpoint().listen();
-  const tunnel2 = await session1.httpEndpoint().listen();
-  const tunnel3 = await session2.httpEndpoint().listen();
-  const tunnel4 = await session2.tcpEndpoint().listen();
+  const listener1 = await session1.httpEndpoint().listen();
+  const listener2 = await session1.httpEndpoint().listen();
+  const listener3 = await session2.httpEndpoint().listen();
+  const listener4 = await session2.tcpEndpoint().listen();
 
-  tunnel1.forward(httpServer.listenTo);
-  tunnel2.forward(httpServer.listenTo);
-  tunnel3.forward(httpServer.listenTo);
-  tunnel4.forward(httpServer.listenTo);
+  listener1.forward(httpServer.listenTo);
+  listener2.forward(httpServer.listenTo);
+  listener3.forward(httpServer.listenTo);
+  listener4.forward(httpServer.listenTo);
 
-  t.is(2, (await session1.tunnels()).length);
-  t.is(2, (await session2.tunnels()).length);
-  t.truthy((await ngrok.tunnels()).length >= 4);
-  t.is(tunnel3.url(), (await ngrok.getTunnel(tunnel3.id())).url());
+  t.is(2, (await session1.listeners()).length);
+  t.is(2, (await session2.listeners()).length);
+  t.truthy((await ngrok.listeners()).length >= 4);
+  t.is(listener3.url(), (await ngrok.getListener(listener3.id())).url());
 
-  await validateHttpRequest(t, tunnel1.url());
-  await validateHttpRequest(t, tunnel2.url());
-  await validateHttpRequest(t, tunnel3.url());
-  await validateHttpRequest(t, tunnel4.url().replace("tcp:", "http:"));
-  await shutdown(tunnel1, httpServer.socket);
-  await tunnel2.close();
+  await validateHttpRequest(t, listener1.url());
+  await validateHttpRequest(t, listener2.url());
+  await validateHttpRequest(t, listener3.url());
+  await validateHttpRequest(t, listener4.url().replace("tcp:", "http:"));
+  await shutdown(listener1, httpServer.socket);
+  await listener2.close();
   await session2.close();
 });
 
@@ -427,29 +427,29 @@ test("unix multipass", async (t) => {
   const httpServer = createHttpServer();
   const session1 = await makeSession();
   const session2 = await makeSession();
-  const tunnel1 = await session1.httpEndpoint().listen();
-  const tunnel2 = await session1.httpEndpoint().listen();
-  const tunnel3 = await session2.httpEndpoint().listen();
-  const tunnel4 = await session2.tcpEndpoint().listen();
-  const socket = await ngrok.listen(httpServer, tunnel1);
+  const listener1 = await session1.httpEndpoint().listen();
+  const listener2 = await session1.httpEndpoint().listen();
+  const listener3 = await session2.httpEndpoint().listen();
+  const listener4 = await session2.tcpEndpoint().listen();
+  const socket = await ngrok.listen(httpServer, listener1);
 
-  tunnel2.forward("unix:" + socket.path);
-  tunnel3.forward("unix:" + socket.path);
-  tunnel4.forward("unix:" + socket.path);
+  listener2.forward("unix:" + socket.path);
+  listener3.forward("unix:" + socket.path);
+  listener4.forward("unix:" + socket.path);
 
-  await validateHttpRequest(t, tunnel1.url());
-  await validateHttpRequest(t, tunnel2.url());
-  await validateHttpRequest(t, tunnel3.url());
-  await validateHttpRequest(t, tunnel4.url().replace("tcp:", "http:"));
-  await shutdown(tunnel1, socket);
-  await tunnel2.close();
-  await tunnel3.close();
-  await tunnel4.close();
+  await validateHttpRequest(t, listener1.url());
+  await validateHttpRequest(t, listener2.url());
+  await validateHttpRequest(t, listener3.url());
+  await validateHttpRequest(t, listener4.url().replace("tcp:", "http:"));
+  await shutdown(listener1, socket);
+  await listener2.close();
+  await listener3.close();
+  await listener4.close();
 });
 
 test("connect heartbeat callbacks", async (t) => {
   var conn_addr, disconn_addr, test_latency;
-  const builder = new ngrok.NgrokSessionBuilder();
+  const builder = new ngrok.SessionBuilder();
   builder
     .clientInfo("connect_heartbeat_callbacks", "1.2.3")
     .handleHeartbeat((latency) => {
@@ -464,7 +464,7 @@ test("connect heartbeat callbacks", async (t) => {
 });
 
 test("session ca_cert", async (t) => {
-  const builder = new ngrok.NgrokSessionBuilder();
+  const builder = new ngrok.SessionBuilder();
   const error = await t.throwsAsync(
     async () => {
       await builder.authtokenFromEnv().caCert(fs.readFileSync("examples/domain.crt")).connect();
@@ -475,7 +475,7 @@ test("session ca_cert", async (t) => {
 });
 
 test("session incorrect authtoken", async (t) => {
-  const builder = new ngrok.NgrokSessionBuilder();
+  const builder = new ngrok.SessionBuilder();
   const error = await t.throwsAsync(
     async () => {
       await builder.authtoken("badtoken").connect();
@@ -485,7 +485,7 @@ test("session incorrect authtoken", async (t) => {
   t.is("ERR_NGROK_105", error.errorCode);
 });
 
-test("tunnel invalid domain", async (t) => {
+test("listener invalid domain", async (t) => {
   const session = await makeSession();
   const error = await t.throwsAsync(
     async () => {

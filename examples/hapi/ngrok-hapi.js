@@ -21,10 +21,10 @@ const init = async () => {
   await server.start();
   console.log("Server running on %s", server.info.uri);
 
-  const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
-  const tunnel = await session.httpEndpoint().listen();
-  console.log(`Ingress established at: ${tunnel.url()}`);
-  tunnel.forward(`localhost:${port}`);
+  const session = await new ngrok.SessionBuilder().authtokenFromEnv().connect();
+  const listener = await session.httpEndpoint().listen();
+  console.log(`Ingress established at: ${listener.url()}`);
+  listener.forward(`localhost:${port}`);
 };
 
 process.on("unhandledRejection", (err) => {

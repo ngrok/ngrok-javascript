@@ -54,13 +54,13 @@ export interface Config {
   domain?: string
   /**
    * Returns a human-readable string presented in the ngrok dashboard
-   * and the Tunnels API.
+   * and the API.
    */
   forwards_to?: string
   /** Unused, will warn and be ignored */
   host_header?: string
   /**
-   * The hostname for the tunnel to forward to.
+   * The hostname for the listener to forward to.
    * Only used if addr is not defined.
    */
   host?: string
@@ -77,9 +77,9 @@ export interface Config {
    * Only used if "proto" is "tls".
    */
   key?: string
-  /** Add label, value pairs for this tunnel, colon separated. */
+  /** Add label, value pairs for this listener, colon separated. */
   labels?: string|Array<string>
-  /** Tunnel-specific opaque metadata. Viewable via the API. */
+  /** Listener-specific opaque metadata. Viewable via the API. */
   metadata?: string
   /**
    * Certificates to use for client authentication at the ngrok edge.
@@ -116,13 +116,13 @@ export interface Config {
   /** 'closed' - connection is lost, 'connected' - reconnected */
   onStatusChange?: (status: string) => void
   /**
-   * The port for the tunnel to forward to.
+   * The port for the listener to forward to.
    * Only used if addr is not defined.
    */
   port?: number
-  /** The type of tunnel to use, one of http|tcp|tls|labeled, defaults to http. */
+  /** The type of listener to use, one of http|tcp|tls|labeled, defaults to http. */
   proto?: string
-  /** The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using. */
+  /** The version of PROXY protocol to use with this listener "1", "2", or "" if not using. */
   proxy_proto?: string
   /** Adds a header to all requests to this edge. */
   request_header_add?: string|Array<string>
@@ -168,12 +168,18 @@ export interface Config {
   /** Convert incoming websocket connections to TCP-like streams. */
   websocket_tcp_converter?: boolean
 }
-/** Transform a json object configuration into a tunnel */
+/** Transform a json object configuration into a listener */
 export function connect(config: Config|string|number): Promise<string>
-/** Close a tunnel with the given url, or all tunnels if no url is defined. */
+/** Close a listener with the given url, or all listeners if no url is defined. */
 export function disconnect(url?: string | undefined | null): Promise<void>
-/** Close all tunnels. */
+/** Close all listeners. */
 export function kill(): Promise<void>
+/** Retrieve a list of non-closed listeners, in no particular order. */
+export function listeners(): Promise<Array<Listener>>
+/** Retrieve listener using the id */
+export function getListener(id: string): Promise<Listener | null>
+/** Retrieve listener using the url */
+export function getListenerByUrl(url: string): Promise<Listener | null>
 /**
  * Register a callback function that will receive logging event information.
  * An absent callback will unregister an existing callback function.
@@ -182,18 +188,311 @@ export function kill(): Promise<void>
 export function loggingCallback(callback?: (level: string, target: string, message: string) => void, level?: string): void
 /** Set the default auth token to use for any future sessions. */
 export function authtoken(authtoken: string): Promise<void>
-/** Retrieve a list of non-closed tunnels, in no particular order. */
-export function tunnels(): Promise<Array<NgrokTunnel>>
-/** Retrieve tunnel using the id */
-export function getTunnel(id: string): Promise<NgrokTunnel | null>
-/** Retrieve tunnel using the url */
-export function getTunnelByUrl(url: string): Promise<NgrokTunnel | null>
+/**
+ * An ngrok listener.
+ *
+ * @group Listener and Sessions
+ */
+export class Listener {
+  /** The URL that this listener backs. */
+  url(): string | null
+  /** The protocol of the endpoint that this listener backs. */
+  proto(): string | null
+  /** The labels this listener was started with. */
+  labels(): Record<string, string>
+  /** Returns a listener's unique ID. */
+  id(): string
+  /**
+   * Returns a human-readable string presented in the ngrok dashboard
+   * and the API. Use the [HttpListenerBuilder::forwards_to],
+   * [TcpListenerBuilder::forwards_to], etc. to set this value
+   * explicitly.
+   */
+  forwardsTo(): string
+  /** Returns the arbitrary metadata string for this listener. */
+  metadata(): string
+  /**
+   * Forward incoming listener connections. This can be either a TCP address or a file socket path.
+   * For file socket paths on Linux/Darwin, addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
+   *     On Windows, addr can be a named pipe, e.e. "\\\\.\\pipe\\an_ngrok_pipe
+   */
+  forward(addr: string): Promise<void>
+  /** Wait for the forwarding task to exit. */
+  join(): Promise<void>
+  /**
+   * Close the listener.
+   *
+   * This is an RPC call that must be `.await`ed.
+   * It is equivalent to calling `Session::close_listener` with this
+   * listener's ID.
+   */
+  close(): Promise<void>
+}
+/**
+ *r" An ngrok listener backing an HTTP endpoint.
+ *r"
+ *r" @group Listener Builders
+ */
+export class HttpListenerBuilder {
+  /**
+   * The scheme that this edge should use.
+   * "HTTPS" or "HTTP", defaults to "HTTPS".
+   */
+  scheme(scheme: string): this
+  /**
+   * The domain to request for this edge, any valid domain or hostname that you have
+   * previously registered with ngrok. If using a custom domain, this requires
+   * registering in the [ngrok dashboard] and setting a DNS CNAME value.
+   *
+   * [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/domains
+   */
+  domain(domain: string): this
+  /**
+   * Certificates to use for client authentication at the ngrok edge.
+   * See [Mutual TLS] in the ngrok docs for additional details.
+   *
+   * [Mutual TLS]: https://ngrok.com/docs/cloud-edge/modules/mutual-tls/
+   */
+  mutualTlsca(mutualTlsca: Uint8Array): this
+  /**
+   * Enable gzip compression for HTTP responses.
+   * See [Compression] in the ngrok docs for additional details.
+   *
+   * [Compression]: https://ngrok.com/docs/cloud-edge/modules/compression/
+   */
+  compression(): this
+  /** Convert incoming websocket connections to TCP-like streams. */
+  websocketTcpConversion(): this
+  /**
+   * Reject requests when 5XX responses exceed this ratio.
+   * Disabled when 0.
+   * See [Circuit Breaker] in the ngrok docs for additional details.
+   *
+   * [Circuit Breaker]: https://ngrok.com/docs/cloud-edge/modules/circuit-breaker/
+   */
+  circuitBreaker(circuitBreaker: number): this
+  /**
+   * Adds a header to all requests to this edge.
+   * See [Request Headers] in the ngrok docs for additional details.
+   *
+   * [Request Headers]: https://ngrok.com/docs/cloud-edge/modules/request-headers/
+   */
+  requestHeader(name: string, value: string): this
+  /**
+   * Adds a header to all responses coming from this edge.
+   * See [Response Headers] in the ngrok docs for additional details.
+   *
+   * [Response Headers]: https://ngrok.com/docs/cloud-edge/modules/response-headers/
+   */
+  responseHeader(name: string, value: string): this
+  /**
+   * Removes a header from requests to this edge.
+   * See [Request Headers] in the ngrok docs for additional details.
+   *
+   * [Request Headers]: https://ngrok.com/docs/cloud-edge/modules/request-headers/
+   */
+  removeRequestHeader(name: string): this
+  /**
+   * Removes a header from responses from this edge.
+   * See [Response Headers] in the ngrok docs for additional details.
+   *
+   * [Response Headers]: https://ngrok.com/docs/cloud-edge/modules/response-headers/
+   */
+  removeResponseHeader(name: string): this
+  /**
+   * Credentials for basic authentication.
+   * If not called, basic authentication is disabled.
+   */
+  basicAuth(username: string, password: string): this
+  /**
+   * OAuth configuration.
+   * If not called, OAuth is disabled.
+   * See [OAuth] in the ngrok docs for additional details.
+   *
+   * [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
+   */
+  oauth(provider: string, allowEmails?: Array<string> | undefined | null, allowDomains?: Array<string> | undefined | null, scopes?: Array<string> | undefined | null): this
+  /**
+   * OIDC configuration.
+   * If not called, OIDC is disabled.
+   * See [OpenID Connect] in the ngrok docs for additional details.
+   *
+   * [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
+   */
+  oidc(issuerUrl: string, clientId: string, clientSecret: string, allowEmails?: Array<string> | undefined | null, allowDomains?: Array<string> | undefined | null, scopes?: Array<string> | undefined | null): this
+  /**
+   * WebhookVerification configuration.
+   * If not called, WebhookVerification is disabled.
+   * See [Webhook Verification] in the ngrok docs for additional details.
+   *
+   * [Webhook Verification]: https://ngrok.com/docs/cloud-edge/modules/webhook-verification/
+   */
+  webhookVerification(provider: string, secret: string): this
+  /** Listener-specific opaque metadata. Viewable via the API. */
+  metadata(metadata: string): this
+  /** Begin listening for new connections on this listener. */
+  listen(bind?: boolean | undefined | null): Promise<Listener>
+  /** Begin listening for new connections on this listener and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<Listener>
+  /** Begin listening for new connections on this listener and forwarding them to the given server. */
+  listenAndServe(server: any): Promise<Listener>
+  /**
+   * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
+   * Call multiple times to add additional CIDR ranges.
+   * See [IP restrictions] in the ngrok docs for additional details.
+   *
+   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
+   */
+  allowCidr(cidr: string): this
+  /**
+   * Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
+   * Call multiple times to add additional CIDR ranges.
+   * See [IP restrictions] in the ngrok docs for additional details.
+   *
+   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
+   */
+  denyCidr(cidr: string): this
+  /** The version of PROXY protocol to use with this listener "1", "2", or "" if not using. */
+  proxyProto(proxyProto: string): this
+  /**
+   * Listener backend metadata. Viewable via the dashboard and API, but has no
+   * bearing on listener behavior.
+   */
+  forwardsTo(forwardsTo: string): this
+}
+/**
+ *r" An ngrok listener backing a TCP endpoint.
+ *r"
+ *r" @group Listener Builders
+ */
+export class TcpListenerBuilder {
+  /** Listener-specific opaque metadata. Viewable via the API. */
+  metadata(metadata: string): this
+  /** Begin listening for new connections on this listener. */
+  listen(bind?: boolean | undefined | null): Promise<Listener>
+  /** Begin listening for new connections on this listener and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<Listener>
+  /** Begin listening for new connections on this listener and forwarding them to the given server. */
+  listenAndServe(server: any): Promise<Listener>
+  /**
+   * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
+   * Call multiple times to add additional CIDR ranges.
+   * See [IP restrictions] in the ngrok docs for additional details.
+   *
+   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
+   */
+  allowCidr(cidr: string): this
+  /**
+   * Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
+   * Call multiple times to add additional CIDR ranges.
+   * See [IP restrictions] in the ngrok docs for additional details.
+   *
+   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
+   */
+  denyCidr(cidr: string): this
+  /** The version of PROXY protocol to use with this listener "1", "2", or "" if not using. */
+  proxyProto(proxyProto: string): this
+  /**
+   * Listener backend metadata. Viewable via the dashboard and API, but has no
+   * bearing on listener behavior.
+   */
+  forwardsTo(forwardsTo: string): this
+  /**
+   * The TCP address to request for this edge.
+   * These addresses can be reserved in the [ngrok dashboard] to use across sessions. For example: remote_addr("2.tcp.ngrok.io:21746")
+   *
+   * [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/tcp-addresses
+   */
+  remoteAddr(remoteAddr: string): this
+}
+/**
+ *r" An ngrok listener backing a TLS endpoint.
+ *r"
+ *r" @group Listener Builders
+ */
+export class TlsListenerBuilder {
+  /** Listener-specific opaque metadata. Viewable via the API. */
+  metadata(metadata: string): this
+  /** Begin listening for new connections on this listener. */
+  listen(bind?: boolean | undefined | null): Promise<Listener>
+  /** Begin listening for new connections on this listener and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<Listener>
+  /** Begin listening for new connections on this listener and forwarding them to the given server. */
+  listenAndServe(server: any): Promise<Listener>
+  /**
+   * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
+   * Call multiple times to add additional CIDR ranges.
+   * See [IP restrictions] in the ngrok docs for additional details.
+   *
+   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
+   */
+  allowCidr(cidr: string): this
+  /**
+   * Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
+   * Call multiple times to add additional CIDR ranges.
+   * See [IP restrictions] in the ngrok docs for additional details.
+   *
+   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
+   */
+  denyCidr(cidr: string): this
+  /** The version of PROXY protocol to use with this listener "1", "2", or "" if not using. */
+  proxyProto(proxyProto: string): this
+  /**
+   * Listener backend metadata. Viewable via the dashboard and API, but has no
+   * bearing on listener behavior.
+   */
+  forwardsTo(forwardsTo: string): this
+  /**
+   * The domain to request for this edge, any valid domain or hostname that you have
+   * previously registered with ngrok. If using a custom domain, this requires
+   * registering in the [ngrok dashboard] and setting a DNS CNAME value.
+   *
+   * [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/domains
+   */
+  domain(domain: string): this
+  /**
+   * Certificates to use for client authentication at the ngrok edge.
+   * See [Mutual TLS] in the ngrok docs for additional details.
+   *
+   * [Mutual TLS]: https://ngrok.com/docs/cloud-edge/modules/mutual-tls/
+   */
+  mutualTlsca(mutualTlsca: Uint8Array): this
+  /**
+   * The key to use for TLS termination at the ngrok edge in PEM format.
+   * See [TLS Termination] in the ngrok docs for additional details.
+   *
+   * [TLS Termination]: https://ngrok.com/docs/cloud-edge/modules/tls-termination/
+   */
+  termination(certPem: Uint8Array, keyPem: Uint8Array): this
+}
+/**
+ *r" A labeled ngrok listener.
+ *r"
+ *r" @group Listener Builders
+ */
+export class LabeledListenerBuilder {
+  /** Listener-specific opaque metadata. Viewable via the API. */
+  metadata(metadata: string): this
+  /** Begin listening for new connections on this listener. */
+  listen(bind?: boolean | undefined | null): Promise<Listener>
+  /** Begin listening for new connections on this listener and forwarding them to the given url. */
+  listenAndForward(toUrl: string): Promise<Listener>
+  /** Begin listening for new connections on this listener and forwarding them to the given server. */
+  listenAndServe(server: any): Promise<Listener>
+  /**
+   * Add a label, value pair for this listener.
+   * See [Using Labels] in the ngrok docs for additional details.
+   *
+   * [Using Labels]: https://ngrok.com/docs/guides/using-labels-within-ngrok/
+   */
+  label(label: string, value: string): this
+}
 /**
  * The builder for an ngrok session.
  *
- * @group Tunnel and Sessions
+ * @group Listener and Sessions
  */
-export class NgrokSessionBuilder {
+export class SessionBuilder {
   /** Create a new session builder */
   constructor()
   /**
@@ -336,26 +635,26 @@ export class NgrokSessionBuilder {
    */
   handleHeartbeat(handler: (latency: number) => void): this
   /** Attempt to establish an ngrok session using the current configuration. */
-  connect(): Promise<NgrokSession>
+  connect(): Promise<Session>
 }
 /**
  * An ngrok session.
  *
- * @group Tunnel and Sessions
+ * @group Listener and Sessions
  */
-export class NgrokSession {
-  /** Start building a tunnel backing an HTTP endpoint. */
-  httpEndpoint(): NgrokHttpTunnelBuilder
-  /** Start building a tunnel backing a TCP endpoint. */
-  tcpEndpoint(): NgrokTcpTunnelBuilder
-  /** Start building a tunnel backing a TLS endpoint. */
-  tlsEndpoint(): NgrokTlsTunnelBuilder
-  /** Start building a labeled tunnel. */
-  labeledTunnel(): NgrokLabeledTunnelBuilder
-  /** Retrieve a list of this session's non-closed tunnels, in no particular order. */
-  tunnels(): Promise<Array<NgrokTunnel>>
-  /** Close a tunnel with the given ID. */
-  closeTunnel(id: string): Promise<void>
+export class Session {
+  /** Start building a listener backing an HTTP endpoint. */
+  httpEndpoint(): HttpListenerBuilder
+  /** Start building a listener backing a TCP endpoint. */
+  tcpEndpoint(): TcpListenerBuilder
+  /** Start building a listener backing a TLS endpoint. */
+  tlsEndpoint(): TlsListenerBuilder
+  /** Start building a labeled listener. */
+  labeledListener(): LabeledListenerBuilder
+  /** Retrieve a list of this session's non-closed listeners, in no particular order. */
+  listeners(): Promise<Array<Listener>>
+  /** Close a listener with the given ID. */
+  closeListener(id: string): Promise<void>
   /** Close the ngrok session. */
   close(): Promise<void>
 }
@@ -367,314 +666,15 @@ export class UpdateRequest {
   permitMajorVersion: boolean
 }
 /**
- * An ngrok tunnel.
- *
- * @group Tunnel and Sessions
- */
-export class NgrokTunnel {
-  /** The URL that this tunnel backs. */
-  url(): string | null
-  /** The protocol of the endpoint that this tunnel backs. */
-  proto(): string | null
-  /** The labels this tunnel was started with. */
-  labels(): Record<string, string>
-  /** Returns a tunnel's unique ID. */
-  id(): string
-  /**
-   * Returns a human-readable string presented in the ngrok dashboard
-   * and the Tunnels API. Use the [HttpTunnelBuilder::forwards_to],
-   * [TcpTunnelBuilder::forwards_to], etc. to set this value
-   * explicitly.
-   */
-  forwardsTo(): string
-  /** Returns the arbitrary metadata string for this tunnel. */
-  metadata(): string
-  /**
-   * Forward incoming tunnel connections. This can be either a TCP address or a file socket path.
-   * For file socket paths on Linux/Darwin, addr can be a unix domain socket path, e.g. "/tmp/ngrok.sock"
-   *     On Windows, addr can be a named pipe, e.e. "\\\\.\\pipe\\an_ngrok_pipe
-   */
-  forward(addr: string): Promise<void>
-  /** Wait for the forwarding task to exit. */
-  join(): Promise<void>
-  /**
-   * Close the tunnel.
-   *
-   * This is an RPC call that must be `.await`ed.
-   * It is equivalent to calling `Session::close_tunnel` with this
-   * tunnel's ID.
-   */
-  close(): Promise<void>
-}
-/**
- *r" An ngrok tunnel backing an HTTP endpoint.
- *r"
- *r" @group Tunnel Builders
- */
-export class NgrokHttpTunnelBuilder {
-  /**
-   * The scheme that this edge should use.
-   * "HTTPS" or "HTTP", defaults to "HTTPS".
-   */
-  scheme(scheme: string): this
-  /**
-   * The domain to request for this edge, any valid domain or hostname that you have
-   * previously registered with ngrok. If using a custom domain, this requires
-   * registering in the [ngrok dashboard] and setting a DNS CNAME value.
-   *
-   * [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/domains
-   */
-  domain(domain: string): this
-  /**
-   * Certificates to use for client authentication at the ngrok edge.
-   * See [Mutual TLS] in the ngrok docs for additional details.
-   *
-   * [Mutual TLS]: https://ngrok.com/docs/cloud-edge/modules/mutual-tls/
-   */
-  mutualTlsca(mutualTlsca: Uint8Array): this
-  /**
-   * Enable gzip compression for HTTP responses.
-   * See [Compression] in the ngrok docs for additional details.
-   *
-   * [Compression]: https://ngrok.com/docs/cloud-edge/modules/compression/
-   */
-  compression(): this
-  /** Convert incoming websocket connections to TCP-like streams. */
-  websocketTcpConversion(): this
-  /**
-   * Reject requests when 5XX responses exceed this ratio.
-   * Disabled when 0.
-   * See [Circuit Breaker] in the ngrok docs for additional details.
-   *
-   * [Circuit Breaker]: https://ngrok.com/docs/cloud-edge/modules/circuit-breaker/
-   */
-  circuitBreaker(circuitBreaker: number): this
-  /**
-   * Adds a header to all requests to this edge.
-   * See [Request Headers] in the ngrok docs for additional details.
-   *
-   * [Request Headers]: https://ngrok.com/docs/cloud-edge/modules/request-headers/
-   */
-  requestHeader(name: string, value: string): this
-  /**
-   * Adds a header to all responses coming from this edge.
-   * See [Response Headers] in the ngrok docs for additional details.
-   *
-   * [Response Headers]: https://ngrok.com/docs/cloud-edge/modules/response-headers/
-   */
-  responseHeader(name: string, value: string): this
-  /**
-   * Removes a header from requests to this edge.
-   * See [Request Headers] in the ngrok docs for additional details.
-   *
-   * [Request Headers]: https://ngrok.com/docs/cloud-edge/modules/request-headers/
-   */
-  removeRequestHeader(name: string): this
-  /**
-   * Removes a header from responses from this edge.
-   * See [Response Headers] in the ngrok docs for additional details.
-   *
-   * [Response Headers]: https://ngrok.com/docs/cloud-edge/modules/response-headers/
-   */
-  removeResponseHeader(name: string): this
-  /**
-   * Credentials for basic authentication.
-   * If not called, basic authentication is disabled.
-   */
-  basicAuth(username: string, password: string): this
-  /**
-   * OAuth configuration.
-   * If not called, OAuth is disabled.
-   * See [OAuth] in the ngrok docs for additional details.
-   *
-   * [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
-   */
-  oauth(provider: string, allowEmails?: Array<string> | undefined | null, allowDomains?: Array<string> | undefined | null, scopes?: Array<string> | undefined | null): this
-  /**
-   * OIDC configuration.
-   * If not called, OIDC is disabled.
-   * See [OpenID Connect] in the ngrok docs for additional details.
-   *
-   * [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
-   */
-  oidc(issuerUrl: string, clientId: string, clientSecret: string, allowEmails?: Array<string> | undefined | null, allowDomains?: Array<string> | undefined | null, scopes?: Array<string> | undefined | null): this
-  /**
-   * WebhookVerification configuration.
-   * If not called, WebhookVerification is disabled.
-   * See [Webhook Verification] in the ngrok docs for additional details.
-   *
-   * [Webhook Verification]: https://ngrok.com/docs/cloud-edge/modules/webhook-verification/
-   */
-  webhookVerification(provider: string, secret: string): this
-  /** Tunnel-specific opaque metadata. Viewable via the API. */
-  metadata(metadata: string): this
-  /** Begin listening for new connections on this tunnel. */
-  listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
-  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
-  listenAndForward(toUrl: string): Promise<NgrokTunnel>
-  /** Begin listening for new connections on this tunnel and forwarding them to the given server. */
-  listenAndServe(server: any): Promise<NgrokTunnel>
-  /**
-   * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
-   * Call multiple times to add additional CIDR ranges.
-   * See [IP restrictions] in the ngrok docs for additional details.
-   *
-   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
-   */
-  allowCidr(cidr: string): this
-  /**
-   * Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
-   * Call multiple times to add additional CIDR ranges.
-   * See [IP restrictions] in the ngrok docs for additional details.
-   *
-   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
-   */
-  denyCidr(cidr: string): this
-  /** The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using. */
-  proxyProto(proxyProto: string): this
-  /**
-   * Tunnel backend metadata. Viewable via the dashboard and API, but has no
-   * bearing on tunnel behavior.
-   */
-  forwardsTo(forwardsTo: string): this
-}
-/**
- *r" An ngrok tunnel backing a TCP endpoint.
- *r"
- *r" @group Tunnel Builders
- */
-export class NgrokTcpTunnelBuilder {
-  /**
-   * The TCP address to request for this edge.
-   * These addresses can be reserved in the [ngrok dashboard] to use across sessions. For example: remote_addr("2.tcp.ngrok.io:21746")
-   *
-   * [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/tcp-addresses
-   */
-  remoteAddr(remoteAddr: string): this
-  /** Tunnel-specific opaque metadata. Viewable via the API. */
-  metadata(metadata: string): this
-  /** Begin listening for new connections on this tunnel. */
-  listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
-  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
-  listenAndForward(toUrl: string): Promise<NgrokTunnel>
-  /** Begin listening for new connections on this tunnel and forwarding them to the given server. */
-  listenAndServe(server: any): Promise<NgrokTunnel>
-  /**
-   * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
-   * Call multiple times to add additional CIDR ranges.
-   * See [IP restrictions] in the ngrok docs for additional details.
-   *
-   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
-   */
-  allowCidr(cidr: string): this
-  /**
-   * Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
-   * Call multiple times to add additional CIDR ranges.
-   * See [IP restrictions] in the ngrok docs for additional details.
-   *
-   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
-   */
-  denyCidr(cidr: string): this
-  /** The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using. */
-  proxyProto(proxyProto: string): this
-  /**
-   * Tunnel backend metadata. Viewable via the dashboard and API, but has no
-   * bearing on tunnel behavior.
-   */
-  forwardsTo(forwardsTo: string): this
-}
-/**
- *r" An ngrok tunnel backing a TLS endpoint.
- *r"
- *r" @group Tunnel Builders
- */
-export class NgrokTlsTunnelBuilder {
-  /**
-   * The domain to request for this edge, any valid domain or hostname that you have
-   * previously registered with ngrok. If using a custom domain, this requires
-   * registering in the [ngrok dashboard] and setting a DNS CNAME value.
-   *
-   * [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/domains
-   */
-  domain(domain: string): this
-  /**
-   * Certificates to use for client authentication at the ngrok edge.
-   * See [Mutual TLS] in the ngrok docs for additional details.
-   *
-   * [Mutual TLS]: https://ngrok.com/docs/cloud-edge/modules/mutual-tls/
-   */
-  mutualTlsca(mutualTlsca: Uint8Array): this
-  /**
-   * The key to use for TLS termination at the ngrok edge in PEM format.
-   * See [TLS Termination] in the ngrok docs for additional details.
-   *
-   * [TLS Termination]: https://ngrok.com/docs/cloud-edge/modules/tls-termination/
-   */
-  termination(certPem: Uint8Array, keyPem: Uint8Array): this
-  /** Tunnel-specific opaque metadata. Viewable via the API. */
-  metadata(metadata: string): this
-  /** Begin listening for new connections on this tunnel. */
-  listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
-  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
-  listenAndForward(toUrl: string): Promise<NgrokTunnel>
-  /** Begin listening for new connections on this tunnel and forwarding them to the given server. */
-  listenAndServe(server: any): Promise<NgrokTunnel>
-  /**
-   * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
-   * Call multiple times to add additional CIDR ranges.
-   * See [IP restrictions] in the ngrok docs for additional details.
-   *
-   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
-   */
-  allowCidr(cidr: string): this
-  /**
-   * Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges.
-   * Call multiple times to add additional CIDR ranges.
-   * See [IP restrictions] in the ngrok docs for additional details.
-   *
-   * [IP restrictions]: https://ngrok.com/docs/cloud-edge/modules/ip-restrictions/
-   */
-  denyCidr(cidr: string): this
-  /** The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using. */
-  proxyProto(proxyProto: string): this
-  /**
-   * Tunnel backend metadata. Viewable via the dashboard and API, but has no
-   * bearing on tunnel behavior.
-   */
-  forwardsTo(forwardsTo: string): this
-}
-/**
- *r" A labeled ngrok tunnel.
- *r"
- *r" @group Tunnel Builders
- */
-export class NgrokLabeledTunnelBuilder {
-  /** Tunnel-specific opaque metadata. Viewable via the API. */
-  metadata(metadata: string): this
-  /** Begin listening for new connections on this tunnel. */
-  listen(bind?: boolean | undefined | null): Promise<NgrokTunnel>
-  /** Begin listening for new connections on this tunnel and forwarding them to the given url. */
-  listenAndForward(toUrl: string): Promise<NgrokTunnel>
-  /** Begin listening for new connections on this tunnel and forwarding them to the given server. */
-  listenAndServe(server: any): Promise<NgrokTunnel>
-  /**
-   * Add a label, value pair for this listener.
-   * See [Using Labels] in the ngrok docs for additional details.
-   *
-   * [Using Labels]: https://ngrok.com/docs/guides/using-labels-within-ngrok/
-   */
-  label(label: string, value: string): this
-}
-/**
- * Get a listenable ngrok tunnel, suitable for passing to net.Server.listen().
+ * Get a listenable ngrok listener, suitable for passing to net.Server.listen().
  * Uses the NGROK_AUTHTOKEN environment variable to authenticate.
  */
-export function listenable(): NgrokTunnel;
+export function listenable(): Listener;
 /**
- * Start the given net.Server listening to a generated, or passed in, tunnel.
- * Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new tunnel is created.
+ * Start the given net.Server listening to a generated, or passed in, listener.
+ * Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new listener is created.
  */
-export function listen(server: import("net").Server, tunnel?: NgrokTunnel): NgrokTunnel;
+export function listen(server: import("net").Server, listener?: Listener): Listener;
 /**
  * Register a console.log callback for ngrok INFO logging.
  * Optionally set the logging level to one of ERROR, WARN, INFO, DEBUG, or TRACE.

@@ -9,10 +9,10 @@ http
 
 var ngrok = require("@ngrok/ngrok");
 
-async function create_tunnel() {
-  const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
-  const tunnel = await session.httpEndpoint().listen();
-  console.log("Ingress established at:", tunnel.url());
-  tunnel.forward("localhost:8081");
+async function create_listener() {
+  const session = await new ngrok.SessionBuilder().authtokenFromEnv().connect();
+  const listener = await session.httpEndpoint().listen();
+  console.log("Ingress established at:", listener.url());
+  listener.forward("localhost:8081");
 }
-create_tunnel();
+create_listener();

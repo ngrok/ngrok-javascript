@@ -46,13 +46,13 @@ pub struct Config {
     /// The domain to request for this edge.
     pub domain: Option<String>,
     /// Returns a human-readable string presented in the ngrok dashboard
-    /// and the Tunnels API.
+    /// and the API.
     #[napi(js_name = "forwards_to")]
     pub forwards_to: Option<String>,
     /// Unused, will warn and be ignored
     #[napi(js_name = "host_header")]
     pub host_header: Option<String>,
-    /// The hostname for the tunnel to forward to.
+    /// The hostname for the listener to forward to.
     /// Only used if addr is not defined.
     pub host: Option<String>,
     /// Synonym for domain
@@ -74,10 +74,10 @@ pub struct Config {
     /// The certificate to use for TLS termination at the ngrok edge in PEM format.
     /// Only used if "proto" is "tls".
     pub key: Option<String>,
-    /// Add label, value pairs for this tunnel, colon separated.
+    /// Add label, value pairs for this listener, colon separated.
     #[napi(ts_type = "string|Array<string>")]
     pub labels: Option<Vec<String>>,
-    /// Tunnel-specific opaque metadata. Viewable via the API.
+    /// Listener-specific opaque metadata. Viewable via the API.
     pub metadata: Option<String>,
     /// Certificates to use for client authentication at the ngrok edge.
     /// Only used if "proto" is "tls" or "http".
@@ -122,12 +122,12 @@ pub struct Config {
     /// 'closed' - connection is lost, 'connected' - reconnected
     #[napi(ts_type = "(status: string) => void")]
     pub on_status_change: Option<bool>,
-    /// The port for the tunnel to forward to.
+    /// The port for the listener to forward to.
     /// Only used if addr is not defined.
     pub port: Option<u32>,
-    /// The type of tunnel to use, one of http|tcp|tls|labeled, defaults to http.
+    /// The type of listener to use, one of http|tcp|tls|labeled, defaults to http.
     pub proto: Option<String>,
-    /// The version of PROXY protocol to use with this tunnel "1", "2", or "" if not using.
+    /// The version of PROXY protocol to use with this listener "1", "2", or "" if not using.
     #[napi(js_name = "proxy_proto")]
     pub proxy_proto: Option<String>,
     /// Adds a header to all requests to this edge.

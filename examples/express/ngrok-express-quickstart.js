@@ -7,5 +7,5 @@ app.get("/", (req, res) => {
 });
 
 ngrok.listen(app).then(() => {
-  console.log("established tunnel at: " + app.tunnel.url());
+  console.log("established listener at: " + app.listener.url());
 });

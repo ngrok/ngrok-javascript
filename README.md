@@ -76,9 +76,9 @@ await ngrok.authtoken(token);
 
 ## Connection
 
-The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method is the easiest way to start an ngrok session and establish a tunnel to a specified address. The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method returns a promise that resolves to the public URL of the tunnel.
+The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method is the easiest way to start an ngrok session and establish a listener to a specified address. The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method returns a promise that resolves to the public URL of the listener.
 
-With no arguments the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method will start an HTTP tunnel to `localhost` port `80`:
+With no arguments the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method will start an HTTP listener to `localhost` port `80`:
 
 ```jsx
 const ngrok = require("@ngrok/ngrok");
@@ -106,7 +106,7 @@ const url = await ngrok.connect({addr: 8080, basic_auth: "ngrok:online1line"});
 const url = await ngrok.connect({addr: 8080, oauth_provider: "google", oauth_allow_domains: "example.com"});
 ```
 
-The (optional) `proto` parameter is the tunnel type, which defaults to `http`. To create a TCP tunnel:
+The (optional) `proto` parameter is the listener type, which defaults to `http`. To create a TCP listener:
 
 ```jsx
 const url = await ngrok.connect({proto: 'tcp', addr: 25565});
@@ -116,31 +116,31 @@ See [Full Configuration](#full-configuration) for the list of possible configura
 
 ## Disconnection
 
-To close a tunnel use the [disconnect](https://ngrok.github.io/ngrok-nodejs/functions/disconnect.html) method with the `url` of the tunnel to close:
+To close a listener use the [disconnect](https://ngrok.github.io/ngrok-nodejs/functions/disconnect.html) method with the `url` of the listener to close:
 
 ```jsx
 await ngrok.disconnect(url);
 ```
 
-Or omit the `url` to close all tunnels:
+Or omit the `url` to close all listeners:
 
 ```jsx
 await ngrok.disconnect();
 ```
 
-The [close](https://ngrok.github.io/ngrok-nodejs/classes/NgrokTunnel.html#close) method on a tunnel will shut it down, and also stop the ngrok session if it is no longer needed. This method returns a promise that resolves when the tunnel is closed.
+The [close](https://ngrok.github.io/ngrok-nodejs/classes/Listener.html#close) method on a listener will shut it down, and also stop the ngrok session if it is no longer needed. This method returns a promise that resolves when the listener is closed.
 
 ```jsx
-const tunnel = await ngrok.getTunnelByUrl(url);
-await tunnel.close();
+const listener = await ngrok.getListenerByUrl(url);
+await listener.close();
 ```
 
-## Listing Tunnels
+## Listing Listeners
 
-To list all current non-closed tunnels use the [tunnels](https://ngrok.github.io/ngrok-nodejs/functions/tunnels.html) method:
+To list all current non-closed listeners use the [listeners](https://ngrok.github.io/ngrok-nodejs/functions/listeners.html) method:
 
 ```jsx
-const tunnels = await ngrok.tunnels();
+const listeners = await ngrok.listeners();
 ```
 
 # Full Configuration
@@ -157,14 +157,14 @@ const url = await ngrok.connect({
     console.log(`disconnected, addr ${addr} error: ${error}`);
   },
   session_metadata: "Online in One Line",
-  // tunnel configuration
+  // listener configuration
   basic_auth: ["ngrok:online1line"],
   circuit_breaker: 0.1,
   compression: true,
   domain: "<domain>",
   ip_restriction_allow_cidrs: ["0.0.0.0/0"],
   ip_restriction_deny_cidrs: ["10.1.1.1/32"],
-  metadata: "example tunnel metadata from nodejs",
+  metadata: "example listener metadata from nodejs",
   mutual_tls_cas: [fs.readFileSync('ca.crt', 'utf8')],
   oauth_provider: "google",
   oauth_allow_domains: ["<domain>"],
@@ -217,7 +217,7 @@ npx degit github:ngrok/ngrok-nodejs/examples/express express && cd express && np
 * [Vue](https://vuejs.org/) - [Example vite.config.ts](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/vue/vite.config.ts) loading [ngrok.config.ts](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/vue/ngrok.config.ts)
 * [Winston](https://github.com/winstonjs/winston#readme) Logging - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-winston.js)
 
-## Tunnel Types
+## Listener Types
 * ngrok.connect - [ngrok.connect Minimal Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js), [Full ngrok.connect Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-full.js)
 * HTTP - [ngrok.listen Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-listen.js), [Minimal Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js), [Full Configuration Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-full.js)
 * Labeled - [Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-labeled.js)
@@ -227,16 +227,16 @@ npx degit github:ngrok/ngrok-nodejs/examples/express express && cd express && np
 
 # Builders
 
-For more control over Sessions and Tunnels, the builder classes can be used.
+For more control over Sessions and Listeners, the builder classes can be used.
 
 A minimal example using the builder class looks like [the following](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js):
 
 ```jsx
-async function create_tunnel() {
+async function create_listener() {
   const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
-  const tunnel = await session.httpEndpoint().listen();
-  console.log("Ingress established at:", tunnel.url());
-  tunnel.forward("localhost:8081");
+  const listener = await session.httpEndpoint().listen();
+  console.log("Ingress established at:", listener.url());
+  listener.forward("localhost:8081");
 }
 ```
 
@@ -260,7 +260,7 @@ or the `await` keyword to wait for completion of an API call.
 
 ### Error Handling
 
-The asynchronous functions will throw an error on failure to set up a session or tunnel,
+The asynchronous functions will throw an error on failure to set up a session or listener,
 which can be caught and dealt with using standard then/catch semantics.
 
 ```jsx
@@ -268,7 +268,7 @@ new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect()
     .then((session) => {
         session.httpEndpoint().listen()
             .then((tun) => {})
-            .catch(err => console.log('tunnel setup error: ' + err))
+            .catch(err => console.log('listener setup error: ' + err))
     })
     .catch(err => console.log('session setup error: ' + err))
     .await;

@@ -252,24 +252,24 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { connect, disconnect, kill, loggingCallback, authtoken, NgrokSessionBuilder, NgrokSession, UpdateRequest, NgrokTunnel, tunnels, getTunnel, getTunnelByUrl, NgrokHttpTunnelBuilder, NgrokTcpTunnelBuilder, NgrokTlsTunnelBuilder, NgrokLabeledTunnelBuilder } = nativeBinding
+const { connect, disconnect, kill, Listener, listeners, getListener, getListenerByUrl, HttpListenerBuilder, TcpListenerBuilder, TlsListenerBuilder, LabeledListenerBuilder, loggingCallback, authtoken, SessionBuilder, Session, UpdateRequest } = nativeBinding
 
 module.exports.connect = connect
 module.exports.disconnect = disconnect
 module.exports.kill = kill
+module.exports.Listener = Listener
+module.exports.listeners = listeners
+module.exports.getListener = getListener
+module.exports.getListenerByUrl = getListenerByUrl
+module.exports.HttpListenerBuilder = HttpListenerBuilder
+module.exports.TcpListenerBuilder = TcpListenerBuilder
+module.exports.TlsListenerBuilder = TlsListenerBuilder
+module.exports.LabeledListenerBuilder = LabeledListenerBuilder
 module.exports.loggingCallback = loggingCallback
 module.exports.authtoken = authtoken
-module.exports.NgrokSessionBuilder = NgrokSessionBuilder
-module.exports.NgrokSession = NgrokSession
+module.exports.SessionBuilder = SessionBuilder
+module.exports.Session = Session
 module.exports.UpdateRequest = UpdateRequest
-module.exports.NgrokTunnel = NgrokTunnel
-module.exports.tunnels = tunnels
-module.exports.getTunnel = getTunnel
-module.exports.getTunnelByUrl = getTunnelByUrl
-module.exports.NgrokHttpTunnelBuilder = NgrokHttpTunnelBuilder
-module.exports.NgrokTcpTunnelBuilder = NgrokTcpTunnelBuilder
-module.exports.NgrokTlsTunnelBuilder = NgrokTlsTunnelBuilder
-module.exports.NgrokLabeledTunnelBuilder = NgrokLabeledTunnelBuilder
 //
 // javascript trailer
 //
@@ -280,24 +280,24 @@ const os = require("os");
 const path = require("path");
 
 // wrap connect with the code for extending exception with error code
-NgrokSessionBuilder.prototype._connect = NgrokSessionBuilder.prototype.connect;
-NgrokSessionBuilder.prototype.connect = ngrokSessionConnect;
+SessionBuilder.prototype._connect = SessionBuilder.prototype.connect;
+SessionBuilder.prototype.connect = ngrokSessionConnect;
 
 // wrap listen with the bind code for passing to net.Server.listen()
-NgrokHttpTunnelBuilder.prototype._listen = NgrokHttpTunnelBuilder.prototype.listen;
-NgrokTcpTunnelBuilder.prototype._listen = NgrokTcpTunnelBuilder.prototype.listen;
-NgrokTlsTunnelBuilder.prototype._listen = NgrokTlsTunnelBuilder.prototype.listen;
-NgrokLabeledTunnelBuilder.prototype._listen = NgrokLabeledTunnelBuilder.prototype.listen;
+HttpListenerBuilder.prototype._listen = HttpListenerBuilder.prototype.listen;
+TcpListenerBuilder.prototype._listen = TcpListenerBuilder.prototype.listen;
+TlsListenerBuilder.prototype._listen = TlsListenerBuilder.prototype.listen;
+LabeledListenerBuilder.prototype._listen = LabeledListenerBuilder.prototype.listen;
 
-NgrokHttpTunnelBuilder.prototype.listen = ngrokBind;
-NgrokTcpTunnelBuilder.prototype.listen = ngrokBind;
-NgrokTlsTunnelBuilder.prototype.listen = ngrokBind;
-NgrokLabeledTunnelBuilder.prototype.listen = ngrokBind;
+HttpListenerBuilder.prototype.listen = ngrokBind;
+TcpListenerBuilder.prototype.listen = ngrokBind;
+TlsListenerBuilder.prototype.listen = ngrokBind;
+LabeledListenerBuilder.prototype.listen = ngrokBind;
 
-NgrokHttpTunnelBuilder.prototype.listenAndServe = listenAndServe;
-NgrokTcpTunnelBuilder.prototype.listenAndServe = listenAndServe;
-NgrokTlsTunnelBuilder.prototype.listenAndServe = listenAndServe;
-NgrokLabeledTunnelBuilder.prototype.listenAndServe = listenAndServe;
+HttpListenerBuilder.prototype.listenAndServe = listenAndServe;
+TcpListenerBuilder.prototype.listenAndServe = listenAndServe;
+TlsListenerBuilder.prototype.listenAndServe = listenAndServe;
+LabeledListenerBuilder.prototype.listenAndServe = listenAndServe;
 
 // Wrap session connect to fill in exception's errorCode
 async function ngrokSessionConnect() {
@@ -309,29 +309,29 @@ async function ngrokSessionConnect() {
   }
 }
 
-// Begin listening for new connections on this tunnel,
-// and bind to a local socket so this tunnel can be
+// Begin listening for new connections on this listener,
+// and bind to a local socket so this listener can be
 // passed into net.Server.listen().
 async function ngrokBind(bind) {
   try {
-    const tunnel = await this._listen();
+    const listener = await this._listen();
     if (bind !== false) {
       const socket = await randomTcpSocket();
-      tunnel.socket = socket;
-      defineTunnelHandle(tunnel, socket);
+      listener.socket = socket;
+      defineListenerHandle(listener, socket);
     }
-    return tunnel;
+    return listener;
   } catch (err) {
     populateErrorCode(err);
     throw err;
   }
 }
 
-/// Begin listening for new connections on this tunnel and forwarding them to the given server.
+/// Begin listening for new connections on this listener and forwarding them to the given server.
 async function listenAndServe(server) {
-  const tunnel = await this._listen();
-  tunnel.socket = await ngrokListen(server, tunnel);
-  return tunnel;
+  const listener = await this._listen();
+  listener.socket = await ngrokListen(server, listener);
+  return listener;
 }
 
 function populateErrorCode(err) {
@@ -344,15 +344,15 @@ function populateErrorCode(err) {
   }
 }
 
-// add a 'handle' getter to the tunnel so it can be
+// add a 'handle' getter to the listener so it can be
 // passed into net.Server.listen().
-function defineTunnelHandle(tunnel, socket) {
+function defineListenerHandle(listener, socket) {
   // NodeJS net.Server asks passed-in object for 'handle',
   // Return the native TCP object so the pre-existing socket is used.
-  Object.defineProperty(tunnel, "handle", {
+  Object.defineProperty(listener, "handle", {
     get: function () {
       // turn on forwarding now that it has been requested
-      tunnel.forward("localhost:" + socket.address().port);
+      listener.forward("localhost:" + socket.address().port);
       return socket._handle;
     },
   });
@@ -378,61 +378,61 @@ function asyncListen(server, options) {
 }
 
 // Make a session using NGROK_AUTHTOKEN from the environment,
-// and then return a listening HTTP tunnel.
-async function defaultTunnel(bind) {
-  // set up a default session and tunnel
-  var builder = new NgrokSessionBuilder();
+// and then return a listening HTTP listener.
+async function defaultListener(bind) {
+  // set up a default session and listener
+  var builder = new SessionBuilder();
   builder.authtokenFromEnv();
   var session = await builder.connect();
-  var tunnel = await session.httpEndpoint().listen(bind);
-  tunnel.session = session; // surface to caller
-  return tunnel;
+  var listener = await session.httpEndpoint().listen(bind);
+  listener.session = session; // surface to caller
+  return listener;
 }
 
-// Get a listenable ngrok tunnel, suitable for passing to net.Server.listen().
+// Get a listenable ngrok listener, suitable for passing to net.Server.listen().
 // Uses the NGROK_AUTHTOKEN environment variable to authenticate.
 async function listenable() {
-  return await defaultTunnel();
+  return await defaultListener();
 }
 
-// Bind a server to a new ngrok tunnel, optionally passing in a pre-existing tunnel instead.
-// Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new tunnel is created.
-async function ngrokListen(server, tunnel) {
-  if (tunnel && tunnel.socket) {
+// Bind a server to a new ngrok listener, optionally passing in a pre-existing listener instead.
+// Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new listener is created.
+async function ngrokListen(server, listener) {
+  if (listener && listener.socket) {
     // close the default bound port
-    tunnel.socket.close();
+    listener.socket.close();
   }
-  if (!tunnel) {
+  if (!listener) {
     // turn off automatic bind
-    tunnel = await defaultTunnel(false);
+    listener = await defaultListener(false);
   }
 
   // attempt pipe socket
   try {
-    socket = await ngrokLinkPipe(tunnel, server);
+    socket = await ngrokLinkPipe(listener, server);
   } catch (err) {
     console.debug("Using TCP socket. " + err);
     // fallback to tcp socket
-    socket = await ngrokLinkTcp(tunnel, server);
+    socket = await ngrokLinkTcp(listener, server);
   }
-  registerCleanup(tunnel, socket);
+  registerCleanup(listener, socket);
 
-  server.tunnel = tunnel; // surface to caller
-  socket.tunnel = tunnel; // surface to caller
+  server.listener = listener; // surface to caller
+  socket.listener = listener; // surface to caller
   // return the newly created net.Server, which will be different in the express case
   return socket;
 }
 
-async function ngrokLinkTcp(tunnel, server) {
+async function ngrokLinkTcp(listener, server) {
   // random local port
   const socket = await asyncListen(server, { host: "localhost", port: 0 });
   // forward to socket
-  tunnel.forward("localhost:" + socket.address().port);
+  listener.forward("localhost:" + socket.address().port);
   return socket;
 }
 
-function generatePipeFilename(tunnel, server) {
-  var proposed = "tun-" + tunnel.id() + ".sock";
+function generatePipeFilename(listener, server) {
+  var proposed = "tun-" + listener.id() + ".sock";
 
   // windows leaves little choice
   if (platform == "win32") {
@@ -475,8 +475,8 @@ function generatePipeFilename(tunnel, server) {
   return proposed;
 }
 
-async function ngrokLinkPipe(tunnel, server) {
-  var filename = generatePipeFilename(tunnel);
+async function ngrokLinkPipe(listener, server) {
+  var filename = generatePipeFilename(listener);
   // begin listening
   const socket = await asyncListen(server, { path: filename });
   // tighten permissions
@@ -487,13 +487,13 @@ async function ngrokLinkPipe(tunnel, server) {
   } catch (err) {
     console.debug("Cannot change permissions of file: " + filename);
   }
-  // forward tunnel
+  // forward listener
   var addr = "unix:" + filename;
   if (platform == "win32") {
     // convert pipe path to url
     addr = "pipe:" + filename.replace("\\\\.\\pipe\\", "//./");
   }
-  tunnel.forward(addr);
+  listener.forward(addr);
   socket.path = filename; // surface to caller
 
   return socket;
@@ -502,7 +502,7 @@ async function ngrokLinkPipe(tunnel, server) {
 // protect against multiple calls, for instance from npm
 var sigintRan = false;
 
-function registerCleanup(tunnel, socket) {
+function registerCleanup(listener, socket) {
   process.on("SIGINT", function () {
     if (sigintRan) return;
     sigintRan = true;
@@ -511,10 +511,10 @@ function registerCleanup(tunnel, socket) {
       // user has registered a handler, abort this one
       return;
     }
-    // close tunnel
-    if (tunnel) {
-      tunnel.close().catch((err) => {
-        console.error(`Error closing tunnel: ${err}`);
+    // close listener
+    if (listener) {
+      listener.close().catch((err) => {
+        console.error(`Error closing listener: ${err}`);
       });
     }
     // close webserver's socket

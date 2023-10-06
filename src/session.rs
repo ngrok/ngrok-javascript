@@ -21,11 +21,11 @@ use ngrok::{
     session::{
         default_connect,
         ConnectError,
-        SessionBuilder,
+        SessionBuilder as NgrokSessionBuilder,
         Update,
     },
     tunnel::AcceptError,
-    Session,
+    Session as NgrokSession,
 };
 use parking_lot::Mutex as SyncMutex;
 use tokio::sync::Mutex;
@@ -35,19 +35,19 @@ use tracing::{
 };
 
 use crate::{
+    listener::{
+        remove_global_listener,
+        search_listeners,
+        Listener,
+    },
+    listener_builder::{
+        HttpListenerBuilder,
+        LabeledListenerBuilder,
+        TcpListenerBuilder,
+        TlsListenerBuilder,
+    },
     napi_err,
     napi_ngrok_err,
-    tunnel::{
-        remove_global_tunnel,
-        search_tunnels,
-        NgrokTunnel,
-    },
-    tunnel_builder::{
-        NgrokHttpTunnelBuilder,
-        NgrokLabeledTunnelBuilder,
-        NgrokTcpTunnelBuilder,
-        NgrokTlsTunnelBuilder,
-    },
 };
 
 const CLIENT_TYPE: &str = "ngrok-nodejs";
@@ -71,12 +71,12 @@ pub async fn authtoken(authtoken: String) {
 
 /// The builder for an ngrok session.
 ///
-/// @group Tunnel and Sessions
+/// @group Listener and Sessions
 #[napi]
 #[allow(dead_code)]
 #[derive(Default)]
-pub(crate) struct NgrokSessionBuilder {
-    raw_builder: Arc<SyncMutex<SessionBuilder>>,
+pub(crate) struct SessionBuilder {
+    raw_builder: Arc<SyncMutex<NgrokSessionBuilder>>,
     connect_handler: TsfnOption,
     disconnect_handler: TsfnOption,
     auth_token_set: bool,
@@ -85,13 +85,13 @@ pub(crate) struct NgrokSessionBuilder {
 #[napi]
 #[cfg_attr(feature = "cargo-clippy", allow(clippy::new_without_default))]
 #[allow(dead_code)]
-impl NgrokSessionBuilder {
+impl SessionBuilder {
     /// Create a new session builder
     #[napi(constructor)]
     pub fn new() -> Self {
-        NgrokSessionBuilder {
+        SessionBuilder {
             raw_builder: Arc::new(SyncMutex::new(
-                Session::builder()
+                NgrokSession::builder()
                     .client_info(CLIENT_TYPE, VERSION, None::<String>)
                     .clone(),
             )),
@@ -403,7 +403,7 @@ impl NgrokSessionBuilder {
 
     /// Attempt to establish an ngrok session using the current configuration.
     #[napi]
-    pub async fn connect(&self) -> Result<NgrokSession> {
+    pub async fn connect(&self) -> Result<Session> {
         let mut builder = self.raw_builder.lock().clone();
         // set default auth token if it exists
         let default_auth_token = AUTH_TOKEN.lock().await;
@@ -419,7 +419,7 @@ impl NgrokSessionBuilder {
             .map(|s| {
                 let maybe_with = if auth_token_set { "with" } else { "without" };
                 info!("Session created {:?}, {maybe_with} auth token", s.id());
-                NgrokSession {
+                Session {
                     raw_session: Arc::new(SyncMutex::new(s)),
                 }
             })
@@ -429,64 +429,64 @@ impl NgrokSessionBuilder {
 
 /// An ngrok session.
 ///
-/// @group Tunnel and Sessions
+/// @group Listener and Sessions
 #[napi(custom_finalize)]
-pub(crate) struct NgrokSession {
+pub(crate) struct Session {
     #[allow(dead_code)]
-    raw_session: Arc<SyncMutex<Session>>,
+    raw_session: Arc<SyncMutex<NgrokSession>>,
 }
 
 #[napi]
 #[allow(dead_code)]
-impl NgrokSession {
-    /// Start building a tunnel backing an HTTP endpoint.
+impl Session {
+    /// Start building a listener backing an HTTP endpoint.
     #[napi]
-    pub fn http_endpoint(&self) -> NgrokHttpTunnelBuilder {
+    pub fn http_endpoint(&self) -> HttpListenerBuilder {
         let session = self.raw_session.lock().clone();
-        NgrokHttpTunnelBuilder::new(session.clone(), session.http_endpoint())
+        HttpListenerBuilder::new(session.clone(), session.http_endpoint())
     }
 
-    /// Start building a tunnel backing a TCP endpoint.
+    /// Start building a listener backing a TCP endpoint.
     #[napi]
-    pub fn tcp_endpoint(&self) -> NgrokTcpTunnelBuilder {
+    pub fn tcp_endpoint(&self) -> TcpListenerBuilder {
         let session = self.raw_session.lock().clone();
-        NgrokTcpTunnelBuilder::new(session.clone(), session.tcp_endpoint())
+        TcpListenerBuilder::new(session.clone(), session.tcp_endpoint())
     }
 
-    /// Start building a tunnel backing a TLS endpoint.
+    /// Start building a listener backing a TLS endpoint.
     #[napi]
-    pub fn tls_endpoint(&self) -> NgrokTlsTunnelBuilder {
+    pub fn tls_endpoint(&self) -> TlsListenerBuilder {
         let session = self.raw_session.lock().clone();
-        NgrokTlsTunnelBuilder::new(session.clone(), session.tls_endpoint())
+        TlsListenerBuilder::new(session.clone(), session.tls_endpoint())
     }
 
-    /// Start building a labeled tunnel.
+    /// Start building a labeled listener.
     #[napi]
-    pub fn labeled_tunnel(&self) -> NgrokLabeledTunnelBuilder {
+    pub fn labeled_listener(&self) -> LabeledListenerBuilder {
         let session = self.raw_session.lock().clone();
-        NgrokLabeledTunnelBuilder::new(session.clone(), session.labeled_tunnel())
+        LabeledListenerBuilder::new(session.clone(), session.labeled_tunnel())
     }
 
-    /// Retrieve a list of this session's non-closed tunnels, in no particular order.
+    /// Retrieve a list of this session's non-closed listeners, in no particular order.
     #[napi]
-    pub async fn tunnels(&self) -> Vec<NgrokTunnel> {
+    pub async fn listeners(&self) -> Vec<Listener> {
         let session_id = self.raw_session.lock().id();
-        search_tunnels(Some(session_id), None).await
+        search_listeners(Some(session_id), None).await
     }
 
-    /// Close a tunnel with the given ID.
+    /// Close a listener with the given ID.
     #[napi]
-    pub async fn close_tunnel(&self, id: String) -> Result<()> {
+    pub async fn close_listener(&self, id: String) -> Result<()> {
         let session = self.raw_session.lock().clone();
-        // close tunnel
+        // close listener
         let res = session
             .close_tunnel(id.clone())
             .await
-            .map_err(|e| napi_ngrok_err("failed to close tunnel", &e));
+            .map_err(|e| napi_ngrok_err("failed to close listener", &e));
 
         if res.is_ok() {
             // remove our reference to allow it to drop
-            remove_global_tunnel(&id).await;
+            remove_global_listener(&id).await;
         }
         res
     }
@@ -502,9 +502,9 @@ impl NgrokSession {
     }
 }
 
-impl ObjectFinalize for NgrokSession {
+impl ObjectFinalize for Session {
     fn finalize(self, mut _env: Env) -> Result<()> {
-        debug!("NgrokSession finalize");
+        debug!("Session finalize");
         Ok(())
     }
 }

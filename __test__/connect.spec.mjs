@@ -1,4 +1,4 @@
-// to run a single ava test case use the match flag: yarn test -m 'https tunnel'
+// to run a single ava test case use the match flag: yarn test -m 'https listener'
 
 import * as ngrok from "../index.js";
 import test from "ava";
@@ -139,7 +139,7 @@ test("connect vectorize", async (t) => {
   t.is("true2", response.headers["x-res-yup2"]);
 });
 
-test("connect tcp tunnel", async (t) => {
+test("connect tcp listener", async (t) => {
   const httpServer = await makeHttp();
   const url = await ngrok.connect({
     addr: httpServer.listenTo,
@@ -154,7 +154,7 @@ test("connect tcp tunnel", async (t) => {
   await validateShutdown(t, httpServer, url.replace("tcp:", "http:"));
 });
 
-test("connect tls tunnel", async (t) => {
+test("connect tls listener", async (t) => {
   const httpServer = await makeHttp();
   const url = await ngrok.connect({
     addr: httpServer.listenTo,

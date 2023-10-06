@@ -9,19 +9,19 @@ use tracing::warn;
 
 use crate::{
     config::Config,
+    listener,
+    listener::TCP_PREFIX,
     logging::logging_callback,
     napi_err,
     session::{
-        NgrokSession,
-        NgrokSessionBuilder,
+        Session,
+        SessionBuilder,
     },
-    tunnel,
-    tunnel::TCP_PREFIX,
 };
 
 lazy_static! {
     // Save a user-facing NgrokSession to use for connect use cases
-    pub(crate) static ref SESSION: Mutex<Option<NgrokSession>> = Mutex::new(None);
+    pub(crate) static ref SESSION: Mutex<Option<Session>> = Mutex::new(None);
 }
 
 /// Single string configuration
@@ -81,7 +81,7 @@ macro_rules! plumb_vec {
     };
 }
 
-/// All non-labeled tunnels have these common configuration options
+/// All non-labeled listeners have these common configuration options
 macro_rules! config_common {
     ($builder:tt, $config:tt) => {
         plumb!($builder, $config, metadata);
@@ -92,7 +92,7 @@ macro_rules! config_common {
     };
 }
 
-/// Transform a json object configuration into a tunnel
+/// Transform a json object configuration into a listener
 #[napi(
     ts_args_type = "config: Config|string|number",
     ts_return_type = "Promise<string>"
@@ -113,7 +113,7 @@ pub fn connect(
     set_defaults(&mut cfg);
 
     // session configuration
-    let mut s_builder = NgrokSessionBuilder::new();
+    let mut s_builder = SessionBuilder::new();
     plumb!(s_builder, cfg, authtoken);
     plumb_bool!(s_builder, cfg, authtoken_from_env);
     plumb!(s_builder, cfg, metadata, session_metadata);
@@ -124,12 +124,12 @@ pub fn connect(
         s_builder.handle_disconnection(env, func);
     }
 
-    // no longer need Env, hand off to async for tunnel creation, returning the promise to nodejs.
+    // no longer need Env, hand off to async for listener creation, returning the promise to nodejs.
     env.spawn_future(async_connect(s_builder, cfg))
 }
 
-/// Connect the session, configure and start the tunnel
-async fn async_connect(s_builder: NgrokSessionBuilder, config: Config) -> Result<String> {
+/// Connect the session, configure and start the listener
+async fn async_connect(s_builder: SessionBuilder, config: Config) -> Result<String> {
     // Using a singleton session for connect use cases
     let mut opt = SESSION.lock().await;
     if opt.is_none() {
@@ -137,31 +137,31 @@ async fn async_connect(s_builder: NgrokSessionBuilder, config: Config) -> Result
     }
     let session = opt.as_ref().unwrap();
 
-    // tunnel configuration dispatch
+    // listener configuration dispatch
     let proto = config.proto.as_ref().unwrap();
     let id = match proto.as_str() {
         "http" => http_endpoint(session, &config).await?,
         "tcp" => tcp_endpoint(session, &config).await?,
         "tls" => tls_endpoint(session, &config).await?,
-        "labeled" => labeled_tunnel(session, &config).await?,
+        "labeled" => labeled_listener(session, &config).await?,
         _ => return Err(napi_err(format!("unhandled protocol {proto}"))),
     };
 
-    let url = tunnel::get_tunnel(id.clone())
+    let url = listener::get_listener(id.clone())
         .await
         .and_then(|t| t.url())
         .unwrap_or(id.clone());
 
     // move forwarding to another task
     if let Some(addr) = config.addr {
-        tokio::spawn(async move { tunnel::forward(&id, addr).await });
+        tokio::spawn(async move { listener::forward(&id, addr).await });
     }
 
     Ok(url)
 }
 
-/// HTTP Tunnel configuration
-async fn http_endpoint(session: &NgrokSession, cfg: &Config) -> Result<String> {
+/// HTTP Listener configuration
+async fn http_endpoint(session: &Session, cfg: &Config) -> Result<String> {
     let mut bld = session.http_endpoint();
     config_common!(bld, cfg);
     plumb_vec!(bld, cfg, scheme, schemes);
@@ -216,16 +216,16 @@ async fn http_endpoint(session: &NgrokSession, cfg: &Config) -> Result<String> {
     Ok(bld.listen(None).await?.id())
 }
 
-/// TCP Tunnel configuration
-async fn tcp_endpoint(session: &NgrokSession, cfg: &Config) -> Result<String> {
+/// TCP Listener configuration
+async fn tcp_endpoint(session: &Session, cfg: &Config) -> Result<String> {
     let mut bld = session.tcp_endpoint();
     config_common!(bld, cfg);
     plumb!(bld, cfg, remote_addr);
     Ok(bld.listen(None).await?.id())
 }
 
-/// TLS Tunnel configuration
-async fn tls_endpoint(session: &NgrokSession, cfg: &Config) -> Result<String> {
+/// TLS Listener configuration
+async fn tls_endpoint(session: &Session, cfg: &Config) -> Result<String> {
     let mut bld = session.tls_endpoint();
     config_common!(bld, cfg);
     plumb!(bld, cfg, domain, hostname); // synonym for domain
@@ -244,9 +244,9 @@ async fn tls_endpoint(session: &NgrokSession, cfg: &Config) -> Result<String> {
     Ok(bld.listen(None).await?.id())
 }
 
-/// Labeled Tunnel configuration
-async fn labeled_tunnel(session: &NgrokSession, cfg: &Config) -> Result<String> {
-    let mut bld = session.labeled_tunnel();
+/// Labeled Listener configuration
+async fn labeled_listener(session: &Session, cfg: &Config) -> Result<String> {
+    let mut bld = session.labeled_listener();
     plumb!(bld, cfg, metadata);
     plumb_vec!(bld, cfg, label, labels, ":");
     Ok(bld.listen(None).await?.id())
@@ -314,13 +314,13 @@ fn warn_unused(config: &Config) {
     }
 }
 
-/// Close a tunnel with the given url, or all tunnels if no url is defined.
+/// Close a listener with the given url, or all listeners if no url is defined.
 #[napi]
 #[allow(dead_code)]
 pub async fn disconnect(url: Option<String>) -> Result<()> {
-    tunnel::close_url(url.clone()).await?;
+    listener::close_url(url.clone()).await?;
 
-    // if closing every tunnel, remove any stored session
+    // if closing every listener, remove any stored session
     if url.as_ref().is_none() {
         SESSION.lock().await.take();
     }
@@ -328,7 +328,7 @@ pub async fn disconnect(url: Option<String>) -> Result<()> {
     Ok(())
 }
 
-/// Close all tunnels.
+/// Close all listeners.
 #[napi]
 #[allow(dead_code)]
 pub async fn kill() -> Result<()> {
