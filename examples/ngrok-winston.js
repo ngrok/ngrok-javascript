@@ -13,12 +13,12 @@ ngrok.loggingCallback(function (level, target, message) {
   logger.log(level, message, { target: target });
 }, "TRACE");
 
-// set up tunnel
+// set up listener
 const server = require("http").createServer(function (req, res) {
   res.writeHead(200);
   res.write("Hello");
   res.end();
 });
 ngrok.listen(server).then((socket) => {
-  logger.info("Ingress established at:", socket.tunnel.url());
+  logger.info("Ingress established at:", socket.listener.url());
 });

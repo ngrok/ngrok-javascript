@@ -30,14 +30,14 @@ ngrok.consoleLog("INFO"); // turn on info logging
       console.log(`disconnected, addr ${addr} error: ${error}`);
     },
     session_metadata: "Online in One Line",
-    // tunnel configuration
+    // listener configuration
     basic_auth: ["ngrok:online1line"],
     circuit_breaker: 0.1,
     compression: true,
     // domain: "<domain>",
     ip_restriction_allow_cidrs: ["0.0.0.0/0"],
     ip_restriction_deny_cidrs: ["10.1.1.1/32"],
-    metadata: "example tunnel metadata from nodejs",
+    metadata: "example listener metadata from nodejs",
     // mutual_tls_cas: [fs.readFileSync('ca.crt', 'utf8')],
     // oauth_provider: "google",
     // oauth_allow_domains: ["<domain>"],

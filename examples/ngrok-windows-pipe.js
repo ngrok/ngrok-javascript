@@ -11,15 +11,15 @@ http
 
 const ngrok = require("@ngrok/ngrok");
 ngrok.consoleLog(); // turn on info logging
-new ngrok.NgrokSessionBuilder()
+new ngrok.SessionBuilder()
   .authtokenFromEnv()
   .connect()
   .then((session) => {
     session
       .httpEndpoint()
       .listen()
-      .then((tunnel) => {
-        console.log("Ingress established at:", tunnel.url());
-        tunnel.forward(PIPE);
+      .then((listener) => {
+        console.log("Ingress established at:", listener.url());
+        listener.forward(PIPE);
       });
   });

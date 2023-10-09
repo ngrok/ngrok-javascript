@@ -200,11 +200,142 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ngrok/ngrok-darwin-arm64@npm:^0.1.1":
-  version: 0.1.1
-  resolution: "@ngrok/ngrok-darwin-arm64@npm:0.1.1"
-  checksum: d5139f5b45b54c2ae32300247ec35b3b1c582a95c09c87a9fcc8d3724c231d7132bf434bb79d840d19cfbf70bd6bfe262a004fe47419ef5cdf53c65678053e6f
+"@ngrok/ngrok-android-arm-eabi@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-android-arm-eabi@npm:0.7.1"
+  conditions: os=android & cpu=arm
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-android-arm64@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-android-arm64@npm:0.7.1"
+  conditions: os=android & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-darwin-arm64@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-darwin-arm64@npm:0.7.1"
   conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-darwin-universal@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-darwin-universal@npm:0.7.1"
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-darwin-x64@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-darwin-x64@npm:0.7.1"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-freebsd-x64@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-freebsd-x64@npm:0.7.1"
+  conditions: os=freebsd & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-linux-arm-gnueabihf@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-linux-arm-gnueabihf@npm:0.7.1"
+  conditions: os=linux & cpu=arm
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-linux-arm64-gnu@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-linux-arm64-gnu@npm:0.7.1"
+  conditions: os=linux & cpu=arm64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-linux-arm64-musl@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-linux-arm64-musl@npm:0.7.1"
+  conditions: os=linux & cpu=arm64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-linux-x64-gnu@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-linux-x64-gnu@npm:0.7.1"
+  conditions: os=linux & cpu=x64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-linux-x64-musl@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-linux-x64-musl@npm:0.7.1"
+  conditions: os=linux & cpu=x64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-win32-ia32-msvc@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-win32-ia32-msvc@npm:0.7.1"
+  conditions: os=win32 & cpu=ia32
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok-win32-x64-msvc@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok-win32-x64-msvc@npm:0.7.1"
+  conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@ngrok/ngrok@npm:^0.*":
+  version: 0.7.1
+  resolution: "@ngrok/ngrok@npm:0.7.1"
+  dependencies:
+    "@ngrok/ngrok-android-arm-eabi": 0.7.1
+    "@ngrok/ngrok-android-arm64": 0.7.1
+    "@ngrok/ngrok-darwin-arm64": 0.7.1
+    "@ngrok/ngrok-darwin-universal": 0.7.1
+    "@ngrok/ngrok-darwin-x64": 0.7.1
+    "@ngrok/ngrok-freebsd-x64": 0.7.1
+    "@ngrok/ngrok-linux-arm-gnueabihf": 0.7.1
+    "@ngrok/ngrok-linux-arm64-gnu": 0.7.1
+    "@ngrok/ngrok-linux-arm64-musl": 0.7.1
+    "@ngrok/ngrok-linux-x64-gnu": 0.7.1
+    "@ngrok/ngrok-linux-x64-musl": 0.7.1
+    "@ngrok/ngrok-win32-ia32-msvc": 0.7.1
+    "@ngrok/ngrok-win32-x64-msvc": 0.7.1
+  dependenciesMeta:
+    "@ngrok/ngrok-android-arm-eabi":
+      optional: true
+    "@ngrok/ngrok-android-arm64":
+      optional: true
+    "@ngrok/ngrok-darwin-arm64":
+      optional: true
+    "@ngrok/ngrok-darwin-universal":
+      optional: true
+    "@ngrok/ngrok-darwin-x64":
+      optional: true
+    "@ngrok/ngrok-freebsd-x64":
+      optional: true
+    "@ngrok/ngrok-linux-arm-gnueabihf":
+      optional: true
+    "@ngrok/ngrok-linux-arm64-gnu":
+      optional: true
+    "@ngrok/ngrok-linux-arm64-musl":
+      optional: true
+    "@ngrok/ngrok-linux-x64-gnu":
+      optional: true
+    "@ngrok/ngrok-linux-x64-musl":
+      optional: true
+    "@ngrok/ngrok-win32-ia32-msvc":
+      optional: true
+    "@ngrok/ngrok-win32-x64-msvc":
+      optional: true
+  checksum: 3c88ba0298f785a6dcd3d99db4c3cbfce46cdbd0330e0c0ecfb0b16778994cb619d7f4153d6760826300e95a55affe6275928871c59920eb8e53aa2698139eba
   languageName: node
   linkType: hard
 
@@ -2393,7 +2524,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "vue@workspace:."
   dependencies:
-    "@ngrok/ngrok-darwin-arm64": ^0.1.1
+    "@ngrok/ngrok": ^0.*
     "@types/node": ^18.14.2
     "@vitejs/plugin-vue": ^4.0.0
     "@vue/tsconfig": ^0.1.3

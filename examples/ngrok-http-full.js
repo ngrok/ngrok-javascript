@@ -20,7 +20,7 @@ const ngrok = require("@ngrok/ngrok");
 // import ngrok from '@ngrok/ngrok' // if inside a module
 ngrok.consoleLog("INFO"); // turn on info logging
 
-builder = new ngrok.NgrokSessionBuilder();
+builder = new ngrok.SessionBuilder();
 builder
   // .authtoken("<authtoken>")
   .authtokenFromEnv()
@@ -69,10 +69,10 @@ builder.connect().then((session) => {
     // .scheme("HTTPS")
     // .websocketTcpConversion()
     // .webhookVerification("twilio", "asdf")
-    .metadata("example tunnel metadata from nodejs")
+    .metadata("example listener metadata from nodejs")
     .listen()
-    .then((tunnel) => {
-      console.log("Ingress established at:", tunnel.url());
-      tunnel.forward(UNIX_SOCKET);
+    .then((listener) => {
+      console.log("Ingress established at:", listener.url());
+      listener.forward(UNIX_SOCKET);
     });
 });

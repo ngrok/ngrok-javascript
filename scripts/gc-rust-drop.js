@@ -20,19 +20,19 @@ var ngrok = require("..");
 // turn on debug
 ngrok.consoleLog();
 
-new ngrok.NgrokSessionBuilder()
+new ngrok.SessionBuilder()
   .authtokenFromEnv()
   .connect()
   .then((session) => {
     session
       .httpEndpoint()
       .listen()
-      .then((tunnel) => {
-        tunnel.forward("localhost:8081").await;
-        const tun_id = tunnel.id();
-        console.log("tunnel: " + tunnel.url() + " id: " + tun_id);
-        console.log("\n\n=====> nulling tunnel");
-        tunnel = null; // nodejs can gc
+      .then((listener) => {
+        listener.forward("localhost:8081").await;
+        const tun_id = listener.id();
+        console.log("listener: " + listener.url() + " id: " + tun_id);
+        console.log("\n\n=====> nulling listener");
+        listener = null; // nodejs can gc
 
         setTimeout(function () {
           console.log("\n\n=====> running gc");
@@ -40,8 +40,8 @@ new ngrok.NgrokSessionBuilder()
         }, 2000);
 
         setTimeout(function () {
-          console.log("\n\n=====> closing tunnel");
-          session.closeTunnel(tun_id).await;
+          console.log("\n\n=====> closing listener");
+          session.closeListener(tun_id).await;
         }, 4000);
 
         setTimeout(function () {

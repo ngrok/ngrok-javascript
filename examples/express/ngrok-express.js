@@ -8,20 +8,20 @@ app.get("/", (req, res) => {
 
 async function setup() {
   // create session
-  const session = await new ngrok.NgrokSessionBuilder()
+  const session = await new ngrok.SessionBuilder()
     .authtokenFromEnv()
     .metadata("Online in One Line")
     .connect();
-  // create tunnel
-  const tunnel = await session
+  // create listener
+  const listener = await session
     .httpEndpoint()
     .allowCidr("0.0.0.0/0")
     .oauth("google")
     .requestHeader("X-Req-Yup", "true")
     .listen();
-  // link tunnel to app
-  const socket = await ngrok.listen(app, tunnel);
-  console.log(`Ingress established at: ${tunnel.url()}`);
+  // link listener to app
+  const socket = await ngrok.listen(app, listener);
+  console.log(`Ingress established at: ${listener.url()}`);
   console.log(`Express listening on: ${socket.address()}`);
 }
 
