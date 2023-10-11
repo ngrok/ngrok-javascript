@@ -276,6 +276,27 @@ test("websocket conversion", async (t) => {
   await shutdown(listener, httpServer.socket);
 });
 
+test("useragent", async (t) => {
+  const [httpServer, session] = await makeHttpAndSession();
+  const listener = await session
+    .httpEndpoint()
+    .allowUserAgent("^mozilla.*")
+    .denyUserAgent(".*")
+    .listen();
+
+  listener.forward(httpServer.listenTo);
+
+  const error = await t.throwsAsync(
+    async () => {
+      await axios.get(listener.url());
+    },
+    { instanceOf: AxiosError }
+  );
+  // ERR_NGROK_3211: The server does not authorize requests from your user-agent.
+  t.is("ERR_NGROK_3211", error.response.headers["ngrok-error-code"]);
+  await shutdown(listener, httpServer.socket);
+});
+
 test("tcp listener", async (t) => {
   const [httpServer, session] = await makeHttpAndSession();
   const listener = await session

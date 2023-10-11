@@ -175,6 +175,8 @@ async fn http_endpoint(session: &Session, cfg: &Config) -> Result<String> {
     plumb_vec!(bld, cfg, remove_request_header, request_header_remove);
     plumb_vec!(bld, cfg, remove_response_header, response_header_remove);
     plumb_vec!(bld, cfg, basic_auth, basic_auth, ":");
+    plumb_vec!(bld, cfg, allow_user_agent, allow_user_agent);
+    plumb_vec!(bld, cfg, deny_user_agent, deny_user_agent);
     // circuit breaker
     if let Some(circuit_breaker) = cfg.circuit_breaker {
         bld.circuit_breaker(circuit_breaker);
@@ -186,6 +188,8 @@ async fn http_endpoint(session: &Session, cfg: &Config) -> Result<String> {
             cfg.oauth_allow_emails.clone(),
             cfg.oauth_allow_domains.clone(),
             cfg.oauth_scopes.clone(),
+            cfg.oauth_client_id.clone(),
+            cfg.oauth_client_secret.clone(),
         );
     }
     // oidc
