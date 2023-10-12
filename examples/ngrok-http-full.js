@@ -53,13 +53,16 @@ builder.connect().then((session) => {
   session
     .httpEndpoint()
     // .allowCidr("0.0.0.0/0")
+    // .allowUserAgent("^mozilla.*")
     // .basicAuth("ngrok", "online1line")
     // .circuitBreaker(0.5)
     // .compression()
     // .denyCidr("10.1.1.1/32")
+    // .denyUserAgent("^curl.*")
     // .domain("<somedomain>.ngrok.io")
     // .mutualTlsca(fs.readFileSync('ca.crt'))
-    // .oauth("google", ["<user>@<domain>"], ["<domain>"], ["<scope>"])
+    // .oauth("google", ["<user>@<domain>"], ["<domain>"])
+    // .oauth("google", ["<user>@<domain>"], ["<domain>"], ["<scope>"], "<id>", "<secret>")
     // .oidc("<url>", "<id>", "<secret>", ["<user>@<domain>"], ["<domain>"], ["<scope>"])
     // .proxyProto("") // One of: "", "1", "2"
     // .removeRequestHeader("X-Req-Nope")

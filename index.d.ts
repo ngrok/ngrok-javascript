@@ -39,18 +39,35 @@ export interface Config {
   /**
    * Reject requests when 5XX responses exceed this ratio.
    * Disabled when 0.
+   * See [Circuit Breaker] in the ngrok docs for additional details.
+   *
+   * [Circuit Breaker]: https://ngrok.com/docs/cloud-edge/modules/circuit-breaker/
    */
   circuit_breaker?: number
-  /** Enable gzip compression for HTTP responses. */
+  /**
+   * Enable gzip compression for HTTP responses.
+   * See [Compression] in the ngrok docs for additional details.
+   *
+   * [Compression]: https://ngrok.com/docs/cloud-edge/modules/compression/
+   */
   compression?: boolean
   /** Unused, will warn and be ignored */
   configPath?: string
   /**
    * The certificate to use for TLS termination at the ngrok edge in PEM format.
    * Only used if "proto" is "tls".
+   * See [TLS Termination] in the ngrok docs for additional details.
+   *
+   * [TLS Termination]: https://ngrok.com/docs/cloud-edge/modules/tls-termination/
    */
   crt?: string
-  /** The domain to request for this edge. */
+  /**
+   * The domain to request for this edge, any valid domain or hostname that you have
+   * previously registered with ngrok. If using a custom domain, this requires
+   * registering in the [ngrok dashboard] and setting a DNS CNAME value.
+   *
+   * [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/domains
+   */
   domain?: string
   /**
    * Returns a human-readable string presented in the ngrok dashboard
@@ -73,8 +90,29 @@ export interface Config {
   /** Restriction placed on the origin of incoming connections to the edge to deny these CIDR ranges. */
   ip_restriction_deny_cidrs?: string|Array<string>
   /**
+   * A set of regular expressions used to match User-Agents that will be allowed.
+   * On request, the User Agent Filter module will check the incoming User-Agent header value
+   * against the list of defined allow and deny regular expression rules.
+   * See `User Agent Filter`_ in the ngrok docs for additional details.
+   *
+   * .. _User Agent Filter: https://ngrok.com/docs/cloud-edge/modules/user-agent-filter/
+   */
+  allow_user_agent?: string|Array<string>
+  /**
+   * A set of regular expressions used to match User-Agents that will be denied.
+   * On request, the User Agent Filter module will check the incoming User-Agent header value
+   * against the list of defined allow and deny regular expression rules.
+   * See `User Agent Filter`_ in the ngrok docs for additional details.
+   *
+   * .. _User Agent Filter: https://ngrok.com/docs/cloud-edge/modules/user-agent-filter/
+   */
+  deny_user_agent?: string|Array<string>
+  /**
    * The certificate to use for TLS termination at the ngrok edge in PEM format.
    * Only used if "proto" is "tls".
+   * See [TLS Termination] in the ngrok docs for additional details.
+   *
+   * [TLS Termination]: https://ngrok.com/docs/cloud-edge/modules/tls-termination/
    */
   key?: string
   /** Add label, value pairs for this listener, colon separated. */
@@ -84,32 +122,96 @@ export interface Config {
   /**
    * Certificates to use for client authentication at the ngrok edge.
    * Only used if "proto" is "tls" or "http".
+   * See [Mutual TLS] in the ngrok docs for additional details.
+   *
+   * [Mutual TLS]: https://ngrok.com/docs/cloud-edge/modules/mutual-tls/
    */
   mutual_tls_cas?: string|Array<string>
   /** Unused, will warn and be ignored */
   name?: string
-  /** OAuth configuration of domains to allow. */
+  /**
+   * OAuth configuration of domains to allow.
+   * See [OAuth] in the ngrok docs for additional details.
+   *
+   * [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
+   */
   oauth_allow_domains?: string|Array<string>
-  /** OAuth configuration of email addresses to allow. */
+  /**
+   * OAuth configuration of email addresses to allow.
+   * See [OAuth] in the ngrok docs for additional details.
+   *
+   * [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
+   */
   oauth_allow_emails?: string|Array<string>
-  /** OAuth configuration of scopes. */
+  /**
+   * OAuth configuration of scopes.
+   * See [OAuth] in the ngrok docs for additional details.
+   *
+   * [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
+   */
   oauth_scopes?: string|Array<string>
   /**
    * OAuth configuration of the provider, e.g. "google".
-   * https://ngrok.com/docs/cloud-edge/modules/oauth/
+   * See [OAuth] in the ngrok docs for additional details.
+   *
+   * [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
    */
   oauth_provider?: string
-  /** OIDC configuration of client ID. */
+  /**
+   * OAuth configuration of client ID. Required for scopes.
+   * See [OAuth] in the ngrok docs for additional details.
+   *
+   * [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
+   */
+  oauth_client_id?: string
+  /**
+   * OAuth configuration of client secret. Required for scopes.
+   * See [OAuth] in the ngrok docs for additional details.
+   *
+   * [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
+   */
+  oauth_client_secret?: string
+  /**
+   * OIDC configuration of client ID.
+   * See [OpenID Connect] in the ngrok docs for additional details.
+   *
+   * [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
+   */
   oidc_client_id?: string
-  /** OIDC configuration of client secret. */
+  /**
+   * OIDC configuration of client secret.
+   * See [OpenID Connect] in the ngrok docs for additional details.
+   *
+   * [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
+   */
   oidc_client_secret?: string
-  /** OIDC configuration of scopes. */
+  /**
+   * OIDC configuration of scopes.
+   * See [OpenID Connect] in the ngrok docs for additional details.
+   *
+   * [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
+   */
   oidc_scopes?: string|Array<string>
-  /** OIDC configuration of the issuer URL. */
+  /**
+   * OIDC configuration of the issuer URL.
+   * See [OpenID Connect] in the ngrok docs for additional details.
+   *
+   * [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
+   */
   oidc_issuer_url?: string
-  /** OIDC configuration of domains to allow. */
+  /**
+   * OIDC configuration of domains to allow.
+   * See [OpenID Connect] in the ngrok docs for additional details.
+   *
+   * [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
+   */
   oidc_allow_domains?: string|Array<string>
-  /** OIDC configuration of email addresses to allow. */
+  /**
+   * OIDC configuration of email addresses to allow.
+   * See [OpenID Connect] in the ngrok docs for additional details.
+   *
+   * [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
+   */
   oidc_allow_emails?: string|Array<string>
   /** Returns log messages from the ngrok library. */
   onLogEvent?: (data: string) => void
@@ -124,23 +226,47 @@ export interface Config {
   proto?: string
   /** The version of PROXY protocol to use with this listener "1", "2", or "" if not using. */
   proxy_proto?: string
-  /** Adds a header to all requests to this edge. */
+  /**
+   * Adds a header to all requests to this edge.
+   * See [Request Headers] in the ngrok docs for additional details.
+   *
+   * [Request Headers]: https://ngrok.com/docs/cloud-edge/modules/request-headers/
+   */
   request_header_add?: string|Array<string>
-  /** Removes a header from requests to this edge. */
+  /**
+   * Removes a header from requests to this edge.
+   * See [Request Headers] in the ngrok docs for additional details.
+   *
+   * [Request Headers]: https://ngrok.com/docs/cloud-edge/modules/request-headers/
+   */
   request_header_remove?: string|Array<string>
-  /** Adds a header to all responses coming from this edge. */
+  /**
+   * Adds a header to all responses coming from this edge.
+   * See [Response Headers] in the ngrok docs for additional details.
+   *
+   * [Response Headers]: https://ngrok.com/docs/cloud-edge/modules/response-headers/
+   */
   response_header_add?: string|Array<string>
-  /** Removes a header from responses from this edge. */
+  /**
+   * Removes a header from responses from this edge.
+   * See [Response Headers] in the ngrok docs for additional details.
+   *
+   * [Response Headers]: https://ngrok.com/docs/cloud-edge/modules/response-headers/
+   */
   response_header_remove?: string|Array<string>
   /** Unused, will warn and be ignored */
   region?: string
   /**
    * The TCP address to request for this edge.
+   * These addresses can be reserved in the [ngrok dashboard] to use across sessions. For example: remote_addr("2.tcp.ngrok.io:21746")
    * Only used if proto is "tcp".
+   *
+   * [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/tcp-addresses
    */
   remote_addr?: string
   /**
-   * The scheme that this edge should use, defaults to "https".
+   * The scheme that this edge should use.
+   * "HTTPS" or "HTTP", defaults to "HTTPS".
    * If multiple are given only the last one is used.
    */
   schemes?: string|Array<string>
@@ -159,9 +285,19 @@ export interface Config {
   subdomain?: string
   /** Unused, will warn and be ignored */
   terminate_at?: string
-  /** WebhookVerification configuration, the provider to use. */
+  /**
+   * WebhookVerification configuration, the provider to use.
+   * See [Webhook Verification] in the ngrok docs for additional details.
+   *
+   * [Webhook Verification]: https://ngrok.com/docs/cloud-edge/modules/webhook-verification/
+   */
   verify_webhook_provider?: string
-  /** WebhookVerification configuration, the secret to use. */
+  /**
+   * WebhookVerification configuration, the secret to use.
+   * See [Webhook Verification] in the ngrok docs for additional details.
+   *
+   * [Webhook Verification]: https://ngrok.com/docs/cloud-edge/modules/webhook-verification/
+   */
   verify_webhook_secret?: string
   /** Unused, will warn and be ignored */
   web_addr?: string
@@ -305,13 +441,31 @@ export class HttpListenerBuilder {
    */
   basicAuth(username: string, password: string): this
   /**
+   * A set of regular expressions used to match User-Agents that will be allowed.
+   * On request, the User Agent Filter module will check the incoming User-Agent header value
+   * against the list of defined allow and deny regular expression rules.
+   * See [User Agent Filter] in the ngrok docs for additional details.
+   *
+   * .. [User Agent Filter]: https://ngrok.com/docs/cloud-edge/modules/user-agent-filter/
+   */
+  allowUserAgent(regex: string): this
+  /**
+   * A set of regular expressions used to match User-Agents that will be denied.
+   * On request, the User Agent Filter module will check the incoming User-Agent header value
+   * against the list of defined allow and deny regular expression rules.
+   * See [User Agent Filter] in the ngrok docs for additional details.
+   *
+   * .. [User Agent Filter]: https://ngrok.com/docs/cloud-edge/modules/user-agent-filter/
+   */
+  denyUserAgent(regex: string): this
+  /**
    * OAuth configuration.
    * If not called, OAuth is disabled.
    * See [OAuth] in the ngrok docs for additional details.
    *
    * [OAuth]: https://ngrok.com/docs/cloud-edge/modules/oauth/
    */
-  oauth(provider: string, allowEmails?: Array<string> | undefined | null, allowDomains?: Array<string> | undefined | null, scopes?: Array<string> | undefined | null): this
+  oauth(provider: string, allowEmails?: Array<string> | undefined | null, allowDomains?: Array<string> | undefined | null, scopes?: Array<string> | undefined | null, clientId?: string | undefined | null, clientSecret?: string | undefined | null): this
   /**
    * OIDC configuration.
    * If not called, OIDC is disabled.

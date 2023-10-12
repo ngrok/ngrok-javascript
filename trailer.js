@@ -274,8 +274,10 @@ async function ngrokConnect(config) {
   if (Number.isInteger(addr)) config["addr"] = "localhost:" + String(config["addr"]);
   // convert scalar values to arrays to meet what napi-rs expects
   [
+    "allow_user_agent",
     "auth",
     "basic_auth",
+    "deny_user_agent",
     "ip_restriction.allow_cidrs",
     "ip_restriction.deny_cidrs",
     "labels",

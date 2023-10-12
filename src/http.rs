@@ -125,6 +125,31 @@ impl HttpListenerBuilder {
         self
     }
 
+    /// A set of regular expressions used to match User-Agents that will be allowed.
+    /// On request, the User Agent Filter module will check the incoming User-Agent header value
+    /// against the list of defined allow and deny regular expression rules.
+    /// See [User Agent Filter] in the ngrok docs for additional details.
+    ///
+    /// .. [User Agent Filter]: https://ngrok.com/docs/cloud-edge/modules/user-agent-filter/
+    #[napi]
+    pub fn allow_user_agent(&mut self, regex: String) -> &Self {
+        let mut builder = self.listener_builder.lock();
+        builder.allow_user_agent(regex);
+        self
+    }
+    /// A set of regular expressions used to match User-Agents that will be denied.
+    /// On request, the User Agent Filter module will check the incoming User-Agent header value
+    /// against the list of defined allow and deny regular expression rules.
+    /// See [User Agent Filter] in the ngrok docs for additional details.
+    ///
+    /// .. [User Agent Filter]: https://ngrok.com/docs/cloud-edge/modules/user-agent-filter/
+    #[napi]
+    pub fn deny_user_agent(&mut self, regex: String) -> &Self {
+        let mut builder = self.listener_builder.lock();
+        builder.deny_user_agent(regex);
+        self
+    }
+
     /// OAuth configuration.
     /// If not called, OAuth is disabled.
     /// See [OAuth] in the ngrok docs for additional details.
@@ -137,6 +162,8 @@ impl HttpListenerBuilder {
         allow_emails: Option<Vec<String>>,
         allow_domains: Option<Vec<String>>,
         scopes: Option<Vec<String>>,
+        client_id: Option<String>,
+        client_secret: Option<String>,
     ) -> &Self {
         let mut oauth = OauthOptions::new(provider);
         if let Some(allow_emails) = allow_emails {
@@ -153,6 +180,12 @@ impl HttpListenerBuilder {
             scopes.iter().for_each(|v| {
                 oauth.scope(v);
             });
+        }
+        if let Some(client_id) = client_id {
+            oauth.client_id(client_id);
+        }
+        if let Some(client_secret) = client_secret {
+            oauth.client_secret(client_secret);
         }
 
         let mut builder = self.listener_builder.lock();
