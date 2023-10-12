@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "ngrok-nodejs"
-version = "0.7.1"
+version = "0.8.0"
 
 [lib]
 crate-type = ["cdylib"]
@@ -18,7 +18,7 @@ mio = { version = "=0.8.6" }
 # Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
 napi = { version = "2.12.1", default-features = false, features = ["napi4", "tokio_rt"] }
 napi-derive = "2.12.1"
-ngrok = { version = "0.14.0-pre.7" }
+ngrok = { version = "0.14.0-pre.8" }
 parking_lot = "0.12.1"
 regex = "1.9.5"
 rustls-pemfile = "1.0.1"
