@@ -1,3 +1,8 @@
+## 0.8.0:
+
+- Add `allowUserAgent` and `denyUserAgent` options to HTTP listeners
+- Add `clientId` and `clientSecret` options to OAuth
+
 ## 0.7.1:
 
 - Fix for windows pipe pathing.
