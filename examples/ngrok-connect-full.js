@@ -20,7 +20,7 @@ const ngrok = require("@ngrok/ngrok");
 ngrok.consoleLog("INFO"); // turn on info logging
 
 (async function () {
-  const url = await ngrok.connect({
+  const listener = await ngrok.connect({
     // session configuration
     addr: `unix:${UNIX_SOCKET}`,
     // addr: `localhost:8080`,
@@ -63,5 +63,5 @@ ngrok.consoleLog("INFO"); // turn on info logging
     // verify_webhook_secret: "asdf",
     // websocket_tcp_converter: true,
   });
-  console.log(`Ingress established at: ${url}`);
+  console.log(`Ingress established at: ${listener.url()}`);
 })();

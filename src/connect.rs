@@ -9,8 +9,11 @@ use tracing::warn;
 
 use crate::{
     config::Config,
-    listener,
-    listener::TCP_PREFIX,
+    listener::{
+        self,
+        Listener,
+        TCP_PREFIX,
+    },
     logging::logging_callback,
     napi_err,
     session::{
@@ -129,7 +132,7 @@ pub fn connect(
 }
 
 /// Connect the session, configure and start the listener
-async fn async_connect(s_builder: SessionBuilder, config: Config) -> Result<String> {
+async fn async_connect(s_builder: SessionBuilder, config: Config) -> Result<Listener> {
     // Using a singleton session for connect use cases
     let mut opt = SESSION.lock().await;
     if opt.is_none() {
@@ -147,17 +150,16 @@ async fn async_connect(s_builder: SessionBuilder, config: Config) -> Result<Stri
         _ => return Err(napi_err(format!("unhandled protocol {proto}"))),
     };
 
-    let url = listener::get_listener(id.clone())
+    let listener = listener::get_listener(id.clone())
         .await
-        .and_then(|t| t.url())
-        .unwrap_or(id.clone());
+        .ok_or(napi_err("failed to start listener".to_string()))?;
 
     // move forwarding to another task
     if let Some(addr) = config.addr {
         tokio::spawn(async move { listener::forward(&id, addr).await });
     }
 
-    Ok(url)
+    Ok(listener)
 }
 
 /// HTTP Listener configuration
