@@ -305,7 +305,7 @@ export interface Config {
   websocket_tcp_converter?: boolean
 }
 /** Transform a json object configuration into a listener */
-export function connect(config: Config|string|number): Promise<string>
+export function connect(config: Config|string|number): Promise<Listener>
 /** Close a listener with the given url, or all listeners if no url is defined. */
 export function disconnect(url?: string | undefined | null): Promise<void>
 /** Close all listeners. */

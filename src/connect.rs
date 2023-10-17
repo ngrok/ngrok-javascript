@@ -98,7 +98,7 @@ macro_rules! config_common {
 /// Transform a json object configuration into a listener
 #[napi(
     ts_args_type = "config: Config|string|number",
-    ts_return_type = "Promise<string>"
+    ts_return_type = "Promise<Listener>"
 )]
 #[allow(dead_code)]
 pub fn connect(

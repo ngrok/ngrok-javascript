@@ -1,7 +1,11 @@
+## 0.9.0:
+
+- `ngrok.connect` now returns the full `Listener` object.
+
 ## 0.8.0:
 
-- Add `allowUserAgent` and `denyUserAgent` options to HTTP listeners
-- Add `clientId` and `clientSecret` options to OAuth
+- Add `allowUserAgent` and `denyUserAgent` options to HTTP listeners.
+- Add `clientId` and `clientSecret` options to OAuth.
 
 ## 0.7.1:
 

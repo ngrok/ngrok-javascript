@@ -19,7 +19,7 @@ Release
 1. `git add .`
 1. `git commit -m '<version>'`
 1. `git push origin <username>/<version>`
-    - Or with graphite: `gt branch track` and `gt stack submit`
+    - Or with graphite: `gt track` and `gt submit`
 1. Create a pull request off this branch
     - Make sure the name of the pull request is also just the `<version>` so the workflow will know to do a release
 1. Merge the pull request
