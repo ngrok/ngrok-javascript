@@ -48,10 +48,11 @@ async function validateShutdown(t, httpServer, url, axiosConfig) {
 
 test("connect https", async (t) => {
   const httpServer = await makeHttp();
-  const url = await ngrok.connect({
+  const listener = await ngrok.connect({
     addr: httpServer.listenTo,
     authtoken: process.env["NGROK_AUTHTOKEN"],
   });
+  const url = listener.url();
 
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
@@ -61,7 +62,8 @@ test("connect https", async (t) => {
 test("connect number", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const url = await ngrok.connect(parseInt(httpServer.listenTo.split(":")[1], 10));
+  const listener = await ngrok.connect(parseInt(httpServer.listenTo.split(":")[1], 10));
+  const url = listener.url();
 
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
@@ -72,7 +74,8 @@ test("connect port string", async (t) => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const url = await ngrok.connect(httpServer.listenTo.split(":")[1]);
+  const listener = await ngrok.connect(httpServer.listenTo.split(":")[1]);
+  const url = listener.url();
 
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
@@ -83,7 +86,8 @@ test("connect addr port string", async (t) => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const url = await ngrok.connect({ addr: httpServer.listenTo.split(":")[1] });
+  const listener = await ngrok.connect({ addr: httpServer.listenTo.split(":")[1] });
+  const url = listener.url();
 
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
@@ -93,7 +97,8 @@ test("connect addr port string", async (t) => {
 test("connect string", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const url = await ngrok.connect(httpServer.listenTo);
+  const listener = await ngrok.connect(httpServer.listenTo);
+  const url = listener.url();
 
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
@@ -102,7 +107,7 @@ test("connect string", async (t) => {
 
 test("connect vectorize", async (t) => {
   const httpServer = await makeHttp();
-  const url = await ngrok.connect({
+  const listener = await ngrok.connect({
     // numeric port
     addr: parseInt(httpServer.listenTo.split(":")[1], 10),
     authtoken: process.env["NGROK_AUTHTOKEN"],
@@ -129,6 +134,7 @@ test("connect vectorize", async (t) => {
     response_header_add: "X-Res-Yup2:true2",
     schemes: "HTTPS",
   });
+  const url = listener.url();
 
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
@@ -141,7 +147,7 @@ test("connect vectorize", async (t) => {
 
 test("connect tcp listener", async (t) => {
   const httpServer = await makeHttp();
-  const url = await ngrok.connect({
+  const listener = await ngrok.connect({
     addr: httpServer.listenTo,
     authtoken_from_env: true,
     proto: "tcp",
@@ -149,14 +155,14 @@ test("connect tcp listener", async (t) => {
     metadata: "tcp metadata",
   });
 
-  t.truthy(url);
+  t.truthy(listener);
 
-  await validateShutdown(t, httpServer, url.replace("tcp:", "http:"));
+  await validateShutdown(t, httpServer, listener.url().replace("tcp:", "http:"));
 });
 
 test("connect tls listener", async (t) => {
   const httpServer = await makeHttp();
-  const url = await ngrok.connect({
+  const listener = await ngrok.connect({
     addr: httpServer.listenTo,
     authtoken_from_env: true,
     proto: "tls",
@@ -165,6 +171,7 @@ test("connect tls listener", async (t) => {
     crt: fs.readFileSync("examples/domain.crt", "utf8"),
     key: fs.readFileSync("examples/domain.key", "utf8"),
   });
+  const url = listener.url();
 
   t.truthy(url);
 

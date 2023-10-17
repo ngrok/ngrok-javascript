@@ -12,6 +12,6 @@ console.log(`Node.js web server at 8080 is running..`);
 // setup ngrok
 const ngrok = require("@ngrok/ngrok");
 (async function () {
-  const url = await ngrok.connect({ addr: 8080, authtoken_from_env: true });
-  console.log(`Ingress established at: ${url}`);
+  const listener = await ngrok.connect({ addr: 8080, authtoken_from_env: true });
+  console.log(`Ingress established at: ${listener.url()}`);
 })();

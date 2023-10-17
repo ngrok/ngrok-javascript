@@ -45,8 +45,8 @@ npm install @ngrok/ngrok
 ```jsx
 const ngrok = require("@ngrok/ngrok");
 (async function() {
-  const url = await ngrok.connect({ addr: 8080, authtoken_from_env: true });
-  console.log(`Ingress established at: ${url}`);
+  const listener = await ngrok.connect({ addr: 8080, authtoken_from_env: true });
+  console.log(`Ingress established at: ${listener.url()}`);
 })();
 ```
 
@@ -83,56 +83,56 @@ With no arguments the [connect](https://ngrok.github.io/ngrok-nodejs/functions/c
 ```jsx
 const ngrok = require("@ngrok/ngrok");
 (async function() {
-  console.log( await ngrok.connect() );
+  console.log( (await ngrok.connect()).url() );
 })();
 ```
 
 You can pass the port number to forward on `localhost`:
 
 ```jsx
-const url = await ngrok.connect(4242);
+const listener = await ngrok.connect(4242);
 ```
 
 Or you can specify the host and port via a string:
 
 ```jsx
-const url = await ngrok.connect("localhost:4242");
+const listener = await ngrok.connect("localhost:4242");
 ```
 
 More options can be passed to the `connect` method to customize the connection:
 
 ```jsx
-const url = await ngrok.connect({addr: 8080, basic_auth: "ngrok:online1line"});
-const url = await ngrok.connect({addr: 8080, oauth_provider: "google", oauth_allow_domains: "example.com"});
+const listener = await ngrok.connect({addr: 8080, basic_auth: "ngrok:online1line"});
+const listener = await ngrok.connect({addr: 8080, oauth_provider: "google", oauth_allow_domains: "example.com"});
 ```
 
 The (optional) `proto` parameter is the listener type, which defaults to `http`. To create a TCP listener:
 
 ```jsx
-const url = await ngrok.connect({proto: 'tcp', addr: 25565});
+const listener = await ngrok.connect({proto: 'tcp', addr: 25565});
 ```
 
 See [Full Configuration](#full-configuration) for the list of possible configuration options.
 
 ## Disconnection
 
-To close a listener use the [disconnect](https://ngrok.github.io/ngrok-nodejs/functions/disconnect.html) method with the `url` of the listener to close:
-
-```jsx
-await ngrok.disconnect(url);
-```
-
-Or omit the `url` to close all listeners:
-
-```jsx
-await ngrok.disconnect();
-```
-
 The [close](https://ngrok.github.io/ngrok-nodejs/classes/Listener.html#close) method on a listener will shut it down, and also stop the ngrok session if it is no longer needed. This method returns a promise that resolves when the listener is closed.
 
 ```jsx
 const listener = await ngrok.getListenerByUrl(url);
 await listener.close();
+```
+
+Or use the [disconnect](https://ngrok.github.io/ngrok-nodejs/functions/disconnect.html) method with the `url()` of the listener to close (or id() for a Labeled Listener):
+
+```jsx
+await ngrok.disconnect(listener.url());
+```
+
+Or omit the `url()` to close all listeners:
+
+```jsx
+await ngrok.disconnect();
 ```
 
 ## Listing Listeners
@@ -148,7 +148,7 @@ const listeners = await ngrok.listeners();
 This example shows [all the possible configuration items of ngrok.connect](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-full.js):
 
 ```jsx
-const url = await ngrok.connect({
+const listener = await ngrok.connect({
   // session configuration
   addr: `localhost:8080`, // or `8080` or `unix:${UNIX_SOCKET}`
   authtoken: "<authtoken>",
