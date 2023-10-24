@@ -17,7 +17,6 @@
 `ngrok-nodejs` is the official Node.js SDK for ngrok that requires no binaries. Quickly enable secure production-ready connectivity to your applications and services directly from your code.
 
 [ngrok](https://ngrok.com) is a globally distributed gateway that provides secure connectivity for applications and services running in any environment.
-to manage.
 
 # Installation
 
@@ -42,7 +41,7 @@ pnpm add @ngrok/ngrok
 # Quickstart
 
 1. [Install `@ngrok/ngrok`](#installation)
-2. Export your [authtoken from the ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken) in your terminal
+2. Export your [authtoken from the ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken) as `NGROK_AUTHTOKEN` in your terminal
 3. Add the following code to your application to establish connectivity via the [connect method](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js) through port `8080` over `localhost`:
 
     ```jsx
