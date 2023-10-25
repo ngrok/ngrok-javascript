@@ -224,6 +224,7 @@ const listener = await ngrok.connect({
   // listener configuration
   metadata: "example listener metadata from nodejs",
   domain: "<domain>",
+  proto: "http",
   proxy_proto: "", // One of: "", "1", "2"
   schemes: ["HTTPS"],
   // module configuration
@@ -234,6 +235,8 @@ const listener = await ngrok.connect({
   deny_user_agent: "^curl.*",
   ip_restriction_allow_cidrs: ["0.0.0.0/0"],
   ip_restriction_deny_cidrs: ["10.1.1.1/32"],
+  crt: fs.readFileSync("crt.pem", "utf8"),
+  key: fs.readFileSync("key.pem", "utf8"),
   mutual_tls_cas: [fs.readFileSync('ca.crt', 'utf8')],
   oauth_provider: "google",
   oauth_allow_domains: ["<domain>"],
