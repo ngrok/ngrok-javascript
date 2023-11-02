@@ -263,9 +263,14 @@ impl Listener {
     }
 
     /// Returns a human-readable string presented in the ngrok dashboard
-    /// and the API. Use the [HttpListenerBuilder::forwards_to],
-    /// [TcpListenerBuilder::forwards_to], etc. to set this value
-    /// explicitly.
+    /// and the API. Use the
+    /// {@link HttpListenerBuilder.forwardsTo | HttpListenerBuilder.forwardsTo},
+    /// {@link TcpListenerBuilder.forwardsTo | TcpListenerBuilder.forwardsTo},
+    /// etc. to set this value explicitly.
+    ///
+    /// To automatically forward connections, you can use
+    /// {@link HttpListenerBuilder.listenAndForward} or {@link HttpListenerBuilder.listenAndServe}
+    /// on the Listener Builder. These methods will also set this `forwardsTo` value.
     #[napi]
     pub fn forwards_to(&self) -> String {
         self.tun_meta.forwards_to.clone()

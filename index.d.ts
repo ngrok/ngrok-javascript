@@ -10,8 +10,8 @@
  */
 export interface Config {
   /**
-   * Port, network address, or named pipe. Defaults to 80.
-   * Examples: "80", "localhost:8080", "unix:/tmp/my.sock", "pipe://./my-pipe"
+   * Port, network address, url, or named pipe. Defaults to 80.
+   * Examples: "80", "localhost:8080", "https://192.168.1.100:8443", "unix:/tmp/my.sock", "pipe://./my-pipe"
    */
   addr?: number|string
   auth?: string|Array<string>
@@ -304,7 +304,15 @@ export interface Config {
   /** Convert incoming websocket connections to TCP-like streams. */
   websocket_tcp_converter?: boolean
 }
-/** Transform a json object configuration into a listener */
+/**
+ * Transform a json object configuration into a listener.
+ * See {@link Config} for the full set of options.
+ *
+ * Examples:<br>
+ * listener = await ngrok.connect("localhost:4242");<br>
+ * listener = await ngrok.connect({addr: "https://localhost:8443", authtoken_from_env: true});<br>
+ * listener = await ngrok.connect({addr: "unix:///path/to/unix.socket", basic_auth: "ngrok:online1line", authtoken_from_env: true});
+ */
 export function connect(config: Config|string|number): Promise<Listener>
 /** Close a listener with the given url, or all listeners if no url is defined. */
 export function disconnect(url?: string | undefined | null): Promise<void>
@@ -340,9 +348,14 @@ export class Listener {
   id(): string
   /**
    * Returns a human-readable string presented in the ngrok dashboard
-   * and the API. Use the [HttpListenerBuilder::forwards_to],
-   * [TcpListenerBuilder::forwards_to], etc. to set this value
-   * explicitly.
+   * and the API. Use the
+   * {@link HttpListenerBuilder.forwardsTo | HttpListenerBuilder.forwardsTo},
+   * {@link TcpListenerBuilder.forwardsTo | TcpListenerBuilder.forwardsTo},
+   * etc. to set this value explicitly.
+   *
+   * To automatically forward connections, you can use
+   * {@link HttpListenerBuilder.listenAndForward} or {@link HttpListenerBuilder.listenAndServe}
+   * on the Listener Builder. These methods will also set this `forwardsTo` value.
    */
   forwardsTo(): string
   /** Returns the arbitrary metadata string for this listener. */
@@ -486,9 +499,15 @@ export class HttpListenerBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this listener. */
   listen(bind?: boolean | undefined | null): Promise<Listener>
-  /** Begin listening for new connections on this listener and forwarding them to the given url. */
+  /**
+   * Begin listening for new connections on this listener and forwarding them to the given url.
+   * This method will also set the `forwardsTo` value.
+   */
   listenAndForward(toUrl: string): Promise<Listener>
-  /** Begin listening for new connections on this listener and forwarding them to the given server. */
+  /**
+   * Begin listening for new connections on this listener and forwarding them to the given server.
+   * This method will also set the `forwardsTo` value.
+   */
   listenAndServe(server: any): Promise<Listener>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
@@ -511,6 +530,10 @@ export class HttpListenerBuilder {
   /**
    * Listener backend metadata. Viewable via the dashboard and API, but has no
    * bearing on listener behavior.
+   *
+   * To automatically forward connections, you can use {@link listenAndForward},
+   * or {@link listenAndServe} on the Listener Builder. These methods will also
+   * set this `forwardsTo` value.
    */
   forwardsTo(forwardsTo: string): this
 }
@@ -524,9 +547,15 @@ export class TcpListenerBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this listener. */
   listen(bind?: boolean | undefined | null): Promise<Listener>
-  /** Begin listening for new connections on this listener and forwarding them to the given url. */
+  /**
+   * Begin listening for new connections on this listener and forwarding them to the given url.
+   * This method will also set the `forwardsTo` value.
+   */
   listenAndForward(toUrl: string): Promise<Listener>
-  /** Begin listening for new connections on this listener and forwarding them to the given server. */
+  /**
+   * Begin listening for new connections on this listener and forwarding them to the given server.
+   * This method will also set the `forwardsTo` value.
+   */
   listenAndServe(server: any): Promise<Listener>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
@@ -549,6 +578,10 @@ export class TcpListenerBuilder {
   /**
    * Listener backend metadata. Viewable via the dashboard and API, but has no
    * bearing on listener behavior.
+   *
+   * To automatically forward connections, you can use {@link listenAndForward},
+   * or {@link listenAndServe} on the Listener Builder. These methods will also
+   * set this `forwardsTo` value.
    */
   forwardsTo(forwardsTo: string): this
   /**
@@ -569,9 +602,15 @@ export class TlsListenerBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this listener. */
   listen(bind?: boolean | undefined | null): Promise<Listener>
-  /** Begin listening for new connections on this listener and forwarding them to the given url. */
+  /**
+   * Begin listening for new connections on this listener and forwarding them to the given url.
+   * This method will also set the `forwardsTo` value.
+   */
   listenAndForward(toUrl: string): Promise<Listener>
-  /** Begin listening for new connections on this listener and forwarding them to the given server. */
+  /**
+   * Begin listening for new connections on this listener and forwarding them to the given server.
+   * This method will also set the `forwardsTo` value.
+   */
   listenAndServe(server: any): Promise<Listener>
   /**
    * Restriction placed on the origin of incoming connections to the edge to only allow these CIDR ranges.
@@ -594,6 +633,10 @@ export class TlsListenerBuilder {
   /**
    * Listener backend metadata. Viewable via the dashboard and API, but has no
    * bearing on listener behavior.
+   *
+   * To automatically forward connections, you can use {@link listenAndForward},
+   * or {@link listenAndServe} on the Listener Builder. These methods will also
+   * set this `forwardsTo` value.
    */
   forwardsTo(forwardsTo: string): this
   /**
@@ -629,9 +672,15 @@ export class LabeledListenerBuilder {
   metadata(metadata: string): this
   /** Begin listening for new connections on this listener. */
   listen(bind?: boolean | undefined | null): Promise<Listener>
-  /** Begin listening for new connections on this listener and forwarding them to the given url. */
+  /**
+   * Begin listening for new connections on this listener and forwarding them to the given url.
+   * This method will also set the `forwardsTo` value.
+   */
   listenAndForward(toUrl: string): Promise<Listener>
-  /** Begin listening for new connections on this listener and forwarding them to the given server. */
+  /**
+   * Begin listening for new connections on this listener and forwarding them to the given server.
+   * This method will also set the `forwardsTo` value.
+   */
   listenAndServe(server: any): Promise<Listener>
   /**
    * Add a label, value pair for this listener.

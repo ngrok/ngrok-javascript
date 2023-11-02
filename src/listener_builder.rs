@@ -78,6 +78,7 @@ macro_rules! make_listener_builder {
             }
 
             /// Begin listening for new connections on this listener and forwarding them to the given url.
+            /// This method will also set the `forwardsTo` value.
             #[napi]
             pub async fn listen_and_forward(&self, to_url: String) -> Result<Listener> {
                 let url = Url::parse(&to_url).map_err(|e| napi_err(format!("Url forward argument parse failure, {e}")))?;
@@ -97,6 +98,7 @@ macro_rules! make_listener_builder {
             }
 
             /// Begin listening for new connections on this listener and forwarding them to the given server.
+            /// This method will also set the `forwardsTo` value.
             #[napi(ts_args_type = "server: any")]
             pub async fn listen_and_serve(&self, server: String) -> Result<Listener> {
                 Err(napi_err(format!("listen_and_serve implemented in wrapper, {server}")))
@@ -151,6 +153,10 @@ macro_rules! make_listener_builder {
             }
             /// Listener backend metadata. Viewable via the dashboard and API, but has no
             /// bearing on listener behavior.
+            ///
+            /// To automatically forward connections, you can use {@link listenAndForward},
+            /// or {@link listenAndServe} on the Listener Builder. These methods will also
+            /// set this `forwardsTo` value.
             #[napi]
             pub fn forwards_to(&mut self, forwards_to: String) -> &Self {
                 let mut builder = self.listener_builder.lock();
