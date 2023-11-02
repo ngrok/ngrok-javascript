@@ -47,6 +47,7 @@ pnpm add @ngrok/ngrok
     ```jsx
     // Require ngrok nodejs sdk
     const ngrok = require("@ngrok/ngrok");
+    // import ngrok from '@ngrok/ngrok' // if inside a module
     
     (async function() {
       // Establish connectivity
@@ -96,6 +97,7 @@ With no arguments the [connect](https://ngrok.github.io/ngrok-nodejs/functions/c
 
 ```jsx
 const ngrok = require("@ngrok/ngrok");
+// import ngrok from '@ngrok/ngrok' // if inside a module
 
 (async function() {
   console.log( (await ngrok.connect()).url() );

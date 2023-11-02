@@ -95,7 +95,13 @@ macro_rules! config_common {
     };
 }
 
-/// Transform a json object configuration into a listener
+/// Transform a json object configuration into a listener.
+/// See {@link Config} for the full set of options.
+///
+/// Examples:<br>
+/// listener = await ngrok.connect("localhost:4242");<br>
+/// listener = await ngrok.connect({addr: "https://localhost:8443", authtoken_from_env: true});<br>
+/// listener = await ngrok.connect({addr: "unix:///path/to/unix.socket", basic_auth: "ngrok:online1line", authtoken_from_env: true});
 #[napi(
     ts_args_type = "config: Config|string|number",
     ts_return_type = "Promise<Listener>"
