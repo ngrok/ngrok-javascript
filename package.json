@@ -3,6 +3,10 @@
   "version": "0.9.0",
   "main": "index.js",
   "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.js"
+  ],
   "napi": {
     "name": "ngrok",
     "triples": {
