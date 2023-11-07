@@ -144,14 +144,14 @@ jobs:
             build: yarn build --target aarch64-pc-windows-msvc
   build-freebsd:
     if: github.ref == 'refs/heads/main'
-    runs-on: macos-12
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     name: Build FreeBSD
     steps:
       - uses: actions/checkout@v3
       - name: Build
         id: build
-        uses: vmactions/freebsd-vm@v0
+        uses: vmactions/freebsd-vm@v1
         env:
           DEBUG: napi:*
           RUSTUP_HOME: /usr/local/rustup
