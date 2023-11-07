@@ -4,8 +4,15 @@
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+    "README.md",
     "index.js",
-    "index.d.ts"
+    "index.d.ts",
+    "package.json"
   ],
   "napi": {
     "name": "ngrok",
