@@ -64,5 +64,8 @@
   },
   "packageManager": "yarn@3.3.1",
   "description": "The ngrok agent in library form, suitable for integrating directly into your NodeJS application.",
-  "repository": "https://github.com/ngrok/ngrok-nodejs"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ngrok/ngrok-nodejs.git"
+  }
 }
