@@ -32,7 +32,7 @@
     }
   },
   "unused-for-now": "aarch64-pc-windows-msvc",
-  "license": "MIT",
+  "license": "(MIT OR Apache-2.0)",
   "devDependencies": {
     "@napi-rs/cli": "^2.15.1",
     "@types/node": "^18.13.0",
@@ -64,6 +64,12 @@
   },
   "packageManager": "yarn@3.3.1",
   "description": "The ngrok agent in library form, suitable for integrating directly into your NodeJS application.",
+  "keywords": [
+    "ngrok",
+    "nodejs",
+    "ingress",
+    "networking"
+  ],
   "homepage": "https://ngrok.github.io/ngrok-nodejs/",
   "repository": {
     "type": "git",
