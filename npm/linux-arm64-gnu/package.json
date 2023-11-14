@@ -16,7 +16,7 @@
   "engines": {
     "node": ">= 10"
   },
-  "repository": "https://github.com/ngrok/ngrok-nodejs",
+  "repository": "https://github.com/ngrok/ngrok-javascript",
   "libc": [
     "glibc"
   ]

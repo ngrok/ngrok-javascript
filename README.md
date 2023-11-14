@@ -11,10 +11,10 @@
 [mit-url]: https://github.com/ngrok/ngrok-rust/blob/main/LICENSE-MIT
 [apache-badge]: https://img.shields.io/badge/license-Apache_2.0-blue.svg
 [apache-url]: https://github.com/ngrok/ngrok-rust/blob/main/LICENSE-APACHE
-[ci-badge]: https://github.com/ngrok/ngrok-nodejs/actions/workflows/ci.yml/badge.svg
-[ci-url]: https://github.com/ngrok/ngrok-nodejs/actions/workflows/ci.yml
+[ci-badge]: https://github.com/ngrok/ngrok-javascript/actions/workflows/ci.yml/badge.svg
+[ci-url]: https://github.com/ngrok/ngrok-javascript/actions/workflows/ci.yml
 
-`ngrok-nodejs` is the official Node.js SDK for ngrok that requires no binaries. Quickly enable secure production-ready connectivity to your applications and services directly from your code.
+`ngrok-javascript` is the official Node.js SDK for ngrok that requires no binaries. Quickly enable secure production-ready connectivity to your applications and services directly from your code.
 
 [ngrok](https://ngrok.com) is a globally distributed gateway that provides secure connectivity for applications and services running in any environment.
 
@@ -42,7 +42,7 @@ pnpm add @ngrok/ngrok
 
 1. [Install `@ngrok/ngrok`](#installation)
 2. Export your [authtoken from the ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken) as `NGROK_AUTHTOKEN` in your terminal
-3. Add the following code to your application to establish connectivity via the [connect method](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js) through port `8080` over `localhost`:
+3. Add the following code to your application to establish connectivity via the [connect method](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-connect-minimal.js) through port `8080` over `localhost`:
 
     ```jsx
     // Require ngrok nodejs sdk
@@ -61,29 +61,29 @@ pnpm add @ngrok/ngrok
 That's it! Your application should now be available through the url output in your terminal. 
 
 > **Note**
-> You can find more examples in [the examples directory](https://github.com/ngrok/ngrok-nodejs/tree/main/examples).
+> You can find more examples in [the examples directory](https://github.com/ngrok/ngrok-javascript/tree/main/examples).
 
 # Documentation
 
-A quickstart guide and a full API reference are included in the [ngrok-nodejs documentation](https://ngrok.github.io/ngrok-nodejs/).
+A quickstart guide and a full API reference are included in the [ngrok-javascript documentation](https://ngrok.github.io/ngrok-javascript/).
 
 ### Authorization
 
 To use most of ngrok's features, you'll need an authtoken. To obtain one, sign up for free at [ngrok.com](https://dashboard.ngrok.com/signup) and retrieve it from the [authtoken page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken). Once you have copied your authtoken, you can reference it in several ways.
 
-You can set it in the `NGROK_AUTHTOKEN` environment variable and pass `authtoken_from_env: true` to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method:
+You can set it in the `NGROK_AUTHTOKEN` environment variable and pass `authtoken_from_env: true` to the [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method:
 
 ```jsx
 await ngrok.connect({ authtoken_from_env: true, ... });
 ```
 
-Or pass the authtoken directly to the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method:
+Or pass the authtoken directly to the [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method:
 
 ```jsx
 await ngrok.connect({ authtoken: token, ... });
 ```
 
-Or set it for all connections with the [authtoken](https://ngrok.github.io/ngrok-nodejs/functions/authtoken.html) method:
+Or set it for all connections with the [authtoken](https://ngrok.github.io/ngrok-javascript/functions/authtoken.html) method:
 
 ```jsx
 await ngrok.authtoken(token);
@@ -91,9 +91,9 @@ await ngrok.authtoken(token);
 
 ### Connection
 
-The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method is the easiest way to start an ngrok session and establish a listener to a specified address. The [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method returns a promise that resolves to the public URL of the listener.
+The [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method is the easiest way to start an ngrok session and establish a listener to a specified address. The [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method returns a promise that resolves to the public URL of the listener.
 
-With no arguments the [connect](https://ngrok.github.io/ngrok-nodejs/functions/connect.html) method will start an HTTP listener to `localhost` port `80`:
+With no arguments the [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method will start an HTTP listener to `localhost` port `80`:
 
 ```jsx
 const ngrok = require("@ngrok/ngrok");
@@ -133,14 +133,14 @@ See [Full Configuration](#full-configuration) for the list of possible configura
 
 ### Disconnection
 
-The [close](https://ngrok.github.io/ngrok-nodejs/classes/Listener.html#close) method on a listener will shut it down, and also stop the ngrok session if it is no longer needed. This method returns a promise that resolves when the listener is closed.
+The [close](https://ngrok.github.io/ngrok-javascript/classes/Listener.html#close) method on a listener will shut it down, and also stop the ngrok session if it is no longer needed. This method returns a promise that resolves when the listener is closed.
 
 ```jsx
 const listener = await ngrok.getListenerByUrl(url);
 await listener.close();
 ```
 
-Or use the [disconnect](https://ngrok.github.io/ngrok-nodejs/functions/disconnect.html) method with the `url()` of the listener to close (or id() for a Labeled Listener):
+Or use the [disconnect](https://ngrok.github.io/ngrok-javascript/functions/disconnect.html) method with the `url()` of the listener to close (or id() for a Labeled Listener):
 
 ```jsx
 await ngrok.disconnect(listener.url());
@@ -154,7 +154,7 @@ await ngrok.disconnect();
 
 ### Listing Listeners
 
-To list all current non-closed listeners use the [listeners](https://ngrok.github.io/ngrok-nodejs/functions/listeners.html) method:
+To list all current non-closed listeners use the [listeners](https://ngrok.github.io/ngrok-javascript/functions/listeners.html) method:
 
 ```jsx
 const listeners = await ngrok.listeners();
@@ -164,7 +164,7 @@ const listeners = await ngrok.listeners();
 
 For more control over Sessions and Listeners, the builder classes can be used.
 
-A minimal example using the builder class looks like [the following](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js):
+A minimal example using the builder class looks like [the following](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-http-minimum.js):
 
 ```jsx
 async function create_listener() {
@@ -175,7 +175,7 @@ async function create_listener() {
 }
 ```
 
-See here for a [Full Configuration Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-full.js)
+See here for a [Full Configuration Example](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-http-full.js)
 
 ### TLS Backends
 
@@ -211,7 +211,7 @@ new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect()
 
 ### Full Configuration
 
-This example shows [all the possible configuration items of ngrok.connect](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-full.js):
+This example shows [all the possible configuration items of ngrok.connect](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-connect-full.js):
 
 ```jsx
 const listener = await ngrok.connect({
@@ -262,45 +262,45 @@ const listener = await ngrok.connect({
 });
 ```
 
-The [Config](https://ngrok.github.io/ngrok-nodejs/interfaces/Config.html) interface also shows all the available options.
+The [Config](https://ngrok.github.io/ngrok-javascript/interfaces/Config.html) interface also shows all the available options.
 
 # Examples
 
 Degit can be used for cloning and running an example directory like this:
 ```bash
-npx degit github:ngrok/ngrok-nodejs/examples/<example> <folder-name>
+npx degit github:ngrok/ngrok-javascript/examples/<example> <folder-name>
 cd <folder-name>
 npm i
 ```
 For example:
 ```bash
-npx degit github:ngrok/ngrok-nodejs/examples/express express && cd express && npm i
+npx degit github:ngrok/ngrok-javascript/examples/express express && cd express && npm i
 ```
 
 #### Frameworks
 - [AWS App Runner](https://github.com/ngrok/ngrok-sdk-serverless-example)
-- [Express](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/express)
-- [Fastify Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/fastify)
-- [Hapi Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/hapi)
-- [Koa Example](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/koa)
-- [Nest.js](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/nestjs)
-- [Next.js](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/nextjs)
-- [Remix](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/remix)
-- [Svelte](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/svelte)
-- [Typescript](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-typescript.ts)
-- [Vue](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/vue)
-- [Winston (Logging)](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-winston.js)
+- [Express](https://github.com/ngrok/ngrok-javascript/blob/main/examples/express)
+- [Fastify Example](https://github.com/ngrok/ngrok-javascript/blob/main/examples/fastify)
+- [Hapi Example](https://github.com/ngrok/ngrok-javascript/blob/main/examples/hapi)
+- [Koa Example](https://github.com/ngrok/ngrok-javascript/blob/main/examples/koa)
+- [Nest.js](https://github.com/ngrok/ngrok-javascript/blob/main/examples/nestjs)
+- [Next.js](https://github.com/ngrok/ngrok-javascript/blob/main/examples/nextjs)
+- [Remix](https://github.com/ngrok/ngrok-javascript/blob/main/examples/remix)
+- [Svelte](https://github.com/ngrok/ngrok-javascript/blob/main/examples/svelte)
+- [Typescript](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-typescript.ts)
+- [Vue](https://github.com/ngrok/ngrok-javascript/blob/main/examples/vue)
+- [Winston (Logging)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-winston.js)
 
 #### Listeners
-* [ngrok.connect (minimal)](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-minimal.js)
-* [ngrok.connect (full)](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-connect-full.js)
-* [HTTP (ngrok.listener)](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-listen.js)
-* [HTTP (SessionBuilder minimal)](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-minimum.js)
-* [HTTP (SessionBuilder full)](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-http-full.js)
-* [Labeled](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-labeled.js)
-* [TCP](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-tcp.js)
-* [TLS](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-tls.js)
-* [Windows Pipe](https://github.com/ngrok/ngrok-nodejs/blob/main/examples/ngrok-windows-pipe.js)
+* [ngrok.connect (minimal)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-connect-minimal.js)
+* [ngrok.connect (full)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-connect-full.js)
+* [HTTP (ngrok.listener)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-listen.js)
+* [HTTP (SessionBuilder minimal)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-http-minimum.js)
+* [HTTP (SessionBuilder full)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-http-full.js)
+* [Labeled](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-labeled.js)
+* [TCP](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-tcp.js)
+* [TLS](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-tls.js)
+* [Windows Pipe](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-windows-pipe.js)
 
 # Platform Support
 
@@ -316,7 +316,7 @@ Pre-built binaries are provided on NPM for the following platforms:
 | Android    |      |     |    ✓    |  ✓  |
 
 > **Note**
-> `ngrok-nodejs`, and [ngrok-rust](https://github.com/ngrok/ngrok-rust/) which it depends on, are open source, so it may be possible to build them for other platforms.
+> `ngrok-javascript`, and [ngrok-rust](https://github.com/ngrok/ngrok-rust/) which it depends on, are open source, so it may be possible to build them for other platforms.
 > * `Windows-aarch64` will be supported after the next release of [Ring](https://github.com/briansmith/ring/issues/1167).
 
 # Dependencies
@@ -325,14 +325,14 @@ Pre-built binaries are provided on NPM for the following platforms:
 
 # Changelog
 
-Changes to `ngrok-nodejs` are tracked under [CHANGELOG.md](https://github.com/ngrok/ngrok-nodejs/blob/main/CHANGELOG.md).
+Changes to `ngrok-javascript` are tracked under [CHANGELOG.md](https://github.com/ngrok/ngrok-javascript/blob/main/CHANGELOG.md).
 
 
 # Join the ngrok Community
 
 - Check out [our official docs](https://docs.ngrok.com)
 - Read about updates on [our blog](https://blog.ngrok.com)
-- Open an [issue](https://github.com/ngrok/ngrok-nodejs/issues) or [pull request](https://github.com/ngrok/ngrok-nodejs/pulls)
+- Open an [issue](https://github.com/ngrok/ngrok-javascript/issues) or [pull request](https://github.com/ngrok/ngrok-javascript/pulls)
 - Join our [Slack community](https://ngrok.com/slack)
 - Follow us on [X / Twitter (@ngrokHQ)](https://twitter.com/ngrokhq)
 - Subscribe to our [Youtube channel (@ngrokHQ)](https://www.youtube.com/@ngrokhq)
@@ -345,5 +345,5 @@ You can choose between one of them if you use this work.
 ### Contributions
 
 Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in `ngrok-nodejs` by you, as defined in the Apache-2.0 license, shall be
+for inclusion in `ngrok-javascript` by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.

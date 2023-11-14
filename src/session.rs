@@ -50,7 +50,7 @@ use crate::{
     napi_ngrok_err,
 };
 
-const CLIENT_TYPE: &str = "ngrok-nodejs";
+const CLIENT_TYPE: &str = "ngrok-javascript";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // appease clippy
