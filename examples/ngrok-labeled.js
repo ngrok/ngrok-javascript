@@ -34,7 +34,7 @@ builder.connect().then((session) => {
 });
 
 /*
-ngrok.connect({
+ngrok.forward({
     addr: "unix:" + UNIX_SOCKET,
     authtoken_from_env: true,
     labels: "edge:edghts_<edge_id>",

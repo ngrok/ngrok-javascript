@@ -1,4 +1,4 @@
-# NodeJS SDK for ngrok
+# Javascript SDK for ngrok
 
 [![npm.rs][npm-badge]][npm-url]
 [![MIT licensed][mit-badge]][mit-url]
@@ -42,16 +42,16 @@ pnpm add @ngrok/ngrok
 
 1. [Install `@ngrok/ngrok`](#installation)
 2. Export your [authtoken from the ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken) as `NGROK_AUTHTOKEN` in your terminal
-3. Add the following code to your application to establish connectivity via the [connect method](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-connect-minimal.js) through port `8080` over `localhost`:
+3. Add the following code to your application to establish connectivity via the [forward method](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-forward-minimal.js) through port `8080` over `localhost`:
 
     ```jsx
-    // Require ngrok nodejs sdk
+    // Require ngrok javascript sdk
     const ngrok = require("@ngrok/ngrok");
     // import ngrok from '@ngrok/ngrok' // if inside a module
     
     (async function() {
       // Establish connectivity
-      const listener = await ngrok.connect({ addr: 8080, authtoken_from_env: true });
+      const listener = await ngrok.forward({ addr: 8080, authtoken_from_env: true });
     
       // Output ngrok url to console
       console.log(`Ingress established at: ${listener.url()}`);
@@ -71,16 +71,16 @@ A quickstart guide and a full API reference are included in the [ngrok-javascrip
 
 To use most of ngrok's features, you'll need an authtoken. To obtain one, sign up for free at [ngrok.com](https://dashboard.ngrok.com/signup) and retrieve it from the [authtoken page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken). Once you have copied your authtoken, you can reference it in several ways.
 
-You can set it in the `NGROK_AUTHTOKEN` environment variable and pass `authtoken_from_env: true` to the [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method:
+You can set it in the `NGROK_AUTHTOKEN` environment variable and pass `authtoken_from_env: true` to the [forward](https://ngrok.github.io/ngrok-javascript/functions/forward.html) method:
 
 ```jsx
-await ngrok.connect({ authtoken_from_env: true, ... });
+await ngrok.forward({ authtoken_from_env: true, ... });
 ```
 
-Or pass the authtoken directly to the [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method:
+Or pass the authtoken directly to the [forward](https://ngrok.github.io/ngrok-javascript/functions/forward.html) method:
 
 ```jsx
-await ngrok.connect({ authtoken: token, ... });
+await ngrok.forward({ authtoken: token, ... });
 ```
 
 Or set it for all connections with the [authtoken](https://ngrok.github.io/ngrok-javascript/functions/authtoken.html) method:
@@ -91,42 +91,42 @@ await ngrok.authtoken(token);
 
 ### Connection
 
-The [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method is the easiest way to start an ngrok session and establish a listener to a specified address. The [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method returns a promise that resolves to the public URL of the listener.
+The [forward](https://ngrok.github.io/ngrok-javascript/functions/forward.html) method is the easiest way to start an ngrok session and establish a listener to a specified address. The [forward](https://ngrok.github.io/ngrok-javascript/functions/forward.html) method returns a promise that resolves to the public URL of the listener.
 
-With no arguments the [connect](https://ngrok.github.io/ngrok-javascript/functions/connect.html) method will start an HTTP listener to `localhost` port `80`:
+With no arguments the [forward](https://ngrok.github.io/ngrok-javascript/functions/forward.html) method will start an HTTP listener to `localhost` port `80`:
 
 ```jsx
 const ngrok = require("@ngrok/ngrok");
 // import ngrok from '@ngrok/ngrok' // if inside a module
 
 (async function() {
-  console.log( (await ngrok.connect()).url() );
+  console.log( (await ngrok.forward()).url() );
 })();
 ```
 
 You can pass the port number to forward on `localhost`:
 
 ```jsx
-const listener = await ngrok.connect(4242);
+const listener = await ngrok.forward(4242);
 ```
 
 Or you can specify the host and port via a string:
 
 ```jsx
-const listener = await ngrok.connect("localhost:4242");
+const listener = await ngrok.forward("localhost:4242");
 ```
 
-More options can be passed to the `connect` method to customize the connection:
+More options can be passed to the `forward` method to customize the connection:
 
 ```jsx
-const listener = await ngrok.connect({ addr: 8080, basic_auth: "ngrok:online1line" });
-const listener = await ngrok.connect({ addr: 8080, oauth_provider: "google", oauth_allow_domains: "example.com" });
+const listener = await ngrok.forward({ addr: 8080, basic_auth: "ngrok:online1line" });
+const listener = await ngrok.forward({ addr: 8080, oauth_provider: "google", oauth_allow_domains: "example.com" });
 ```
 
 The (optional) `proto` parameter is the listener type, which defaults to `http`. To create a TCP listener:
 
 ```jsx
-const listener = await ngrok.connect({ proto: 'tcp', addr: 25565 });
+const listener = await ngrok.forward({ proto: 'tcp', addr: 25565 });
 ```
 
 See [Full Configuration](#full-configuration) for the list of possible configuration options.
@@ -179,10 +179,10 @@ See here for a [Full Configuration Example](https://github.com/ngrok/ngrok-javas
 
 ### TLS Backends
 
-As of version `0.7.0` there is backend TLS connection support, validated by a filepath specified in the `SSL_CERT_FILE` environment variable, or falling back to the host OS installed trusted certificate authorities. So it is now possible to do this to connect:
+As of version `0.7.0` there is backend TLS connection support, validated by a filepath specified in the `SSL_CERT_FILE` environment variable, or falling back to the host OS installed trusted certificate authorities. So it is now possible to do this to forward:
 
 ```jsx
-await ngrok.connect({ addr: "https://127.0.0.1:3000", authtoken_from_env: true });
+await ngrok.forward({ addr: "https://127.0.0.1:3000", authtoken_from_env: true });
 ```
 
 If the service is using certs not trusted by the OS, such as self-signed certificates, add an environment variable like this before running: `SSL_CERT_FILE=/path/to/ca.crt`.
@@ -211,10 +211,10 @@ new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect()
 
 ### Full Configuration
 
-This example shows [all the possible configuration items of ngrok.connect](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-connect-full.js):
+This example shows [all the possible configuration items of ngrok.forward](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-forward-full.js):
 
 ```jsx
-const listener = await ngrok.connect({
+const listener = await ngrok.forward({
   // session configuration
   addr: `localhost:8080`, // or `8080` or `unix:${UNIX_SOCKET}`
   authtoken: "<authtoken>",
@@ -224,7 +224,7 @@ const listener = await ngrok.connect({
   },
   session_metadata: "Online in One Line",
   // listener configuration
-  metadata: "example listener metadata from nodejs",
+  metadata: "example listener metadata from javascript",
   domain: "<domain>",
   proto: "http",
   proxy_proto: "", // One of: "", "1", "2"
@@ -292,8 +292,8 @@ npx degit github:ngrok/ngrok-javascript/examples/express express && cd express &
 - [Winston (Logging)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-winston.js)
 
 #### Listeners
-* [ngrok.connect (minimal)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-connect-minimal.js)
-* [ngrok.connect (full)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-connect-full.js)
+* [ngrok.forward (minimal)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-forward-minimal.js)
+* [ngrok.forward (full)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-forward-full.js)
 * [HTTP (ngrok.listener)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-listen.js)
 * [HTTP (SessionBuilder minimal)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-http-minimum.js)
 * [HTTP (SessionBuilder full)](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-http-full.js)

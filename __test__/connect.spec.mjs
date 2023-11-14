@@ -46,9 +46,9 @@ async function validateShutdown(t, httpServer, url, axiosConfig) {
   return response;
 }
 
-test("connect https", async (t) => {
+test("forward https", async (t) => {
   const httpServer = await makeHttp();
-  const listener = await ngrok.connect({
+  const listener = await ngrok.forward({
     addr: httpServer.listenTo,
     authtoken: process.env["NGROK_AUTHTOKEN"],
   });
@@ -70,11 +70,22 @@ test("connect number", async (t) => {
   await validateShutdown(t, httpServer, url);
 });
 
-test("connect port string", async (t) => {
+test("forward number", async (t) => {
+  const httpServer = await makeHttp();
+  ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
+  const listener = await ngrok.forward(parseInt(httpServer.listenTo.split(":")[1], 10));
+  const url = listener.url();
+
+  t.truthy(url);
+  t.truthy(url.startsWith("https://"), url);
+  await validateShutdown(t, httpServer, url);
+});
+
+test("forward port string", async (t) => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const listener = await ngrok.connect(httpServer.listenTo.split(":")[1]);
+  const listener = await ngrok.forward(httpServer.listenTo.split(":")[1]);
   const url = listener.url();
 
   t.truthy(url);
@@ -82,11 +93,11 @@ test("connect port string", async (t) => {
   await validateShutdown(t, httpServer, url);
 });
 
-test("connect addr port string", async (t) => {
+test("forward addr port string", async (t) => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const listener = await ngrok.connect({ addr: httpServer.listenTo.split(":")[1] });
+  const listener = await ngrok.forward({ addr: httpServer.listenTo.split(":")[1] });
   const url = listener.url();
 
   t.truthy(url);
@@ -94,10 +105,10 @@ test("connect addr port string", async (t) => {
   await validateShutdown(t, httpServer, url);
 });
 
-test("connect string", async (t) => {
+test("forward string", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const listener = await ngrok.connect(httpServer.listenTo);
+  const listener = await ngrok.forward(httpServer.listenTo);
   const url = listener.url();
 
   t.truthy(url);
@@ -105,9 +116,9 @@ test("connect string", async (t) => {
   await validateShutdown(t, httpServer, url);
 });
 
-test("connect vectorize", async (t) => {
+test("forward vectorize", async (t) => {
   const httpServer = await makeHttp();
-  const listener = await ngrok.connect({
+  const listener = await ngrok.forward({
     // numeric port
     addr: parseInt(httpServer.listenTo.split(":")[1], 10),
     authtoken: process.env["NGROK_AUTHTOKEN"],
@@ -145,9 +156,9 @@ test("connect vectorize", async (t) => {
   t.is("true2", response.headers["x-res-yup2"]);
 });
 
-test("connect tcp listener", async (t) => {
+test("forward tcp listener", async (t) => {
   const httpServer = await makeHttp();
-  const listener = await ngrok.connect({
+  const listener = await ngrok.forward({
     addr: httpServer.listenTo,
     authtoken_from_env: true,
     proto: "tcp",
@@ -160,9 +171,9 @@ test("connect tcp listener", async (t) => {
   await validateShutdown(t, httpServer, listener.url().replace("tcp:", "http:"));
 });
 
-test("connect tls listener", async (t) => {
+test("forward tls listener", async (t) => {
   const httpServer = await makeHttp();
-  const listener = await ngrok.connect({
+  const listener = await ngrok.forward({
     addr: httpServer.listenTo,
     authtoken_from_env: true,
     proto: "tls",
@@ -186,12 +197,12 @@ test("connect tls listener", async (t) => {
 });
 
 // serial to not run into double error on a session issue
-test.serial("connect bad domain", async (t) => {
+test.serial("forward bad domain", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
   const error = await t.throwsAsync(
     async () => {
-      await ngrok.connect({ addr: httpServer.listenTo, domain: "1.21 gigawatts" });
+      await ngrok.forward({ addr: httpServer.listenTo, domain: "1.21 gigawatts" });
     },
     { instanceOf: Error }
   );

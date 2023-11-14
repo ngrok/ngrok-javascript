@@ -95,19 +95,35 @@ macro_rules! config_common {
     };
 }
 
-/// Transform a json object configuration into a listener.
-/// See {@link Config} for the full set of options.
+/// Alias for {@link forward}.
 ///
-/// Examples:<br>
-/// listener = await ngrok.connect("localhost:4242");<br>
-/// listener = await ngrok.connect({addr: "https://localhost:8443", authtoken_from_env: true});<br>
-/// listener = await ngrok.connect({addr: "unix:///path/to/unix.socket", basic_auth: "ngrok:online1line", authtoken_from_env: true});
+/// See {@link forward} for the full set of options.
 #[napi(
     ts_args_type = "config: Config|string|number",
     ts_return_type = "Promise<Listener>"
 )]
-#[allow(dead_code)]
 pub fn connect(
+    env: Env,
+    cfg: Config,
+    on_log_event: Option<JsFunction>,
+    on_connection: Option<JsFunction>,
+    on_disconnection: Option<JsFunction>,
+) -> Result<JsObject> {
+    forward(env, cfg, on_log_event, on_connection, on_disconnection)
+}
+
+/// Transform a json object configuration into a listener.
+/// See {@link Config} for the full set of options.
+///
+/// Examples:<br>
+/// listener = await ngrok.forward("localhost:4242");<br>
+/// listener = await ngrok.forward({addr: "https://localhost:8443", authtoken_from_env: true});<br>
+/// listener = await ngrok.forward({addr: "unix:///path/to/unix.socket", basic_auth: "ngrok:online1line", authtoken_from_env: true});
+#[napi(
+    ts_args_type = "config: Config|string|number",
+    ts_return_type = "Promise<Listener>"
+)]
+pub fn forward(
     env: Env,
     mut cfg: Config,
     on_log_event: Option<JsFunction>,

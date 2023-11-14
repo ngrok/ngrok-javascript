@@ -20,7 +20,7 @@ const ngrok = require("@ngrok/ngrok");
 ngrok.consoleLog("INFO"); // turn on info logging
 
 (async function () {
-  const listener = await ngrok.connect({
+  const listener = await ngrok.forward({
     // session configuration
     addr: `unix:${UNIX_SOCKET}`,
     // addr: `localhost:8080`,
