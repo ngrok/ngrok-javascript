@@ -1,6 +1,6 @@
 use napi_derive::napi;
 
-/// Configuration object to pass to ngrok.connect()
+/// Configuration object to pass to ngrok.forward()
 ///
 /// @group Functions
 #[napi(object)]

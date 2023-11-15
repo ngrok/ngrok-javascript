@@ -252,9 +252,10 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { connect, disconnect, kill, Listener, listeners, getListener, getListenerByUrl, HttpListenerBuilder, TcpListenerBuilder, TlsListenerBuilder, LabeledListenerBuilder, loggingCallback, authtoken, SessionBuilder, Session, UpdateRequest } = nativeBinding
+const { connect, forward, disconnect, kill, Listener, listeners, getListener, getListenerByUrl, HttpListenerBuilder, TcpListenerBuilder, TlsListenerBuilder, LabeledListenerBuilder, loggingCallback, authtoken, SessionBuilder, Session, UpdateRequest } = nativeBinding
 
 module.exports.connect = connect
+module.exports.forward = forward
 module.exports.disconnect = disconnect
 module.exports.kill = kill
 module.exports.Listener = Listener
@@ -530,9 +531,9 @@ function consoleLog(level) {
   }, level);
 }
 
-// wrap connect with code to vectorize and split out functions
-const _connect = connect;
-async function ngrokConnect(config) {
+// wrap forward with code to vectorize and split out functions
+const _forward = forward;
+async function ngrokForward(config) {
   if (config == undefined) config = 80;
   if (Number.isInteger(config) || typeof config === "string" || config instanceof String) {
     address = String(config);
@@ -613,7 +614,7 @@ async function ngrokConnect(config) {
   }
   // call into rust
   try {
-    return await _connect(config, on_log_event, on_connection, on_disconnection);
+    return await _forward(config, on_log_event, on_connection, on_disconnection);
   } catch (err) {
     populateErrorCode(err);
     throw err;
@@ -648,7 +649,8 @@ function vectorize(config, key) {
   }
 }
 
-module.exports.connect = ngrokConnect;
+module.exports.connect = ngrokForward;
+module.exports.forward = ngrokForward;
 module.exports.consoleLog = consoleLog;
 module.exports.listen = ngrokListen;
 module.exports.listenable = listenable;
