@@ -1,6 +1,6 @@
 [package]
 edition = "2021"
-name = "ngrok-nodejs"
+name = "ngrok-javascript"
 version = "0.9.0"
 
 [lib]
