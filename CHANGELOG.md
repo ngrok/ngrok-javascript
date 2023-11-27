@@ -1,3 +1,9 @@
+## 0.9.1:
+
+- Move to `ngrok.forward` from `ngrok.connect`, keeping an alias.
+- Rename to `ngrok-javascript`.
+- Smaller number of files packaged.
+
 ## 0.9.0:
 
 - `ngrok.connect` now returns the full `Listener` object.
