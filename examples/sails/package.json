@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@ngrok/ngrok": "^0.*",
+    "sails": "^1.*"
+  }
+}
