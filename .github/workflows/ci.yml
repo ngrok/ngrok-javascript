@@ -76,9 +76,8 @@ jobs:
           - host: windows-latest
             build: |
               yarn build --target i686-pc-windows-msvc
-              yarn test -m smoke
             target: i686-pc-windows-msvc
-            if: ${{ github.ref == 'refs/heads/main' }}
+            if: true
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             if: true
@@ -185,7 +184,7 @@ jobs:
             yarn install
             yarn build
             strip -x *.node
-            yarn test -m smoke
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -m smoke
             rm -rf examples
             rm -rf node.core
             rm -rf node_modules
@@ -207,6 +206,8 @@ jobs:
         settings:
           - host: windows-latest
             target: x86_64-pc-windows-msvc
+          - host: windows-latest
+            target: i686-pc-windows-msvc
         node:
           - '14'
           - '16'
@@ -214,12 +215,25 @@ jobs:
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v3
-      - name: Setup node
+      - name: Setup node x86_64
         uses: actions/setup-node@v3
+        if: matrix.settings.target == 'x86_64-pc-windows-msvc'
         with:
           node-version: ${{ matrix.node }}
           check-latest: true
           cache: yarn
+      - name: Setup node x86
+        uses: actions/setup-node@v3
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
+        with:
+          node-version: 18
+          check-latest: true
+          cache: yarn
+          architecture: x86
+      - name: yarn config x86
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
+        run: yarn config set supportedArchitectures.cpu "ia32"
+        shell: bash
       - name: Install dependencies
         run: yarn install
       - name: Download artifacts
@@ -231,7 +245,10 @@ jobs:
         run: ls -R .
         shell: bash
       - name: Test bindings
-        run: yarn test -m smoke
+        env:
+          NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        run: |
+          yarn test -m smoke
   test-linux-x64-gnu-binding:
     name: Test bindings on Linux-x64-gnu - node@${{ matrix.node }}
     needs:
@@ -299,7 +316,7 @@ jobs:
         run: ls -R .
         shell: bash
       - name: Test bindings
-        run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -m smoke
+        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -m smoke
   test-linux-aarch64-gnu-binding:
     if: github.ref == 'refs/heads/main'
     name: Test bindings on aarch64-unknown-linux-gnu - node@${{ matrix.node }}
@@ -336,7 +353,7 @@ jobs:
           options: '-v ${{ github.workspace }}:/build -w /build'
           run: |
             set -e
-            yarn test -m smoke
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -m smoke
             ls -la
   test-linux-aarch64-musl-binding:
     if: github.ref == 'refs/heads/main'
@@ -368,7 +385,7 @@ jobs:
           run: |
             set -e
             apk add nodejs npm yarn
-            yarn test -m smoke
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -m smoke
   test-linux-arm-gnueabihf-binding:
     if: github.ref == 'refs/heads/main'
     name: Test bindings on armv7-unknown-linux-gnueabihf - node@${{ matrix.node }}
@@ -404,7 +421,7 @@ jobs:
           options: '-v ${{ github.workspace }}:/build -w /build'
           run: |
             set -e
-            yarn test -m smoke
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -m smoke
             ls -la
   universal-macOS:
     if: github.ref == 'refs/heads/main'
