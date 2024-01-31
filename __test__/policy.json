@@ -1,0 +1,18 @@
+{
+  "outbound": [
+    {
+      "name": "test_out",
+      "expressions": ["req.Method == 'GET'"],
+      "actions": [
+        {
+          "type": "add-headers",
+          "config": {
+            "headers": {
+              "foo": "bar"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -217,6 +217,8 @@ export interface Config {
   onLogEvent?: (data: string) => void
   /** 'closed' - connection is lost, 'connected' - reconnected */
   onStatusChange?: (status: string) => void
+  /** The Traffic Policy to use for this endpoint. */
+  policy?: string
   /**
    * The port for the listener to forward to.
    * Only used if addr is not defined.
@@ -542,6 +544,7 @@ export class HttpListenerBuilder {
    * set this `forwardsTo` value.
    */
   forwardsTo(forwardsTo: string): this
+  policy(policy: string): this
 }
 /**
  *r" An ngrok listener backing a TCP endpoint.
@@ -590,6 +593,7 @@ export class TcpListenerBuilder {
    * set this `forwardsTo` value.
    */
   forwardsTo(forwardsTo: string): this
+  policy(policy: string): this
   /**
    * The TCP address to request for this edge.
    * These addresses can be reserved in the [ngrok dashboard] to use across sessions. For example: remote_addr("2.tcp.ngrok.io:21746")
@@ -645,6 +649,7 @@ export class TlsListenerBuilder {
    * set this `forwardsTo` value.
    */
   forwardsTo(forwardsTo: string): this
+  policy(policy: string): this
   /**
    * The domain to request for this edge, any valid domain or hostname that you have
    * previously registered with ngrok. If using a custom domain, this requires

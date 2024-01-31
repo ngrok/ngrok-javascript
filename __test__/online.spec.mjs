@@ -9,6 +9,7 @@ import * as fs from "fs";
 import * as http from "http";
 import * as net from "net";
 import * as retry from "./retry-config.mjs";
+import * as path from "path";
 
 axiosRetry(axios, retry.retryConfig);
 const expected = "Hello";
@@ -515,4 +516,13 @@ test("listener invalid domain", async (t) => {
     { instanceOf: Error }
   );
   t.is("ERR_NGROK_326", error.errorCode);
+});
+
+test("policy", async (t) => {
+  const policy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
+
+  const [httpServer, session] = await makeHttpAndSession();
+  const listener = await session.httpEndpoint().policy(policy).listen();
+  const response = await forwardValidateShutdown(t, httpServer, listener, listener.url());
+  t.is("bar", response.headers["foo"]);
 });
