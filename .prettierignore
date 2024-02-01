@@ -1,6 +1,7 @@
 # Ignore artifacts:
 *.css
 *.json
+!__test__/policy.json
 *.html
 *.md
 *.vue

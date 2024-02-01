@@ -203,6 +203,8 @@ pub struct Config {
     /// 'closed' - connection is lost, 'connected' - reconnected
     #[napi(ts_type = "(status: string) => void")]
     pub on_status_change: Option<bool>,
+    /// The Traffic Policy to use for this endpoint.
+    pub policy: Option<String>,
     /// The port for the listener to forward to.
     /// Only used if addr is not defined.
     pub port: Option<u32>,

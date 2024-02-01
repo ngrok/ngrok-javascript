@@ -7,6 +7,7 @@ import axiosRetry from "axios-retry";
 import * as fs from "fs";
 import * as http from "http";
 import * as retry from "./retry-config.mjs";
+import * as path from "path";
 
 axiosRetry(axios, retry.retryConfig);
 const expected = "Hello";
@@ -207,4 +208,22 @@ test.serial("forward bad domain", async (t) => {
     { instanceOf: Error }
   );
   t.is("ERR_NGROK_326", error.errorCode, error.message);
+});
+
+test("policy", async (t) => {
+  const policy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
+
+  const httpServer = await makeHttp();
+  const listener = await ngrok.forward({
+    addr: httpServer.listenTo,
+    authtoken: process.env["NGROK_AUTHTOKEN"],
+    proto: "http",
+    policy: policy,
+  });
+  const url = listener.url();
+
+  t.truthy(url);
+  t.truthy(url.startsWith("https://"), url);
+  const response = await validateShutdown(t, httpServer, url);
+  t.is("bar", response.headers["foo"]);
 });

@@ -92,6 +92,11 @@ macro_rules! config_common {
         plumb_vec!($builder, $config, deny_cidr);
         plumb!($builder, $config, proxy_proto);
         plumb!($builder, $config, forwards_to);
+
+        // returns a Result, so we can't use the macro
+        if let Some(ref v) = $config.policy {
+            $builder.policy(v.clone())?;
+        }
     };
 }
 
