@@ -1,6 +1,6 @@
 {
   "name": "@ngrok/ngrok-freebsd-x64",
-  "version": "0.9.1",
+  "version": "1.0.0",
   "os": [
     "freebsd"
   ],

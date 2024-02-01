@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "ngrok-javascript"
-version = "0.9.1"
+version = "1.0.0"
 
 [lib]
 crate-type = ["cdylib"]
