@@ -1,6 +1,6 @@
 {
   "name": "@ngrok/ngrok-linux-x64-musl",
-  "version": "0.9.1",
+  "version": "1.0.0",
   "os": [
     "linux"
   ],
