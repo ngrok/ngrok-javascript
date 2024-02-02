@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "@ngrok/ngrok": "^0.*",
+    "@ngrok/ngrok": "^1.*",
     "create-remix": "1.15.0",
     "create-svelte": "3.3.0",
     "create-vue": "3.6.1",
