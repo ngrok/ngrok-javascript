@@ -10,6 +10,8 @@ pub struct Config {
     /// Examples: "80", "localhost:8080", "https://192.168.1.100:8443", "unix:/tmp/my.sock", "pipe://./my-pipe"
     #[napi(ts_type = "number|string")]
     pub addr: Option<String>,
+    /// The L7 application protocol to use for this edge, e.g. "http2" or "http1".
+    pub app_protocol: Option<String>,
     // Synonym for basic_auth
     #[napi(ts_type = "string|Array<string>")]
     pub auth: Option<Vec<String>>,

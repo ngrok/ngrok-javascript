@@ -25,6 +25,13 @@ impl HttpListenerBuilder {
         );
         self
     }
+    /// The L7 application protocol to use for this edge, e.g. "http2" or "http1".
+    #[napi]
+    pub fn app_protocol(&mut self, app_protocol: String) -> &Self {
+        let mut builder = self.listener_builder.lock();
+        builder.app_protocol(app_protocol);
+        self
+    }
     /// The domain to request for this edge, any valid domain or hostname that you have
     /// previously registered with ngrok. If using a custom domain, this requires
     /// registering in the [ngrok dashboard] and setting a DNS CNAME value.
