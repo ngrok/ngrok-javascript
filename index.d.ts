@@ -14,6 +14,8 @@ export interface Config {
    * Examples: "80", "localhost:8080", "https://192.168.1.100:8443", "unix:/tmp/my.sock", "pipe://./my-pipe"
    */
   addr?: number|string
+  /** The L7 application protocol to use for this edge, e.g. "http2" or "http1". */
+  appProtocol?: string
   auth?: string|Array<string>
   /**
    * Configures the session to authenticate with the provided authtoken. You
@@ -396,6 +398,8 @@ export class HttpListenerBuilder {
    * "HTTPS" or "HTTP", defaults to "HTTPS".
    */
   scheme(scheme: string): this
+  /** The L7 application protocol to use for this edge, e.g. "http2" or "http1". */
+  appProtocol(appProtocol: string): this
   /**
    * The domain to request for this edge, any valid domain or hostname that you have
    * previously registered with ngrok. If using a custom domain, this requires
