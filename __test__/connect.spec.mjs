@@ -6,13 +6,19 @@ import axios, { AxiosError } from "axios";
 import axiosRetry from "axios-retry";
 import * as fs from "fs";
 import * as http from "http";
+import * as http2 from "http2";
 import * as retry from "./retry-config.mjs";
 import * as path from "path";
+import exp from "constants";
 
 axiosRetry(axios, retry.retryConfig);
 const expected = "Hello";
 
-function createHttpServer() {
+function createHttpServer({ protocol }) {
+  if (protocol === "http2") {
+    return createHttp2Server();
+  }
+
   return http.createServer(function (req, res) {
     res.writeHead(200);
     res.write(expected);
@@ -20,8 +26,22 @@ function createHttpServer() {
   });
 }
 
-async function makeHttp(useUnixSocket) {
-  const server = createHttpServer();
+function createHttp2Server() {
+  const server = http2.createServer();
+
+  server.on("stream", (stream, headers) => {
+    stream.respond({
+      ":status": 200,
+    });
+    stream.end(expected);
+  });
+
+  return server;
+}
+
+async function makeHttp(options = {}) {
+  const { useUnixSocket = false, useHttp2 = false } = options;
+  const server = createHttpServer({ protocol: useHttp2 ? "http2" : "http" });
   const listenTo = useUnixSocket ? "tun-" + Math.floor(Math.random() * 1000000) : 0;
   const socket = await server.listen(listenTo);
   server.socket = socket;
@@ -58,6 +78,25 @@ test("forward https", async (t) => {
   t.truthy(url);
   t.truthy(url.startsWith("https://"), url);
   await validateShutdown(t, httpServer, url);
+});
+
+test("forward http2", async (t) => {
+  const httpServer = await makeHttp(false, true);
+  const listener = await ngrok.forward({
+    // numeric port
+    addr: parseInt(httpServer.listenTo.split(":")[1], 10),
+    // authtoken from env
+    authtoken: process.env["NGROK_AUTHTOKEN"],
+    // The L7 app_protocol
+    app_protocol: "http2",
+  });
+
+  const url = listener.url();
+  t.truthy(url.startsWith("https://"), url);
+  const res = await validateShutdown(t, httpServer, url);
+
+  t.assert(res.status === 200);
+  t.assert(res.data.includes(expected));
 });
 
 test("connect number", async (t) => {
