@@ -24,6 +24,7 @@ ngrok.consoleLog("INFO"); // turn on info logging
     // session configuration
     addr: `unix:${UNIX_SOCKET}`,
     // addr: `localhost:8080`,
+    // app_protocol: "http1",
     // authtoken: "<authtoken>",
     authtoken_from_env: true,
     on_status_change: (addr, error) => {
