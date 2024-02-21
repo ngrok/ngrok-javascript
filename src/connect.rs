@@ -196,6 +196,7 @@ async fn http_endpoint(session: &Session, cfg: &Config) -> Result<String> {
     plumb_vec!(bld, cfg, scheme, schemes);
     plumb!(bld, cfg, domain, hostname); // synonym for domain
     plumb!(bld, cfg, domain);
+    plumb!(bld, cfg, app_protocol);
     plumb_vec!(bld, cfg, mutual_tlsca, mutual_tls_cas, vecu8);
     plumb_bool!(bld, cfg, compression);
     plumb_bool!(bld, cfg, websocket_tcp_conversion, websocket_tcp_converter);

@@ -15,7 +15,7 @@ export interface Config {
    */
   addr?: number|string
   /** The L7 application protocol to use for this edge, e.g. "http2" or "http1". */
-  appProtocol?: string
+  app_protocol?: string
   auth?: string|Array<string>
   /**
    * Configures the session to authenticate with the provided authtoken. You
