@@ -1,5 +1,5 @@
-const ngrok = require("../index.js");
 const http2 = require("node:http2");
+const ngrok = require("@ngrok/ngrok");
 
 const server = http2.createServer();
 server.on("error", (err) => console.error(err));
