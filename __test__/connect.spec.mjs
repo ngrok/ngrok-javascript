@@ -81,7 +81,7 @@ test("forward https", async (t) => {
 });
 
 test("forward http2", async (t) => {
-  const httpServer = await makeHttp(false, true);
+  const httpServer = await makeHttp({useHttp2: true});
   const listener = await ngrok.forward({
     // numeric port
     addr: parseInt(httpServer.listenTo.split(":")[1], 10),
