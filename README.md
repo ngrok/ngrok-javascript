@@ -230,6 +230,7 @@ const listener = await ngrok.forward({
   proxy_proto: "", // One of: "", "1", "2"
   schemes: ["HTTPS"],
   labels: "edge:edghts_2G...",  // Along with proto="labeled"
+  app_protocol: "http2",
   // module configuration
   basic_auth: ["ngrok:online1line"],
   circuit_breaker: 0.1,
