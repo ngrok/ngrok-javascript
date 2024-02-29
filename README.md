@@ -69,7 +69,7 @@ A quickstart guide and a full API reference are included in the [ngrok-javascrip
 
 ### Authorization
 
-To use most of ngrok's features, you'll need an authtoken. To obtain one, sign up for free at [ngrok.com](https://dashboard.ngrok.com/signup) and retrieve it from the [authtoken page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken). Once you have copied your authtoken, you can reference it in several ways.
+To use ngrok you'll need an authtoken. To obtain one, sign up for free at [ngrok.com](https://dashboard.ngrok.com/signup) and retrieve it from the [authtoken page of your ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken). Once you have copied your authtoken, you can reference it in several ways.
 
 You can set it in the `NGROK_AUTHTOKEN` environment variable and pass `authtoken_from_env: true` to the [forward](https://ngrok.github.io/ngrok-javascript/functions/forward.html) method:
 
