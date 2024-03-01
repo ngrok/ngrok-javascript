@@ -501,28 +501,31 @@ async function ngrokLinkPipe(listener, server) {
 }
 
 // protect against multiple calls, for instance from npm
-var sigintRan = false;
+var sigHandlerRan = false;
 
 function registerCleanup(listener, socket) {
-  process.on("SIGINT", function () {
-    if (sigintRan) return;
-    sigintRan = true;
+  for (const signal of ["SIGINT", "SIGTERM"]) {
+    process.on(signal, function () {
+      if (process.listenerCount(signal) > 1) {
+        // user has registered a handler, abort this one
+        return;
+      }
 
-    if (process.listenerCount("SIGINT") > 1) {
-      // user has registered a handler, abort this one
-      return;
-    }
-    // close listener
-    if (listener) {
-      listener.close().catch((err) => {
-        console.error(`Error closing listener: ${err}`);
-      });
-    }
-    // close webserver's socket
-    if (socket) socket.close();
-    // unregister any logging callback
-    loggingCallback();
-  });
+      if (sigHandlerRan) return;
+      sigHandlerRan = true;
+
+      // close listener
+      if (listener) {
+        listener.close().catch((err) => {
+          console.error(`Error closing listener: ${err}`);
+        });
+      }
+      // close webserver's socket
+      if (socket) socket.close();
+      // unregister any logging callback
+      loggingCallback();
+    });
+  }
 }
 
 function consoleLog(level) {
