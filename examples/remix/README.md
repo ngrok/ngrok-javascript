@@ -1,8 +1,4 @@
-# Welcome to Remix!
-
-- [Remix Docs](https://remix.run/docs)
-
-## Development
+# This example wires up Remix development mode
 
 From your terminal:
 
@@ -12,42 +8,25 @@ npm run dev
 
 This starts your app in development mode, rebuilding assets on file changes.
 
-## Deployment
+# Explanation
 
-First, build your app for production:
+The line `require("./ngrok.config.js");` is added to `remix.config.js` which includes the code to setup the ngrok listener on the appropriate port, which defaults to `3000`.
 
-```sh
-npm run build
+# Example Output
+
+```
+> npm run dev
+
+> dev
+> remix dev
+
+Forwarding to: localhost:3000 from ingress at: https://935d84664d13.ngrok.app
+Remix App Server started at http://localhost:3000 (http://192.168.2.66:3000)
 ```
 
-Then run the app in production mode:
+# Additional information
 
-```sh
-npm start
-```
+For more information about Remix see:
 
-Now you'll need to pick a host to deploy it to.
-
-### DIY
-
-If you're familiar with deploying node applications, the built-in Remix app server is production-ready.
-
-Make sure to deploy the output of `remix build`
-
-- `build/`
-- `public/build/`
-
-### Using a Template
-
-When you ran `npx create-remix@latest` there were a few choices for hosting. You can run that again to create a new project, then copy over your `app/` folder to the new project that's pre-configured for your target server.
-
-```sh
-cd ..
-# create a new project, and pick a pre-configured host
-npx create-remix@latest
-cd my-new-remix-app
-# remove the new project's app (not the old one!)
-rm -rf app
-# copy your app over
-cp -R ../my-old-remix-app/app app
-```
+- [Remix Docs](https://remix.run/docs)
+- [Remix Readme](REMIX-README.md)
