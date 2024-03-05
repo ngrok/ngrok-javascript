@@ -704,7 +704,7 @@ export class LabeledListenerBuilder {
    * [Using Labels]: https://ngrok.com/docs/guides/using-labels-within-ngrok/
    */
   label(label: string, value: string): this
-  /** Set the L7 application portocol for this listener, i.e. "http1" or "http2" (defualts "http1") */
+  /** Set the L7 application portocol for this listener, i.e. "http1" or "http2" (defaults "http1") */
   appProtocol(appProtocol: string): this
 }
 /**
