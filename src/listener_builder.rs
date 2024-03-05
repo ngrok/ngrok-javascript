@@ -188,6 +188,14 @@ macro_rules! make_listener_builder {
                 builder.label(label, value);
                 self
             }
+
+            /// Set the L7 application portocol for this listener, i.e. "http1" or "http2" (defaults "http1")
+            #[napi]
+            pub fn app_protocol(&mut self, app_protocol: String) -> &Self {
+                let mut builder = self.listener_builder.lock();
+                builder.app_protocol(app_protocol);
+                self
+            }
         }
     };
 }
