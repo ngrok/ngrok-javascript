@@ -26,6 +26,8 @@ builder.connect().then((session) => {
     .labeledListener()
     .label("edge", "edghts_<edge_id>")
     .metadata("example listener metadata from nodejs")
+    // Set the appProtocol for the listener, i.e. "http1" or "http2", default is "http1"
+    // .appProtocol("http2")
     .listen()
     .then((listener) => {
       console.log("Ingress established at: " + JSON.stringify(listener.labels()));

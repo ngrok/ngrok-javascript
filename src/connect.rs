@@ -282,6 +282,7 @@ async fn tls_endpoint(session: &Session, cfg: &Config) -> Result<String> {
 async fn labeled_listener(session: &Session, cfg: &Config) -> Result<String> {
     let mut bld = session.labeled_listener();
     plumb!(bld, cfg, metadata);
+    plumb!(bld, cfg, app_protocol);
     plumb_vec!(bld, cfg, label, labels, ":");
     Ok(bld.listen(None).await?.id())
 }
