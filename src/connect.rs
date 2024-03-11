@@ -92,6 +92,7 @@ macro_rules! config_common {
         plumb_vec!($builder, $config, deny_cidr);
         plumb!($builder, $config, proxy_proto);
         plumb!($builder, $config, forwards_to);
+        plumb!($builder, $config, verify_upstream_tls);
 
         // returns a Result, so we can't use the macro
         if let Some(ref v) = $config.policy {
@@ -283,6 +284,7 @@ async fn labeled_listener(session: &Session, cfg: &Config) -> Result<String> {
     let mut bld = session.labeled_listener();
     plumb!(bld, cfg, metadata);
     plumb!(bld, cfg, app_protocol);
+    plumb!(bld, cfg, verify_upstream_tls);
     plumb_vec!(bld, cfg, label, labels, ":");
     Ok(bld.listen(None).await?.id())
 }

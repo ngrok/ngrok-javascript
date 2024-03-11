@@ -269,6 +269,9 @@ pub struct Config {
     /// Unused, will warn and be ignored
     #[napi(js_name = "terminate_at")]
     pub terminate_at: Option<String>,
+    /// Whether to disable certificate verification for this listener
+    #[napi(js_name = "verify_upstream_tls")]
+    pub verify_upstream_tls: Option<bool>,
     /// WebhookVerification configuration, the provider to use.
     /// See [Webhook Verification] in the ngrok docs for additional details.
     ///

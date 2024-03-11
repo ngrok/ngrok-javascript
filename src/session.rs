@@ -4,7 +4,6 @@ use std::{
     time::Duration,
 };
 
-use async_rustls::rustls::ClientConfig;
 use bytes::Bytes;
 use lazy_static::lazy_static;
 use napi::{
@@ -28,6 +27,7 @@ use ngrok::{
     Session as NgrokSession,
 };
 use parking_lot::Mutex as SyncMutex;
+use rustls::ClientConfig;
 use tokio::sync::Mutex;
 use tracing::{
     debug,

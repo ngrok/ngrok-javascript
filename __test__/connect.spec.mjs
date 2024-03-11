@@ -99,6 +99,27 @@ test("forward http2", async (t) => {
   t.assert(res.data.includes(expected));
 });
 
+test("forward http2 no cert validation", async (t) => {
+  const httpServer = await makeHttp({useHttp2: true});
+  const listener = await ngrok.forward({
+    // numeric port
+    addr: parseInt(httpServer.listenTo.split(":")[1], 10),
+    // authtoken from env
+    authtoken: process.env["NGROK_AUTHTOKEN"],
+    // The L7 app_protocol
+    app_protocol: "http2",
+    // No upstream cert validation
+    verify_upstream_tls: false,
+  });
+
+  const url = listener.url();
+  t.truthy(url.startsWith("https://"), url);
+  const res = await validateShutdown(t, httpServer, url);
+
+  t.assert(res.status === 200);
+  t.assert(res.data.includes(expected));
+});
+
 test("connect number", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
