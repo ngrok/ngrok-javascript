@@ -1,3 +1,7 @@
+## 1.2.0:
+
+- Add `verifyUpstreamTls` to listener builders and `verify_upstream_tls` to `ngrok.forward`. Setting this to false will skip verification of the upstream application's TLS certificate.
+
 ## 1.1.1:
 
 - Add `appProtocol(string)` to the labeled listener builder. Setting this to "http2" will enable HTTP/2 support to the backend application.
