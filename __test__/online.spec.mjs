@@ -141,6 +141,22 @@ test("tls backend", async (t) => {
   await listener.close();
 });
 
+test("unverified tls backend", async (t) => {
+  const session = await makeSession();
+  const listener = await session.httpEndpoint().verifyUpstreamTls(false)
+    .listenAndForward("https://dashboard.ngrok.com");
+
+  const error = await t.throwsAsync(
+    async () => {
+      await axios.get(listener.url());
+    },
+    { instanceOf: AxiosError }
+  );
+  t.is(421, error.response.status);
+  t.truthy(error.response.headers["ngrok-trace-id"]);
+  await listener.close();
+});
+
 test("http headers", async (t) => {
   const httpServer = http.createServer(function (req, res) {
     const { headers } = req;

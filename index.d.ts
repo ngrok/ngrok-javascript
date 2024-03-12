@@ -289,6 +289,8 @@ export interface Config {
   subdomain?: string
   /** Unused, will warn and be ignored */
   terminate_at?: string
+  /** Whether to disable certificate verification for this listener */
+  verify_upstream_tls?: boolean
   /**
    * WebhookVerification configuration, the provider to use.
    * See [Webhook Verification] in the ngrok docs for additional details.
@@ -509,6 +511,8 @@ export class HttpListenerBuilder {
   webhookVerification(provider: string, secret: string): this
   /** Listener-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
+  /** Whether to disable certificate verification for this listener. */
+  verifyUpstreamTls(verifyUpstreamTls: boolean): this
   /** Begin listening for new connections on this listener. */
   listen(bind?: boolean | undefined | null): Promise<Listener>
   /**
@@ -558,6 +562,8 @@ export class HttpListenerBuilder {
 export class TcpListenerBuilder {
   /** Listener-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
+  /** Whether to disable certificate verification for this listener. */
+  verifyUpstreamTls(verifyUpstreamTls: boolean): this
   /** Begin listening for new connections on this listener. */
   listen(bind?: boolean | undefined | null): Promise<Listener>
   /**
@@ -614,6 +620,8 @@ export class TcpListenerBuilder {
 export class TlsListenerBuilder {
   /** Listener-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
+  /** Whether to disable certificate verification for this listener. */
+  verifyUpstreamTls(verifyUpstreamTls: boolean): this
   /** Begin listening for new connections on this listener. */
   listen(bind?: boolean | undefined | null): Promise<Listener>
   /**
@@ -685,6 +693,8 @@ export class TlsListenerBuilder {
 export class LabeledListenerBuilder {
   /** Listener-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
+  /** Whether to disable certificate verification for this listener. */
+  verifyUpstreamTls(verifyUpstreamTls: boolean): this
   /** Begin listening for new connections on this listener. */
   listen(bind?: boolean | undefined | null): Promise<Listener>
   /**

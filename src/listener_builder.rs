@@ -60,6 +60,14 @@ macro_rules! make_listener_builder {
                 self
             }
 
+            /// Whether to disable certificate verification for this listener.
+            #[napi]
+            pub fn verify_upstream_tls(&mut self, verify_upstream_tls: bool) -> &Self {
+                let mut builder = self.listener_builder.lock();
+                builder.verify_upstream_tls(verify_upstream_tls);
+                self
+            }
+
             /// Begin listening for new connections on this listener.
             #[napi]
             pub async fn listen(&self, _bind: Option<bool>) -> Result<Listener> {
