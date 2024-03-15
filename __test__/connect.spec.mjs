@@ -142,7 +142,7 @@ test("forward number", async (t) => {
   await validateShutdown(t, httpServer, url);
 });
 
-test("forward port string", async (t) => {
+test("forward just string as port", async (t) => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
@@ -159,6 +159,18 @@ test("forward addr port string", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
   const listener = await ngrok.forward({ addr: httpServer.listenTo.split(":")[1] });
+  const url = listener.url();
+
+  t.truthy(url);
+  t.truthy(url.startsWith("https://"), url);
+  await validateShutdown(t, httpServer, url);
+});
+
+test("forward port string", async (t) => {
+  ngrok.consoleLog();
+  const httpServer = await makeHttp();
+  ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
+  const listener = await ngrok.forward({ port: httpServer.listenTo.split(":")[1] });
   const url = listener.url();
 
   t.truthy(url);

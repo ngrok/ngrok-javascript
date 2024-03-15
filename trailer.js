@@ -272,6 +272,13 @@ async function ngrokForward(config) {
     }
     config = { addr: address };
   }
+  if (typeof config["port"] === "string" || config["port"] instanceof String) {
+    const num = parseInt(config["port"], 10);
+    if (isNaN(num)) {
+      throw new Error(`port must be a number: '${config["port"]}'`);
+    }
+    config["port"] = num;
+  }
   // Convert addr to string to allow for numeric port numbers
   const addr = config["addr"];
   if (Number.isInteger(addr)) config["addr"] = "localhost:" + String(config["addr"]);
