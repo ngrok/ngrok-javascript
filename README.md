@@ -185,7 +185,7 @@ As of version `0.7.0` there is backend TLS connection support, validated by a fi
 await ngrok.forward({ addr: "https://127.0.0.1:3000", authtoken_from_env: true });
 ```
 
-If the service is using certs not trusted by the OS, such as self-signed certificates, add an environment variable like this before running: `SSL_CERT_FILE=/path/to/ca.crt`.
+If the service is using certs not trusted by the OS, such as self-signed certificates, add an environment variable like this before running: `SSL_CERT_FILE=/path/to/ca.crt`. There is also a `verify_upstream_tls: false` option to disable certification verification.
 
 ### Async Programming
 
@@ -259,6 +259,7 @@ const listener = await ngrok.forward({
   response_header_remove: ["X-Res-Nope"],
   request_header_add: ["X-Req-Yup:true"],
   response_header_add: ["X-Res-Yup:true"],
+  verify_upstream_tls: false,
   verify_webhook_provider: "twilio",
   verify_webhook_secret: "asdf",
   websocket_tcp_converter: true,

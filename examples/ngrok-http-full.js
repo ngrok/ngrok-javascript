@@ -70,6 +70,7 @@ builder.connect().then((session) => {
     // .requestHeader("X-Req-Yup", "true")
     // .responseHeader("X-Res-Yup", "true")
     // .scheme("HTTPS")
+    // .verifyUpstreamTls(false)
     // .websocketTcpConversion()
     // .webhookVerification("twilio", "asdf")
     .metadata("example listener metadata from nodejs")
