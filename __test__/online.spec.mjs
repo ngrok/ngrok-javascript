@@ -137,7 +137,7 @@ test("tls backend", async (t) => {
     { instanceOf: AxiosError }
   );
   t.is(421, error.response.status);
-  t.truthy(error.response.headers["ngrok-trace-id"]);
+  t.truthy(error.response.data.includes("different Host"));
   await listener.close();
 });
 
@@ -153,7 +153,7 @@ test("unverified tls backend", async (t) => {
     { instanceOf: AxiosError }
   );
   t.is(421, error.response.status);
-  t.truthy(error.response.headers["ngrok-trace-id"]);
+  t.truthy(error.response.data.includes("different Host"));
   await listener.close();
 });
 

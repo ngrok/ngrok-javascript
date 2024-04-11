@@ -6,13 +6,6 @@ use std::{
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use ngrok::{
-    config::{
-        HttpTunnelBuilder,
-        LabeledTunnelBuilder,
-        ProxyProto,
-        TcpTunnelBuilder,
-        TlsTunnelBuilder,
-    },
     prelude::*,
     Session,
 };
