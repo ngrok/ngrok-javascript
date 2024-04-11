@@ -1,6 +1,6 @@
 {
   "dependencies": {
     "@ngrok/ngrok": "^1.*",
-    "next": "13.3.0"
+    "next": "14.0.4"
   }
 }

@@ -83,7 +83,7 @@ pub(crate) struct SessionBuilder {
 }
 
 #[napi]
-#[cfg_attr(feature = "cargo-clippy", allow(clippy::new_without_default))]
+#[cfg_attr(feature = "clippy", allow(clippy::new_without_default))]
 #[allow(dead_code)]
 impl SessionBuilder {
     /// Create a new session builder
