@@ -213,6 +213,23 @@ impl SessionBuilder {
         Ok(self)
     }
 
+    /// Sets the file path to a default certificate in PEM format to validate ngrok Session TLS connections.
+    /// Setting to "trusted" is the default, using the ngrok CA certificate.
+    /// Setting to "host" will verify using the certificates on the host operating system.
+    /// A client config set via tls_config after calling root_cas will override this value.
+    ///
+    /// Corresponds to the [root_cas parameter in the ngrok docs]
+    ///
+    /// [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
+    #[napi]
+    pub fn root_cas(&mut self, root_cas: String) -> Result<&Self> {
+        let mut builder = self.raw_builder.lock();
+        builder
+            .root_cas(root_cas)
+            .map_err(|e| napi_err(format!("{e}")))?;
+        Ok(self)
+    }
+
     /// Configures the TLS certificate used to connect to the ngrok service while
     /// establishing the session. Use this option only if you are connecting through
     /// a man-in-the-middle or deep packet inspection proxy. Pass in the bytes of the certificate

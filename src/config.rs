@@ -65,6 +65,9 @@ pub struct Config {
     /// and the API.
     #[napi(js_name = "forwards_to")]
     pub forwards_to: Option<String>,
+    /// Force a new session connection to be made.
+    #[napi(js_name = "force_new_session")]
+    pub force_new_session: Option<bool>,
     /// Unused, will warn and be ignored
     #[napi(js_name = "host_header")]
     pub host_header: Option<String>,
@@ -249,11 +252,32 @@ pub struct Config {
     /// [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/tcp-addresses
     #[napi(js_name = "remote_addr")]
     pub remote_addr: Option<String>,
+    /// Sets the file path to a default certificate in PEM format to validate ngrok Session TLS connections.
+    /// Setting to "trusted" is the default, using the ngrok CA certificate.
+    /// Setting to "host" will verify using the certificates on the host operating system.
+    /// A client config set via tls_config after calling root_cas will override this value.
+    ///
+    /// Corresponds to the [root_cas parameter in the ngrok docs]
+    ///
+    /// [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
+    #[napi(js_name = "root_cas")]
+    pub root_cas: Option<String>,
     /// The scheme that this edge should use.
     /// "HTTPS" or "HTTP", defaults to "HTTPS".
     /// If multiple are given only the last one is used.
     #[napi(ts_type = "string|Array<string>")]
     pub schemes: Option<Vec<String>>,
+    /// Configures the TLS certificate used to connect to the ngrok service while
+    /// establishing the session. Use this option only if you are connecting through
+    /// a man-in-the-middle or deep packet inspection proxy. Pass in the bytes of the certificate
+    /// to be used to validate the connection, then override the address to connect to via
+    /// the server_addr call.
+    ///
+    /// Roughly corresponds to the [root_cas parameter in the ngrok docs].
+    ///
+    /// [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
+    #[napi(js_name = "session_ca_cert")]
+    pub session_ca_cert: Option<String>,
     /// Configures the opaque, machine-readable metadata string for this session.
     /// Metadata is made available to you in the ngrok dashboard and the Agents API
     /// resource. It is a useful way to allow you to uniquely identify sessions. We
@@ -264,6 +288,14 @@ pub struct Config {
     /// [metdata parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#metadata
     #[napi(js_name = "session_metadata")]
     pub session_metadata: Option<String>,
+    /// Configures the network address to dial to connect to the ngrok service.
+    /// Use this option only if you are connecting to a custom agent ingress.
+    ///
+    /// See the [server_addr parameter in the ngrok docs] for additional details.
+    ///
+    /// [server_addr parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#server_addr
+    #[napi(js_name = "server_addr")]
+    pub server_addr: Option<String>,
     /// Unused, use domain instead, will warn and be ignored
     pub subdomain: Option<String>,
     /// Unused, will warn and be ignored

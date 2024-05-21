@@ -39,6 +39,15 @@ macro_rules! plumb {
     };
 }
 
+/// Single string configuration with result
+macro_rules! plumb_with_result {
+    ($builder:tt, $config:tt, $name:tt, $config_name:tt) => {
+        if let Some(ref $name) = $config.$config_name {
+            $builder.$name($name.clone())?;
+        }
+    };
+}
+
 /// Boolean configuration
 macro_rules! plumb_bool {
     ($builder:tt, $config:tt, $name:tt) => {
@@ -148,6 +157,11 @@ pub fn forward(
     plumb!(s_builder, cfg, authtoken);
     plumb_bool!(s_builder, cfg, authtoken_from_env);
     plumb!(s_builder, cfg, metadata, session_metadata);
+    if let Some(ref ca_cert) = cfg.session_ca_cert {
+        s_builder.ca_cert(Uint8Array::new(ca_cert.as_bytes().to_vec()));
+    }
+    plumb_with_result!(s_builder, cfg, root_cas, root_cas);
+    plumb_with_result!(s_builder, cfg, server_addr, server_addr);
     if let Some(func) = on_connection {
         s_builder.handle_connection(env, func);
     }
@@ -161,9 +175,11 @@ pub fn forward(
 
 /// Connect the session, configure and start the listener
 async fn async_connect(s_builder: SessionBuilder, config: Config) -> Result<Listener> {
+    let force_new_session = config.force_new_session.unwrap_or(false);
+
     // Using a singleton session for connect use cases
     let mut opt = SESSION.lock().await;
-    if opt.is_none() {
+    if opt.is_none() || force_new_session {
         opt.replace(s_builder.connect().await?);
     }
     let session = opt.as_ref().unwrap();

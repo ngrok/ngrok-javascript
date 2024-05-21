@@ -223,6 +223,10 @@ const listener = await ngrok.forward({
     console.log(`disconnected, addr ${addr} error: ${error}`);
   },
   session_metadata: "Online in One Line",
+  // advanced session connection configuration
+  server_addr: "example.com:443",
+  root_cas: "trusted",
+  session_ca_cert: fs.readFileSync("ca.pem", "utf8"),  
   // listener configuration
   metadata: "example listener metadata from javascript",
   domain: "<domain>",
