@@ -143,7 +143,9 @@ test("tls backend", async (t) => {
 
 test("unverified tls backend", async (t) => {
   const session = await makeSession();
-  const listener = await session.httpEndpoint().verifyUpstreamTls(false)
+  const listener = await session
+    .httpEndpoint()
+    .verifyUpstreamTls(false)
     .listenAndForward("https://dashboard.ngrok.com");
 
   const error = await t.throwsAsync(

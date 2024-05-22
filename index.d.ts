@@ -76,6 +76,8 @@ export interface Config {
    * and the API.
    */
   forwards_to?: string
+  /** Force a new session connection to be made. */
+  force_new_session?: boolean
   /** Unused, will warn and be ignored */
   host_header?: string
   /**
@@ -269,11 +271,34 @@ export interface Config {
    */
   remote_addr?: string
   /**
+   * Sets the file path to a default certificate in PEM format to validate ngrok Session TLS connections.
+   * Setting to "trusted" is the default, using the ngrok CA certificate.
+   * Setting to "host" will verify using the certificates on the host operating system.
+   * A client config set via tls_config after calling root_cas will override this value.
+   *
+   * Corresponds to the [root_cas parameter in the ngrok docs]
+   *
+   * [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
+   */
+  root_cas?: string
+  /**
    * The scheme that this edge should use.
    * "HTTPS" or "HTTP", defaults to "HTTPS".
    * If multiple are given only the last one is used.
    */
   schemes?: string|Array<string>
+  /**
+   * Configures the TLS certificate used to connect to the ngrok service while
+   * establishing the session. Use this option only if you are connecting through
+   * a man-in-the-middle or deep packet inspection proxy. Pass in the bytes of the certificate
+   * to be used to validate the connection, then override the address to connect to via
+   * the server_addr call.
+   *
+   * Roughly corresponds to the [root_cas parameter in the ngrok docs].
+   *
+   * [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
+   */
+  session_ca_cert?: string
   /**
    * Configures the opaque, machine-readable metadata string for this session.
    * Metadata is made available to you in the ngrok dashboard and the Agents API
@@ -285,6 +310,15 @@ export interface Config {
    * [metdata parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#metadata
    */
   session_metadata?: string
+  /**
+   * Configures the network address to dial to connect to the ngrok service.
+   * Use this option only if you are connecting to a custom agent ingress.
+   *
+   * See the [server_addr parameter in the ngrok docs] for additional details.
+   *
+   * [server_addr parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#server_addr
+   */
+  server_addr?: string
   /** Unused, use domain instead, will warn and be ignored */
   subdomain?: string
   /** Unused, will warn and be ignored */
@@ -794,6 +828,17 @@ export class SessionBuilder {
    * [server_addr parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#server_addr
    */
   serverAddr(addr: string): this
+  /**
+   * Sets the file path to a default certificate in PEM format to validate ngrok Session TLS connections.
+   * Setting to "trusted" is the default, using the ngrok CA certificate.
+   * Setting to "host" will verify using the certificates on the host operating system.
+   * A client config set via tls_config after calling root_cas will override this value.
+   *
+   * Corresponds to the [root_cas parameter in the ngrok docs]
+   *
+   * [root_cas parameter in the ngrok docs]: https://ngrok.com/docs/ngrok-agent/config#root_cas
+   */
+  rootCas(rootCas: string): this
   /**
    * Configures the TLS certificate used to connect to the ngrok service while
    * establishing the session. Use this option only if you are connecting through

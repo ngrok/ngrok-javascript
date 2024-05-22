@@ -81,7 +81,7 @@ test("forward https", async (t) => {
 });
 
 test("forward http2", async (t) => {
-  const httpServer = await makeHttp({useHttp2: true});
+  const httpServer = await makeHttp({ useHttp2: true });
   const listener = await ngrok.forward({
     // numeric port
     addr: parseInt(httpServer.listenTo.split(":")[1], 10),
@@ -100,7 +100,7 @@ test("forward http2", async (t) => {
 });
 
 test("forward http2 no cert validation", async (t) => {
-  const httpServer = await makeHttp({useHttp2: true});
+  const httpServer = await makeHttp({ useHttp2: true });
   const listener = await ngrok.forward({
     // numeric port
     addr: parseInt(httpServer.listenTo.split(":")[1], 10),
@@ -280,6 +280,45 @@ test.serial("forward bad domain", async (t) => {
     { instanceOf: Error }
   );
   t.is("ERR_NGROK_326", error.errorCode, error.message);
+
+  await shutdown(null, httpServer.socket);
+});
+
+// serial to not run into double error on a session issue
+test.serial("root_cas", async (t) => {
+  // remove any lingering sessions
+  await ngrok.disconnect();
+
+  const httpServer = await makeHttp();
+  ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
+
+  // tls error connecting to marketing site
+  var error = await t.throwsAsync(
+    async () => {
+      await ngrok.forward({
+        addr: httpServer.listenTo,
+        force_new_session: true,
+        root_cas: "trusted",
+        server_addr: "ngrok.com:443",
+      });
+    },
+    { instanceOf: Error }
+  );
+  t.true(error.message.includes("tls handshake"), error.message);
+
+  // non-tls error connecting to marketing site with "host" root_cas
+  error = await t.throwsAsync(
+    async () => {
+      await ngrok.forward({
+        addr: httpServer.listenTo,
+        force_new_session: true,
+        root_cas: "host",
+        server_addr: "ngrok.com:443",
+      });
+    },
+    { instanceOf: Error }
+  );
+  t.false(error.message.includes("tls handshake"), error.message);
 });
 
 test("policy", async (t) => {
