@@ -280,10 +280,15 @@ test.serial("forward bad domain", async (t) => {
     { instanceOf: Error }
   );
   t.is("ERR_NGROK_326", error.errorCode, error.message);
+
+  await shutdown(null, httpServer.socket);
 });
 
 // serial to not run into double error on a session issue
 test.serial("root_cas", async (t) => {
+  // remove any lingering sessions
+  await ngrok.disconnect();
+
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
 
