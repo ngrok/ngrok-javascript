@@ -1,3 +1,8 @@
+## 1.3.0:
+
+- Add `rootCas` to session builder and `root_cas` to `ngrok.forward`. Setting this to `host` will use the host's trusted certificates to connect for the ngrok session.
+- Add `session_ca_cert` and `server_addr` to `ngrok.forward`, which correspond to the same functions in the session builder.
+
 ## 1.2.0:
 
 - Add `verifyUpstreamTls` to listener builders and `verify_upstream_tls` to `ngrok.forward`. Setting this to false will skip verification of the upstream application's TLS certificate.
