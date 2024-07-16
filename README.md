@@ -56,6 +56,8 @@ pnpm add @ngrok/ngrok
       // Output ngrok url to console
       console.log(`Ingress established at: ${listener.url()}`);
     })();
+
+    process.stdin.resume();
     ```
 
 That's it! Your application should now be available through the url output in your terminal. 
