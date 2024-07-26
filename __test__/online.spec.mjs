@@ -544,3 +544,12 @@ test("policy", async (t) => {
   const response = await forwardValidateShutdown(t, httpServer, listener, listener.url());
   t.is("bar", response.headers["foo"]);
 });
+
+test("traffic policy", async (t) => {
+  const trafficPolicy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
+
+  const [httpServer, session] = await makeHttpAndSession();
+  const listener = await session.httpEndpoint().trafficPolicy(trafficPolicy).listen();
+  const response = await forwardValidateShutdown(t, httpServer, listener, listener.url());
+  t.is("bar", response.headers["foo"]);
+});

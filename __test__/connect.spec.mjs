@@ -338,3 +338,21 @@ test("policy", async (t) => {
   const response = await validateShutdown(t, httpServer, url);
   t.is("bar", response.headers["foo"]);
 });
+
+test("traffic policy", async (t) => {
+  const trafficPolicy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
+
+  const httpServer = await makeHttp();
+  const listener = await ngrok.forward({
+    addr: httpServer.listenTo,
+    authtoken: process.env["NGROK_AUTHTOKEN"],
+    proto: "http",
+    trafficPolicy: trafficPolicy,
+  });
+  const url = listener.url();
+
+  t.truthy(url);
+  t.truthy(url.startsWith("https://"), url);
+  const response = await validateShutdown(t, httpServer, url);
+  t.is("bar", response.headers["foo"]);
+});

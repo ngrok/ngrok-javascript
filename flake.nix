@@ -32,6 +32,7 @@
           "rust-src"
           "rustc"
           "rustfmt"
+          "rust-analyzer"
         ];
         node-toolchain = with pkgs; [
           nodejs
