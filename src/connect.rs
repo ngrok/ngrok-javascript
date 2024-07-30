@@ -102,11 +102,9 @@ macro_rules! config_common {
         plumb!($builder, $config, proxy_proto);
         plumb!($builder, $config, forwards_to);
         plumb!($builder, $config, verify_upstream_tls);
-
-        // returns a Result, so we can't use the macro
-        if let Some(ref v) = $config.policy {
-            $builder.policy(v.clone())?;
-        }
+        plumb!($builder, $config, traffic_policy);
+        // policy is in the process of being deprecated. for now, we just remap it to traffic_policy
+        plumb!($builder, $config, traffic_policy, policy);
     };
 }
 

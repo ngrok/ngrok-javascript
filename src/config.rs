@@ -209,7 +209,7 @@ pub struct Config {
     /// 'closed' - connection is lost, 'connected' - reconnected
     #[napi(ts_type = "(status: string) => void")]
     pub on_status_change: Option<bool>,
-    /// The Traffic Policy to use for this endpoint.
+    /// DEPRECATED: use TrafficPolicy instead.
     pub policy: Option<String>,
     /// The port for the listener to forward to.
     /// Only used if addr is not defined.
@@ -301,6 +301,8 @@ pub struct Config {
     /// Unused, will warn and be ignored
     #[napi(js_name = "terminate_at")]
     pub terminate_at: Option<String>,
+    /// The Traffic Policy to use for this endpoint.
+    pub traffic_policy: Option<String>,
     /// Whether to disable certificate verification for this listener
     #[napi(js_name = "verify_upstream_tls")]
     pub verify_upstream_tls: Option<bool>,

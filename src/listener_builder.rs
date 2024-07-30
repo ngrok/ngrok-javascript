@@ -165,12 +165,16 @@ macro_rules! make_listener_builder {
                 self
             }
             #[napi]
-            pub fn policy(&mut self, policy: String) -> Result<&Self> {
+            pub fn policy(&mut self, policy: String) -> &Self {
                 let mut builder = self.listener_builder.lock();
-                match builder.policy(policy.as_str()) {
-                    Ok(_) => Ok(self),
-                    Err(e) => Err(napi_err(format!("Error parsing policy, {e}"))),
-                }
+                builder.traffic_policy(policy);
+                self
+            }
+            #[napi]
+            pub fn traffic_policy(&mut self, traffic_policy: String) -> &Self {
+                let mut builder = self.listener_builder.lock();
+                builder.traffic_policy(traffic_policy);
+                self
             }
         }
     };

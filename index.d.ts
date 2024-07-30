@@ -221,7 +221,7 @@ export interface Config {
   onLogEvent?: (data: string) => void
   /** 'closed' - connection is lost, 'connected' - reconnected */
   onStatusChange?: (status: string) => void
-  /** The Traffic Policy to use for this endpoint. */
+  /** DEPRECATED: use TrafficPolicy instead. */
   policy?: string
   /**
    * The port for the listener to forward to.
@@ -323,6 +323,8 @@ export interface Config {
   subdomain?: string
   /** Unused, will warn and be ignored */
   terminate_at?: string
+  /** The Traffic Policy to use for this endpoint. */
+  trafficPolicy?: string
   /** Whether to disable certificate verification for this listener */
   verify_upstream_tls?: boolean
   /**
@@ -349,7 +351,7 @@ export interface Config {
  *
  * See {@link forward} for the full set of options.
  */
-export function connect(config: Config|string|number): Promise<Listener>
+export declare function connect(config: Config|string|number): Promise<Listener>
 /**
  * Transform a json object configuration into a listener.
  * See {@link Config} for the full set of options.
@@ -359,25 +361,25 @@ export function connect(config: Config|string|number): Promise<Listener>
  * listener = await ngrok.forward({addr: "https://localhost:8443", authtoken_from_env: true});<br>
  * listener = await ngrok.forward({addr: "unix:///path/to/unix.socket", basic_auth: "ngrok:online1line", authtoken_from_env: true});
  */
-export function forward(config: Config|string|number): Promise<Listener>
+export declare function forward(config: Config|string|number): Promise<Listener>
 /** Close a listener with the given url, or all listeners if no url is defined. */
-export function disconnect(url?: string | undefined | null): Promise<void>
+export declare function disconnect(url?: string | undefined | null): Promise<void>
 /** Close all listeners. */
-export function kill(): Promise<void>
+export declare function kill(): Promise<void>
 /** Retrieve a list of non-closed listeners, in no particular order. */
-export function listeners(): Promise<Array<Listener>>
+export declare function listeners(): Promise<Array<Listener>>
 /** Retrieve listener using the id */
-export function getListener(id: string): Promise<Listener | null>
+export declare function getListener(id: string): Promise<Listener | null>
 /** Retrieve listener using the url */
-export function getListenerByUrl(url: string): Promise<Listener | null>
+export declare function getListenerByUrl(url: string): Promise<Listener | null>
 /**
  * Register a callback function that will receive logging event information.
  * An absent callback will unregister an existing callback function.
  * The log level defaults to INFO, it can be set to one of ERROR, WARN, INFO, DEBUG, or TRACE.
  */
-export function loggingCallback(callback?: (level: string, target: string, message: string) => void, level?: string): void
+export declare function loggingCallback(callback?: (level: string, target: string, message: string) => void, level?: string): void
 /** Set the default auth token to use for any future sessions. */
-export function authtoken(authtoken: string): Promise<void>
+export declare function authtoken(authtoken: string): Promise<void>
 /**
  * An ngrok listener.
  *
@@ -587,6 +589,7 @@ export class HttpListenerBuilder {
    */
   forwardsTo(forwardsTo: string): this
   policy(policy: string): this
+  trafficPolicy(trafficPolicy: string): this
 }
 /**
  *r" An ngrok listener backing a TCP endpoint.
@@ -638,6 +641,7 @@ export class TcpListenerBuilder {
    */
   forwardsTo(forwardsTo: string): this
   policy(policy: string): this
+  trafficPolicy(trafficPolicy: string): this
   /**
    * The TCP address to request for this edge.
    * These addresses can be reserved in the [ngrok dashboard] to use across sessions. For example: remote_addr("2.tcp.ngrok.io:21746")
@@ -696,6 +700,7 @@ export class TlsListenerBuilder {
    */
   forwardsTo(forwardsTo: string): this
   policy(policy: string): this
+  trafficPolicy(trafficPolicy: string): this
   /**
    * The domain to request for this edge, any valid domain or hostname that you have
    * previously registered with ngrok. If using a custom domain, this requires
@@ -940,18 +945,3 @@ export class UpdateRequest {
   /** Whether or not updating to the same major version is sufficient. */
   permitMajorVersion: boolean
 }
-/**
- * Get a listenable ngrok listener, suitable for passing to net.Server.listen().
- * Uses the NGROK_AUTHTOKEN environment variable to authenticate.
- */
-export function listenable(): Listener;
-/**
- * Start the given net.Server listening to a generated, or passed in, listener.
- * Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new listener is created.
- */
-export function listen(server: import("net").Server, listener?: Listener): Listener;
-/**
- * Register a console.log callback for ngrok INFO logging.
- * Optionally set the logging level to one of ERROR, WARN, INFO, DEBUG, or TRACE.
- */
-export function consoleLog(level?: String): void;
