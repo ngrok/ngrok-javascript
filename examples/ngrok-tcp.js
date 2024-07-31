@@ -13,7 +13,7 @@ http
     res.end();
   })
   .listen(UNIX_SOCKET); // Server object listens on unix socket
-console.log("Node.js web server at", UNIX_SOCKET, "is running..");
+console.log("Node.js web server at", UNIX_SOCKET, "is running...");
 
 // setup ngrok
 const ngrok = require("@ngrok/ngrok");
