@@ -1,3 +1,9 @@
+## 1.4.0
+
+- Rename `policy` to `traffic_policy`
+- Fix quickstart example in README
+- Add Microsoft Visual C++ Redistributable requirement for Windows to documentation
+
 ## 1.3.0:
 
 - Add `rootCas` to session builder and `root_cas` to `ngrok.forward`. Setting this to `host` will use the host's trusted certificates to connect for the ngrok session.
