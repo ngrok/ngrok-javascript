@@ -347,7 +347,7 @@ test("traffic policy", async (t) => {
     addr: httpServer.listenTo,
     authtoken: process.env["NGROK_AUTHTOKEN"],
     proto: "http",
-    trafficPolicy: trafficPolicy,
+    traffic_policy: trafficPolicy,
   });
   const url = listener.url();
 

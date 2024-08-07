@@ -302,6 +302,7 @@ pub struct Config {
     #[napi(js_name = "terminate_at")]
     pub terminate_at: Option<String>,
     /// The Traffic Policy to use for this endpoint.
+    #[napi(js_name = "traffic_policy")]
     pub traffic_policy: Option<String>,
     /// Whether to disable certificate verification for this listener
     #[napi(js_name = "verify_upstream_tls")]
