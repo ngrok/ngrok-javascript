@@ -324,7 +324,7 @@ export interface Config {
   /** Unused, will warn and be ignored */
   terminate_at?: string
   /** The Traffic Policy to use for this endpoint. */
-  trafficPolicy?: string
+  traffic_policy?: string
   /** Whether to disable certificate verification for this listener */
   verify_upstream_tls?: boolean
   /**
@@ -945,18 +945,3 @@ export class UpdateRequest {
   /** Whether or not updating to the same major version is sufficient. */
   permitMajorVersion: boolean
 }
-/**
- * Get a listenable ngrok listener, suitable for passing to net.Server.listen().
- * Uses the NGROK_AUTHTOKEN environment variable to authenticate.
- */
-export function listenable(): Listener;
-/**
- * Start the given net.Server listening to a generated, or passed in, listener.
- * Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new listener is created.
- */
-export function listen(server: import("net").Server, listener?: Listener): Listener;
-/**
- * Register a console.log callback for ngrok INFO logging.
- * Optionally set the logging level to one of ERROR, WARN, INFO, DEBUG, or TRACE.
- */
-export function consoleLog(level?: String): void;

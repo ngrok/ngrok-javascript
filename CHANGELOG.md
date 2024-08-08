@@ -1,3 +1,7 @@
+## 1.4.1
+
+- Fix `traffic_policy` naming for `ngrok.forward`
+
 ## 1.4.0
 
 - Rename `policy` to `traffic_policy`
