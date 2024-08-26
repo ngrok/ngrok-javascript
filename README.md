@@ -330,6 +330,8 @@ Pre-built binaries are provided on NPM for the following platforms:
 > 
 > On Windows, ensure you have [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version) installed.
 > * `Windows-aarch64` will be supported after the next release of [Ring](https://github.com/briansmith/ring/issues/1167).
+>
+> We currently support MacOS 12+. 
 
 # Dependencies
 
