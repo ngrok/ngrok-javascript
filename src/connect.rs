@@ -371,9 +371,11 @@ fn warn_unused(config: &Config) {
 pub async fn disconnect(url: Option<String>) -> Result<()> {
     listener::close_url(url.clone()).await?;
 
-    // if closing every listener, remove any stored session
+    // if closing every listener, close and remove the stored session
     if url.as_ref().is_none() {
-        SESSION.lock().await.take();
+        if let Some(session) = SESSION.lock().await.take() {
+            session.close().await?;
+        }
     }
 
     Ok(())
