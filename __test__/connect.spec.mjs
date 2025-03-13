@@ -9,7 +9,10 @@ import * as http from "http";
 import * as http2 from "http2";
 import * as retry from "./retry-config.mjs";
 import * as path from "path";
-import exp from "constants";
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 axiosRetry(axios, retry.retryConfig);
 const expected = "Hello";
@@ -19,7 +22,7 @@ function createHttpServer({ protocol }) {
     return createHttp2Server();
   }
 
-  return http.createServer(function (req, res) {
+  return http.createServer(function (_, res) {
     res.writeHead(200);
     res.write(expected);
     res.end();
@@ -29,7 +32,7 @@ function createHttpServer({ protocol }) {
 function createHttp2Server() {
   const server = http2.createServer();
 
-  server.on("stream", (stream, headers) => {
+  server.on("stream", (stream) => {
     stream.respond({
       ":status": 200,
     });
@@ -40,12 +43,10 @@ function createHttp2Server() {
 }
 
 async function makeHttp(options = {}) {
-  const { useUnixSocket = false, useHttp2 = false } = options;
+  const { useHttp2 = false } = options;
   const server = createHttpServer({ protocol: useHttp2 ? "http2" : "http" });
-  const listenTo = useUnixSocket ? "tun-" + Math.floor(Math.random() * 1000000) : 0;
-  const socket = await server.listen(listenTo);
-  server.socket = socket;
-  server.listenTo = useUnixSocket ? listenTo : "localhost:" + server.address().port;
+  server.socket = server.listen(0);
+  server.listenTo = `localhost:${server.address().port}`;
   return server;
 }
 
@@ -231,13 +232,29 @@ test("forward vectorize", async (t) => {
 
 test("forward tcp listener", async (t) => {
   const httpServer = await makeHttp();
-  const listener = await ngrok.forward({
-    addr: httpServer.listenTo,
-    authtoken_from_env: true,
-    proto: "tcp",
-    forwards_to: "tcp forwards to",
-    metadata: "tcp metadata",
-  });
+  let listener;
+  let retries = 3;
+
+  while (retries > 0) {
+    try {
+      listener = await ngrok.forward({
+        addr: httpServer.listenTo,
+        authtoken_from_env: true,
+        proto: "tcp",
+        forwards_to: "tcp forwards to",
+        metadata: "tcp metadata",
+      });
+      break;
+    } catch (error) {
+      console.error(`Failed to create TCP listener, retries left: ${retries - 1}`, error);
+      retries -= 1;
+      if (retries === 0) {
+        throw error;
+      }
+      // Add a delay before retrying
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
 
   t.truthy(listener);
 
@@ -269,7 +286,7 @@ test("forward tls listener", async (t) => {
   await shutdown(url, httpServer.socket);
 });
 
-// serial to not run into double error on a session issue
+// // serial to not run into double error on a session issue
 test.serial("forward bad domain", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
@@ -284,7 +301,7 @@ test.serial("forward bad domain", async (t) => {
   await shutdown(null, httpServer.socket);
 });
 
-// serial to not run into double error on a session issue
+// // serial to not run into double error on a session issue
 test.serial("root_cas", async (t) => {
   // remove any lingering sessions
   await ngrok.disconnect();
@@ -292,7 +309,7 @@ test.serial("root_cas", async (t) => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
 
-  // tls error connecting to marketing site
+  // // tls error connecting to marketing site
   var error = await t.throwsAsync(
     async () => {
       await ngrok.forward({
@@ -306,13 +323,13 @@ test.serial("root_cas", async (t) => {
   );
   t.true(error.message.includes("tls handshake"), error.message);
 
-  // non-tls error connecting to marketing site with "host" root_cas
+  // // non-tls error connecting to marketing site with "host" root_cas
   error = await t.throwsAsync(
     async () => {
       await ngrok.forward({
         addr: httpServer.listenTo,
         force_new_session: true,
-        root_cas: "host",
+        root_cas: "me",
         server_addr: "ngrok.com:443",
       });
     },

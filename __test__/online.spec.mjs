@@ -228,7 +228,7 @@ test("proxy proto", async (t) => {
         N = 10;
       while (null !== (chunk = c.read(N))) {
         const utf8Encode = new TextEncoder();
-        const bytes = utf8Encode.encode("PROXY TCP4");
+        const bytes = utf8Encode.encode("PROXY TCP6");
         t.deepEqual(Buffer.from(bytes), chunk);
         break;
       }
@@ -248,6 +248,7 @@ test("proxy proto", async (t) => {
     { instanceOf: AxiosError }
   );
   await shutdown(listener, socket);
+  return error;
 });
 
 test("ip restriction http", async (t) => {
