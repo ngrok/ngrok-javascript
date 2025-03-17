@@ -209,8 +209,6 @@ jobs:
           - host: windows-latest
             target: i686-pc-windows-msvc
         node:
-          - '14'
-          - '16'
           - '18'
     runs-on: ${{ matrix.settings.host }}
     steps:
@@ -257,8 +255,6 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '14'
-          - '16'
           - '18'
     runs-on: ubuntu-latest
     steps:
@@ -294,8 +290,6 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '14'
-          - '16'
           - '18'
     runs-on: ubuntu-latest
     steps:
@@ -329,8 +323,6 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '14'
-          - '16'
           - '18'
     runs-on: ubuntu-latest
     steps:
