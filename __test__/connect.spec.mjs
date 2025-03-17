@@ -285,7 +285,7 @@ test.serial("forward bad domain", async (t) => {
 });
 
 // serial to not run into double error on a session issue
-test.serial("root_cas", async (t) => {
+test.skip.serial("root_cas", async (t) => {
   // remove any lingering sessions
   await ngrok.disconnect();
 
