@@ -1,7 +1,7 @@
 use core::result::Result as CoreResult;
 use std::{
     collections::HashMap,
-    error::Error,
+    error::Error as StdError,
     io,
     sync::Arc,
 };
@@ -75,7 +75,7 @@ pub trait ExtendedListener: Send {
 }
 
 pub trait ExtendedForwarder: Send {
-    fn get_join(&mut self) -> &mut JoinHandle<CoreResult<(), io::Error>>;
+    fn get_join(&mut self) -> &mut JoinHandle<CoreResult<(), Box<dyn StdError + Send + Sync>>>;
 }
 
 /// An ngrok listener.
@@ -219,7 +219,7 @@ macro_rules! make_listener_type {
         }
 
         impl ExtendedForwarder for Forwarder<$listener> {
-            fn get_join(&mut self) -> &mut JoinHandle<CoreResult<(), io::Error>> {
+            fn get_join(&mut self) -> &mut JoinHandle<CoreResult<(), Box<dyn StdError + Send + Sync>>> {
                 self.join()
             }
         }
