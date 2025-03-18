@@ -36,7 +36,6 @@ jobs:
         if: ${{ !inputs.docker }}
         with:
           node-version: 18
-          check-latest: true
           cache: yarn
       - name: Install
         uses: dtolnay/rust-toolchain@stable
@@ -73,7 +72,6 @@ jobs:
         if: inputs.target == 'i686-pc-windows-msvc'
         with:
           node-version: 18
-          check-latest: true
           cache: yarn
           architecture: x86
       - name: Build in docker
