@@ -1,25 +1,15 @@
 use lazy_static::lazy_static;
-use napi::{
-    bindgen_prelude::*,
-    JsObject,
-};
+use napi::{bindgen_prelude::*, JsObject};
 use napi_derive::napi;
 use tokio::sync::Mutex;
 use tracing::warn;
 
 use crate::{
     config::Config,
-    listener::{
-        self,
-        Listener,
-        TCP_PREFIX,
-    },
+    listener::{self, Listener, TCP_PREFIX},
     logging::logging_callback,
     napi_err,
-    session::{
-        Session,
-        SessionBuilder,
-    },
+    session::{Session, SessionBuilder},
 };
 
 lazy_static! {

@@ -1,7 +1,4 @@
-use napi::{
-    Error,
-    Status,
-};
+use napi::{Error, Status};
 use ngrok::prelude::Error as NgrokError;
 
 pub mod config;

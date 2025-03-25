@@ -2,19 +2,13 @@ use lazy_static::lazy_static;
 use napi::{
     bindgen_prelude::*,
     threadsafe_function::{
-        ErrorStrategy,
-        ThreadSafeCallContext,
-        ThreadsafeFunction,
-        ThreadsafeFunctionCallMode,
+        ErrorStrategy, ThreadSafeCallContext, ThreadsafeFunction, ThreadsafeFunctionCallMode,
     },
 };
 use napi_derive::napi;
 use parking_lot::Mutex;
 use tracing::metadata::LevelFilter;
-use tracing_subscriber::{
-    prelude::*,
-    Layer,
-};
+use tracing_subscriber::{prelude::*, Layer};
 
 use crate::napi_err;
 
