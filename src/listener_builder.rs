@@ -1,28 +1,15 @@
-use std::{
-    str::FromStr,
-    sync::Arc,
-};
+use std::{str::FromStr, sync::Arc};
 
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use ngrok::{
-    prelude::*,
-    Session,
-};
+use ngrok::{prelude::*, Session};
 use parking_lot::Mutex;
 use tracing::debug;
 use url::Url;
 
 use crate::{
-    listener::{
-        HttpListener,
-        LabeledListener,
-        Listener,
-        TcpListener,
-        TlsListener,
-    },
-    napi_err,
-    napi_ngrok_err,
+    listener::{HttpListener, LabeledListener, Listener, TcpListener, TlsListener},
+    napi_err, napi_ngrok_err,
 };
 
 macro_rules! make_listener_builder {

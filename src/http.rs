@@ -3,11 +3,7 @@ use std::str::FromStr;
 use bytes::Bytes;
 use napi::bindgen_prelude::Uint8Array;
 use napi_derive::napi;
-use ngrok::config::{
-    OauthOptions,
-    OidcOptions,
-    Scheme,
-};
+use ngrok::config::{OauthOptions, OidcOptions, Scheme};
 
 use crate::listener_builder::HttpListenerBuilder;
 
@@ -234,6 +230,14 @@ impl HttpListenerBuilder {
 
         let mut builder = self.listener_builder.lock();
         builder.oidc(oidc);
+        self
+    }
+
+    /// Enable endpoint pooling for this listener.
+    #[napi]
+    pub fn pooling_enabled(&mut self, pooling_enabled: bool) -> &Self {
+        let mut builder = self.listener_builder.lock();
+        builder.pooling_enabled(pooling_enabled);
         self
     }
 

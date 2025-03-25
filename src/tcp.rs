@@ -15,4 +15,12 @@ impl TcpListenerBuilder {
         builder.remote_addr(remote_addr);
         self
     }
+
+    /// Enable endpoint pooling for this listener.
+    #[napi]
+    pub fn pooling_enabled(&mut self, pooling_enabled: bool) -> &Self {
+        let mut builder = self.listener_builder.lock();
+        builder.pooling_enabled(pooling_enabled);
+        self
+    }
 }
