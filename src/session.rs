@@ -1,30 +1,53 @@
-use std::{env, sync::Arc, time::Duration};
+use std::{
+    env,
+    sync::Arc,
+    time::Duration,
+};
 
 use bytes::Bytes;
 use lazy_static::lazy_static;
 use napi::{
     bindgen_prelude::*,
     threadsafe_function::{
-        ErrorStrategy, ThreadSafeCallContext, ThreadsafeFunction, ThreadsafeFunctionCallMode,
+        ErrorStrategy,
+        ThreadSafeCallContext,
+        ThreadsafeFunction,
+        ThreadsafeFunctionCallMode,
     },
 };
 use napi_derive::napi;
 use ngrok::{
-    session::{default_connect, ConnectError, SessionBuilder as NgrokSessionBuilder, Update},
+    session::{
+        default_connect,
+        ConnectError,
+        SessionBuilder as NgrokSessionBuilder,
+        Update,
+    },
     tunnel::AcceptError,
     Session as NgrokSession,
 };
 use parking_lot::Mutex as SyncMutex;
 use rustls::ClientConfig;
 use tokio::sync::Mutex;
-use tracing::{debug, info};
+use tracing::{
+    debug,
+    info,
+};
 
 use crate::{
-    listener::{remove_global_listener, search_listeners, Listener},
-    listener_builder::{
-        HttpListenerBuilder, LabeledListenerBuilder, TcpListenerBuilder, TlsListenerBuilder,
+    listener::{
+        remove_global_listener,
+        search_listeners,
+        Listener,
     },
-    napi_err, napi_ngrok_err,
+    listener_builder::{
+        HttpListenerBuilder,
+        LabeledListenerBuilder,
+        TcpListenerBuilder,
+        TlsListenerBuilder,
+    },
+    napi_err,
+    napi_ngrok_err,
 };
 
 const CLIENT_TYPE: &str = "ngrok-javascript";

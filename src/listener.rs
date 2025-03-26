@@ -1,5 +1,10 @@
 use core::result::Result as CoreResult;
-use std::{collections::HashMap, error::Error as StdError, io, sync::Arc};
+use std::{
+    collections::HashMap,
+    error::Error as StdError,
+    io,
+    sync::Arc,
+};
 
 use async_trait::async_trait;
 use futures::prelude::*;
@@ -10,15 +15,29 @@ use ngrok::{
     forwarder::Forwarder,
     prelude::*,
     session::ConnectError,
-    tunnel::{HttpTunnel, LabeledTunnel, TcpTunnel, TlsTunnel},
+    tunnel::{
+        HttpTunnel,
+        LabeledTunnel,
+        TcpTunnel,
+        TlsTunnel,
+    },
     Session,
 };
 use regex::Regex;
-use tokio::{sync::Mutex, task::JoinHandle};
-use tracing::{debug, info};
+use tokio::{
+    sync::Mutex,
+    task::JoinHandle,
+};
+use tracing::{
+    debug,
+    info,
+};
 use url::Url;
 
-use crate::{napi_err, napi_ngrok_err};
+use crate::{
+    napi_err,
+    napi_ngrok_err,
+};
 
 // no forward host section to allow for relative unix paths
 pub(crate) const UNIX_PREFIX: &str = "unix:";

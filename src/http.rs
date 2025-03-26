@@ -3,7 +3,11 @@ use std::str::FromStr;
 use bytes::Bytes;
 use napi::bindgen_prelude::Uint8Array;
 use napi_derive::napi;
-use ngrok::config::{OauthOptions, OidcOptions, Scheme};
+use ngrok::config::{
+    OauthOptions,
+    OidcOptions,
+    Scheme,
+};
 
 use crate::listener_builder::HttpListenerBuilder;
 
