@@ -3,7 +3,7 @@ env:
   DEBUG: napi:*
   APP_NAME: ngrok
   MACOSX_DEPLOYMENT_TARGET: '10.13'
-'on':
+on:
   push:
     branches:
       - main
