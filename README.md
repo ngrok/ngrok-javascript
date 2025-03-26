@@ -319,8 +319,8 @@ Pre-built binaries are provided on NPM for the following platforms:
 
 | OS         | i686 | x64 | aarch64 | arm |
 | ---------- | -----|-----|---------|-----|
-| Windows    |   ✓  |  ✓  |    *    |     |
-| MacOS      |      |  ✓  |    ✓    |     |
+| Windows    |   ✓  |  ✓  |    ✓    |     |
+| MacOS      |      |  ✓  |    ✓    |  ✓  |
 | Linux      |      |  ✓  |    ✓    |  ✓  |
 | Linux musl |      |  ✓  |    ✓    |     |
 | FreeBSD    |      |  ✓  |         |     |
@@ -330,7 +330,8 @@ Pre-built binaries are provided on NPM for the following platforms:
 > `ngrok-javascript`, and [ngrok-rust](https://github.com/ngrok/ngrok-rust/) which it depends on, are open source, so it may be possible to build them for other platforms.
 > 
 > On Windows, ensure you have [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version) installed.
-> * `Windows-aarch64` will be supported after the next release of [Ring](https://github.com/briansmith/ring/issues/1167).
+>
+>  We currently support MacOS 10.13+. 
 
 # Dependencies
 
