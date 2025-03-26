@@ -15,7 +15,6 @@ env:
       - '**/*.gitignore'
       - .editorconfig
       - docs/**
-  pull_request: null
 jobs:
   udeps:
     name: Udeps
@@ -65,23 +64,16 @@ jobs:
         settings:
           - host: macos-latest
             target: x86_64-apple-darwin
-            if: true
             build: yarn build
-            docker: null
           - host: windows-latest
             build: yarn build
             target: x86_64-pc-windows-msvc
-            if: true
-            docker: null
           - host: windows-latest
             build: |
               yarn build --target i686-pc-windows-msvc
             target: i686-pc-windows-msvc
-            if: true
-            docker: null
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            if: true
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: yarn build --target x86_64-unknown-linux-gnu
           - host: ubuntu-latest
