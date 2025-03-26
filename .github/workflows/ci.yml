@@ -5,16 +5,7 @@ env:
   MACOSX_DEPLOYMENT_TARGET: '10.13'
 on:
   push:
-    branches:
-      - main
-    tags-ignore:
-      - '**'
-    paths-ignore:
-      - '**/*.md'
-      - LICENSE
-      - '**/*.gitignore'
-      - .editorconfig
-      - docs/**
+
 jobs:
   udeps:
     name: Udeps
@@ -55,7 +46,7 @@ jobs:
       build: ${{ matrix.settings.build }}
       docker: ${{ matrix.settings.docker }}
       host: ${{ matrix.settings.host }}
-      if: ${{ matrix.settings.if }}
+      if: ${{ matrix.settings.if || true }}
       setup: ${{ matrix.settings.setup }}
       target: ${{ matrix.settings.target }}
     strategy:
