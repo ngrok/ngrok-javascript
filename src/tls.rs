@@ -28,6 +28,15 @@ impl TlsListenerBuilder {
         builder.mutual_tlsca(Bytes::from(mutual_tlsca.to_vec()));
         self
     }
+
+    /// Enable endpoint pooling for this listener.
+    #[napi]
+    pub fn pooling_enabled(&mut self, pooling_enabled: bool) -> &Self {
+        let mut builder = self.listener_builder.lock();
+        builder.pooling_enabled(pooling_enabled);
+        self
+    }
+
     /// The key to use for TLS termination at the ngrok edge in PEM format.
     /// See [TLS Termination] in the ngrok docs for additional details.
     ///

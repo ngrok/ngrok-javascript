@@ -1,3 +1,6 @@
+## 1.5.0
+Adds `poolingEnabled` to listener builders, allowing the endpoint to pool with other endpoints with the same host/port/binding
+
 ## 1.4.1
 
 - Fix `traffic_policy` naming for `ngrok.forward`

@@ -237,6 +237,14 @@ impl HttpListenerBuilder {
         self
     }
 
+    /// Enable endpoint pooling for this listener.
+    #[napi]
+    pub fn pooling_enabled(&mut self, pooling_enabled: bool) -> &Self {
+        let mut builder = self.listener_builder.lock();
+        builder.pooling_enabled(pooling_enabled);
+        self
+    }
+
     /// WebhookVerification configuration.
     /// If not called, WebhookVerification is disabled.
     /// See [Webhook Verification] in the ngrok docs for additional details.

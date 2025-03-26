@@ -385,7 +385,7 @@ export declare function authtoken(authtoken: string): Promise<void>
  *
  * @group Listener and Sessions
  */
-export class Listener {
+export declare class Listener {
   /** The URL that this listener backs. */
   url(): string | null
   /** The protocol of the endpoint that this listener backs. */
@@ -430,7 +430,7 @@ export class Listener {
  *r"
  *r" @group Listener Builders
  */
-export class HttpListenerBuilder {
+export declare class HttpListenerBuilder {
   /**
    * The scheme that this edge should use.
    * "HTTPS" or "HTTP", defaults to "HTTPS".
@@ -537,6 +537,8 @@ export class HttpListenerBuilder {
    * [OpenID Connect]: https://ngrok.com/docs/cloud-edge/modules/openid-connect/
    */
   oidc(issuerUrl: string, clientId: string, clientSecret: string, allowEmails?: Array<string> | undefined | null, allowDomains?: Array<string> | undefined | null, scopes?: Array<string> | undefined | null): this
+  /** Enable endpoint pooling for this listener. */
+  poolingEnabled(poolingEnabled: boolean): this
   /**
    * WebhookVerification configuration.
    * If not called, WebhookVerification is disabled.
@@ -596,7 +598,7 @@ export class HttpListenerBuilder {
  *r"
  *r" @group Listener Builders
  */
-export class TcpListenerBuilder {
+export declare class TcpListenerBuilder {
   /** Listener-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Whether to disable certificate verification for this listener. */
@@ -649,13 +651,15 @@ export class TcpListenerBuilder {
    * [ngrok dashboard]: https://dashboard.ngrok.com/cloud-edge/tcp-addresses
    */
   remoteAddr(remoteAddr: string): this
+  /** Enable endpoint pooling for this listener. */
+  poolingEnabled(poolingEnabled: boolean): this
 }
 /**
  *r" An ngrok listener backing a TLS endpoint.
  *r"
  *r" @group Listener Builders
  */
-export class TlsListenerBuilder {
+export declare class TlsListenerBuilder {
   /** Listener-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Whether to disable certificate verification for this listener. */
@@ -716,6 +720,8 @@ export class TlsListenerBuilder {
    * [Mutual TLS]: https://ngrok.com/docs/cloud-edge/modules/mutual-tls/
    */
   mutualTlsca(mutualTlsca: Uint8Array): this
+  /** Enable endpoint pooling for this listener. */
+  poolingEnabled(poolingEnabled: boolean): this
   /**
    * The key to use for TLS termination at the ngrok edge in PEM format.
    * See [TLS Termination] in the ngrok docs for additional details.
@@ -729,7 +735,7 @@ export class TlsListenerBuilder {
  *r"
  *r" @group Listener Builders
  */
-export class LabeledListenerBuilder {
+export declare class LabeledListenerBuilder {
   /** Listener-specific opaque metadata. Viewable via the API. */
   metadata(metadata: string): this
   /** Whether to disable certificate verification for this listener. */
@@ -761,7 +767,7 @@ export class LabeledListenerBuilder {
  *
  * @group Listener and Sessions
  */
-export class SessionBuilder {
+export declare class SessionBuilder {
   /** Create a new session builder */
   constructor()
   /**
@@ -922,7 +928,7 @@ export class SessionBuilder {
  *
  * @group Listener and Sessions
  */
-export class Session {
+export declare class Session {
   /** Start building a listener backing an HTTP endpoint. */
   httpEndpoint(): HttpListenerBuilder
   /** Start building a listener backing a TCP endpoint. */
@@ -939,7 +945,7 @@ export class Session {
   close(): Promise<void>
 }
 /** Container for UpdateRequest information. */
-export class UpdateRequest {
+export declare class UpdateRequest {
   /** The version that the agent is requested to update to. */
   version: string
   /** Whether or not updating to the same major version is sufficient. */
