@@ -69,36 +69,29 @@ jobs:
             build: yarn build --target x86_64-unknown-linux-gnu
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            if: ${{ github.ref == 'refs/heads/main' }}
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: yarn build
           - host: macos-latest
             target: aarch64-apple-darwin
-            if: ${{ github.ref == 'refs/heads/main' }}
             build: yarn build --target aarch64-apple-darwin
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            if: ${{ github.ref == 'refs/heads/main' }}
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
             build: yarn build --target aarch64-unknown-linux-gnu
           - host: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
-            if: ${{ github.ref == 'refs/heads/main' }}
             setup: |
               sudo apt-get update
               sudo apt-get install gcc-arm-linux-gnueabihf -y
             build: yarn build --target=armv7-unknown-linux-gnueabihf
           - host: ubuntu-latest
             target: aarch64-linux-android
-            if: ${{ github.ref == 'refs/heads/main' }}
             build: yarn build --target aarch64-linux-android
           - host: ubuntu-latest
             target: armv7-linux-androideabi
-            if: ${{ github.ref == 'refs/heads/main' }}
             build: yarn build --target armv7-linux-androideabi
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            if: ${{ github.ref == 'refs/heads/main' }}
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
               set -e &&
@@ -108,7 +101,6 @@ jobs:
             target: aarch64-pc-windows-msvc
             build: yarn build --target aarch64-pc-windows-msvc
   build-freebsd:
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     name: Build FreeBSD
@@ -246,7 +238,6 @@ jobs:
         run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
 
   test-linux-x64-musl-binding:
-    if: github.ref == 'refs/heads/main'
     name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
@@ -285,7 +276,6 @@ jobs:
         run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -m smoke
 
   test-linux-aarch64-gnu-binding:
-    if: github.ref == 'refs/heads/main'
     name: Test bindings on aarch64-unknown-linux-gnu - node@${{ matrix.node }}
     needs:
       - build
@@ -332,7 +322,6 @@ jobs:
             ls -la
 
   test-linux-aarch64-musl-binding:
-    if: github.ref == 'refs/heads/main'
     name: Test bindings on aarch64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
@@ -378,7 +367,6 @@ jobs:
             NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -m smoke
 
   test-linux-arm-gnueabihf-binding:
-    if: github.ref == 'refs/heads/main'
     name: Test bindings on armv7-unknown-linux-gnueabihf - node@${{ matrix.node }}
     needs:
       - build
@@ -424,7 +412,6 @@ jobs:
             ls -la
 
   universal-macOS:
-    if: github.ref == 'refs/heads/main'
     name: Build universal macOS binary
     needs:
       - build
@@ -469,7 +456,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    if: github.ref == 'refs/heads/main' && github.repository == 'ngrok/ngrok-javascript'
+    if: github.repository == 'ngrok/ngrok-javascript'
     name: Publish
     runs-on: ubuntu-latest
     needs:
