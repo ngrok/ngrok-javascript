@@ -43,8 +43,6 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ inputs.target }}
-      - name: Install bindgen-cli
-        run: cargo install --force --locked bindgen-cli
       - name: Cache cargo
         uses: actions/cache@v4
         with:
