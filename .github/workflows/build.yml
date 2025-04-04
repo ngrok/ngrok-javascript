@@ -53,6 +53,9 @@ jobs:
             .cargo-cache
             target/
           key: ${{ inputs.target }}-cargo-${{ inputs.host }}
+      - name: Install ubuntu libclang
+        if: ${{ inputs.host == 'ubuntu-latest' }}
+        run: sudo apt install libclang-dev
       - uses: mlugg/setup-zig@v1
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
