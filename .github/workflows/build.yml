@@ -57,7 +57,7 @@ jobs:
         if: ${{ inputs.host == 'ubuntu-latest' }}
         run: |
           sudo apt update
-          sudo apt install -y libclang-18-dev
+          sudo apt install -y libclang-18-dev clang
           sudo ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
       - uses: mlugg/setup-zig@v1
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
