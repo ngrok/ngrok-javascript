@@ -86,7 +86,7 @@ jobs:
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |
               set -e &&
-              su apk add --no-cache musl-dev musl-tools &&
+              su apk add musl-dev musl-tools &&
               yarn build
           # - host: macos-latest
           #   target: aarch64-apple-darwin
