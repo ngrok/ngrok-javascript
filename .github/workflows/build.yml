@@ -66,8 +66,7 @@ jobs:
         if: ${{ inputs.target == 'aarch64-unknown-linux-gnu' && inputs.docker }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          sudo ln -s /usr/bin/aarch64-linux-gnu-gcc /usr/bin/aarch64-linux-gnu-gcc-12
+          sudo apt-get install -y gcc-multilib
       - uses: mlugg/setup-zig@v1
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
