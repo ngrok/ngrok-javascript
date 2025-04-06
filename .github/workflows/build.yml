@@ -59,15 +59,15 @@ jobs:
       - name: Install ubuntu deps
         if: ${{ inputs.host == 'ubuntu-latest' && !contains(inputs.docker, 'lts-alpine') }}
         run: |
-          apt update
-          apt install -y build-essential cmake pkg-config libclang-dev clang gcc-multilib
-          ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
+          sudo apt update
+          sudo apt install -y build-essential cmake pkg-config libclang-dev clang gcc-multilib
+          sudo ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
       - name: Install cross-compilation deps
         if: ${{ inputs.target == 'aarch64-unknown-linux-gnu' && inputs.docker }}
         run: |
-          apt-get update
-          apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          ln -s /usr/bin/aarch64-linux-gnu-gcc /usr/bin/aarch64-linux-gnu-gcc-12
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo ln -s /usr/bin/aarch64-linux-gnu-gcc /usr/bin/aarch64-linux-gnu-gcc-12
       - uses: mlugg/setup-zig@v1
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
