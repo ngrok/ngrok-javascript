@@ -88,6 +88,7 @@ jobs:
               set -e &&
               sudo apt-get update &&
               sudo apt-get install -y musl-dev &&
+              rustup target add x86_64-unknown-linux-musl
               yarn build --target x86_64-unknown-linux-musl
           # - host: macos-latest
           #   target: aarch64-apple-darwin
@@ -120,11 +121,11 @@ jobs:
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             if: ${{ github.ref == 'refs/heads/main' }}
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
             build: |-
               set -e &&
-              apk add musl-dev clang &&
-              ln -s /usr/lib/libclang-cpp.so.19.1 /usr/lib/libclang.so &&
+              sudo apt-get update &&
+              sudo apt-get install -y musl-dev &&
               rustup target add aarch64-unknown-linux-musl &&
               yarn build --target aarch64-unknown-linux-musl
           # - host: windows-latest
