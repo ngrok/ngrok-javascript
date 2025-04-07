@@ -80,16 +80,16 @@ jobs:
           #   target: x86_64-unknown-linux-gnu
           #   docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           #   build: yarn build --target x86_64-unknown-linux-gnu
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            if: ${{ github.ref == 'refs/heads/main' }}
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-            build: |
-              set -e &&
-              sudo apt-get update &&
-              sudo apt-get install -y musl-dev &&
-              rustup target add x86_64-unknown-linux-musl
-              yarn build --target x86_64-unknown-linux-musl
+          # - host: ubuntu-latest
+          #   target: x86_64-unknown-linux-musl
+          #   if: ${{ github.ref == 'refs/heads/main' }}
+          #   docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+          #   build: |
+          #     set -e &&
+          #     sudo apt-get update &&
+          #     sudo apt-get install -y musl-dev &&
+          #     rustup target add x86_64-unknown-linux-musl
+          #     yarn build --target x86_64-unknown-linux-musl
           # - host: macos-latest
           #   target: aarch64-apple-darwin
           #   if: ${{ github.ref == 'refs/heads/main' }}
@@ -98,11 +98,7 @@ jobs:
             target: aarch64-unknown-linux-gnu
             if: ${{ github.ref == 'refs/heads/main' }}
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
-            build: |
-              set -e &&
-              sudo apt-get update &&
-              sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross musl-tools &&
-              yarn build --target aarch64-unknown-linux-gnu
+            build: yarn build --target aarch64-unknown-linux-gnu
           # - host: ubuntu-latest
           #   target: armv7-unknown-linux-gnueabihf
           #   if: ${{ github.ref == 'refs/heads/main' }}
