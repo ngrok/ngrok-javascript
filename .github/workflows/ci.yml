@@ -83,12 +83,12 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             if: ${{ github.ref == 'refs/heads/main' }}
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: |
               set -e &&
-              apk add musl-dev clang &&
-              ln -s /usr/lib/libclang-cpp.so.19.1 /usr/lib/libclang.so &&
-              yarn build
+              sudo apt-get update &&
+              sudo apt-get install -y musl-dev &&
+              yarn build --target x86_64-unknown-linux-musl
           # - host: macos-latest
           #   target: aarch64-apple-darwin
           #   if: ${{ github.ref == 'refs/heads/main' }}
