@@ -20,38 +20,38 @@ on:
     branches:
       - main # the branch that the pull request is targeting
 jobs:
-  # udeps:
-  #   name: Udeps
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: jrobsonchase/direnv-action@v0.7
-  #     - uses: ./.github/workflows/rust-cache
-  #     - uses: actions-rs/cargo@v1
-  #       with:
-  #         command: udeps
-  #         args: '--workspace --all-targets --all-features'
-  # fmt:
-  #   name: Rustfmt
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: jrobsonchase/direnv-action@v0.7
-  #     - uses: actions-rs/cargo@v1
-  #       with:
-  #         command: fmt
-  #         args: '--all -- --check'
-  # clippy:
-  #   name: Clippy
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: jrobsonchase/direnv-action@v0.7
-  #     - uses: ./.github/workflows/rust-cache
-  #     - uses: actions-rs/cargo@v1
-  #       with:
-  #         command: clippy
-  #         args: '--all-targets --all-features --workspace -- -D warnings'
+  udeps:
+    name: Udeps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jrobsonchase/direnv-action@v0.7
+      - uses: ./.github/workflows/rust-cache
+      - uses: actions-rs/cargo@v1
+        with:
+          command: udeps
+          args: '--workspace --all-targets --all-features'
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jrobsonchase/direnv-action@v0.7
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: '--all -- --check'
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jrobsonchase/direnv-action@v0.7
+      - uses: ./.github/workflows/rust-cache
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: '--all-targets --all-features --workspace -- -D warnings'
   build:
     uses: ./.github/workflows/build.yml
     with:
