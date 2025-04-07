@@ -86,7 +86,8 @@ jobs:
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |
               set -e &&
-              apk add musl-dev &&
+              apk add musl-dev clang &&
+              ln -s /usr/lib/libclang-cpp.so.19.1 /usr/lib/libclang.so &&
               yarn build
           # - host: macos-latest
           #   target: aarch64-apple-darwin
@@ -122,6 +123,8 @@ jobs:
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
               set -e &&
+              apk add musl-dev clang &&
+              ln -s /usr/lib/libclang-cpp.so.19.1 /usr/lib/libclang.so &&
               rustup target add aarch64-unknown-linux-musl &&
               yarn build --target aarch64-unknown-linux-musl
           # - host: windows-latest
