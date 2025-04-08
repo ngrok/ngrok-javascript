@@ -61,8 +61,8 @@ jobs:
       - name: Install ubuntu deps
         if: ${{ inputs.host == 'ubuntu-latest' && !inputs.docker && inputs.target == 'armv7-linux-androideabi' }}
         run: |
-          sudo apt update
-          sudo apt install -y build-essential cmake pkg-config libclang-dev clang gcc-multilib
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config libclang-dev clang gcc-multilib
           sudo ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
       - name: Install zig
         uses: mlugg/setup-zig@v1
@@ -91,7 +91,7 @@ jobs:
           architecture: x86
       - name: Build in docker
         uses: addnab/docker-run-action@v3
-        if: ${{ inputs.docker != '' && inputs.docker != 'false' }}
+        if: ${{ inputs.docker}}
         with:
           image: ${{ inputs.docker }}
           options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
