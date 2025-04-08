@@ -57,7 +57,7 @@ jobs:
         run: |
           cargo install --force --locked bindgen-cli
       - name: Install ubuntu deps
-        if: ${{ inputs.host == 'ubuntu-latest' && !inputs.docker }}
+        if: ${{ inputs.host == 'ubuntu-latest' && !inputs.docker && inputs.target == 'armv7-linux-androideabi' }}
         run: |
           sudo apt update
           sudo apt install -y build-essential cmake pkg-config libclang-dev clang gcc-multilib
