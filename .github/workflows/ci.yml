@@ -85,10 +85,15 @@ jobs:
             if: ${{ github.ref == 'refs/heads/main' }}
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |
-              apk add clang18 llvm18
+              apk add clang18 llvm18 musl-dev
               ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
               rustup target add x86_64-unknown-linux-musl
-               yarn build --target x86_64-unknown-linux-musl
+              export CC="x86_64-linux-musl-gcc"
+              export CXX="x86_64-linux-musl-g++"
+              export AR="x86_64-linux-musl-ar"
+              export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER="x86_64-linux-musl-gcc"
+              export RUSTFLAGS="-C linker=x86_64-linux-musl-gcc"
+              yarn build --target x86_64-unknown-linux-musl
           # - host: macos-latest
           #   target: aarch64-apple-darwin
           #   if: ${{ github.ref == 'refs/heads/main' }}
