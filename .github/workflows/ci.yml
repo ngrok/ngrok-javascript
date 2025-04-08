@@ -80,23 +80,23 @@ jobs:
           #   target: x86_64-unknown-linux-gnu
           #   docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           #   build: yarn build --target x86_64-unknown-linux-gnu
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            if: ${{ github.ref == 'refs/heads/main' }}
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-            build: |
-              sudo apt-get update &&
-              sudo apt-get install -y musl-tools musl-dev gcc-multilib &&
-              rustup target add x86_64-unknown-linux-musl &&
-              wget https://ziglang.org/download/0.10.0/zig-linux-x86_64-0.10.0.tar.xz &&
-              mkdir -p $HOME/zig &&
-              tar -xf zig-linux-x86_64-0.10.0.tar.xz -C $HOME/zig --strip-components=1 &&
-              export CC="clang" &&
-              export CXX="clang++" &&
-              export RUSTFLAGS="-C target-feature=-crt-static" &&
-              export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=clang &&
-              export PATH="$HOME/zig:$PATH" &&
-              yarn build --target x86_64-unknown-linux-musl
+          # - host: ubuntu-latest
+          #   target: x86_64-unknown-linux-musl
+          #   if: ${{ github.ref == 'refs/heads/main' }}
+          #   docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+          #   build: |
+          #     sudo apt-get update &&
+          #     sudo apt-get install -y musl-tools musl-dev gcc-multilib &&
+          #     rustup target add x86_64-unknown-linux-musl &&
+          #     wget https://ziglang.org/download/0.10.0/zig-linux-x86_64-0.10.0.tar.xz &&
+          #     mkdir -p $HOME/zig &&
+          #     tar -xf zig-linux-x86_64-0.10.0.tar.xz -C $HOME/zig --strip-components=1 &&
+          #     export CC="clang" &&
+          #     export CXX="clang++" &&
+          #     export RUSTFLAGS="-C target-feature=-crt-static" &&
+          #     export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=clang &&
+          #     export PATH="$HOME/zig:$PATH" &&
+          #     yarn build --target x86_64-unknown-linux-musl
           # - host: macos-latest
           #   target: aarch64-apple-darwin
           #   if: ${{ github.ref == 'refs/heads/main' }}
@@ -126,7 +126,7 @@ jobs:
             if: ${{ github.ref == 'refs/heads/main' }}
             build: |
               sudo apt-get update &&
-              sudo apt-get install -y wget unzip &&
+              sudo apt-get install -y wget unzip gcc-multilib &&
               wget https://dl.google.com/android/repository/android-ndk-r25c-linux.zip &&
               unzip android-ndk-r25c-linux.zip &&
               export ANDROID_NDK_HOME=$PWD/android-ndk-r25c &&
