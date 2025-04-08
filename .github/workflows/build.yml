@@ -10,7 +10,6 @@ on:
       docker:
         required: false
         type: string
-        default: ''
       host:
         required: true
         type: string
