@@ -84,14 +84,13 @@ jobs:
             target: x86_64-unknown-linux-musl
             if: ${{ github.ref == 'refs/heads/main' }}
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-            setup: |
+            build: |
               sudo apt-get update &&
               sudo apt-get install -y musl-tools musl-dev gcc-multilib &&
               rustup target add x86_64-unknown-linux-musl &&
               wget https://ziglang.org/download/0.10.0/zig-linux-x86_64-0.10.0.tar.xz &&
               mkdir -p $HOME/zig &&
-              tar -xf zig-linux-x86_64-0.10.0.tar.xz -C $HOME/zig --strip-components=1
-            build: |
+              tar -xf zig-linux-x86_64-0.10.0.tar.xz -C $HOME/zig --strip-components=1 &&
               export CC="clang" &&
               export CXX="clang++" &&
               export RUSTFLAGS="-C target-feature=-crt-static" &&
@@ -126,6 +125,16 @@ jobs:
             target: armv7-linux-androideabi
             if: ${{ github.ref == 'refs/heads/main' }}
             build: |
+              sudo apt-get update &&
+              sudo apt-get install -y wget unzip &&
+              wget https://dl.google.com/android/repository/android-ndk-r25c-linux.zip &&
+              unzip android-ndk-r25c-linux.zip &&
+              export ANDROID_NDK_HOME=$PWD/android-ndk-r25c &&
+              export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH &&
+              export CC_armv7_linux_androideabi=armv7a-linux-androideabi21-clang &&
+              export CXX_armv7_linux_androideabi=armv7a-linux-androideabi21-clang++ &&
+              export AR_armv7_linux_androideabi=llvm-ar &&
+              export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi21-clang &&
               yarn build --target armv7-linux-androideabi
           # - host: ubuntu-latest
           #   target: aarch64-unknown-linux-musl
