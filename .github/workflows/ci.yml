@@ -83,16 +83,15 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             if: ${{ github.ref == 'refs/heads/main' }}
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: |
-              apk add clang18 llvm18 musl-dev
-              ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
+              apt-get update && apt-get install -y musl-tools musl-dev
               rustup target add x86_64-unknown-linux-musl
               export CC="x86_64-linux-musl-gcc"
               export CXX="x86_64-linux-musl-g++"
               export AR="x86_64-linux-musl-ar"
               export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER="x86_64-linux-musl-gcc"
-              export RUSTFLAGS="-C linker=x86_64-linux-musl-gcc"
+              export RUSTFLAGS="-C linker=x86_64-linux-musl-gcc -C target-feature=-crt-static"
               yarn build --target x86_64-unknown-linux-musl
           # - host: macos-latest
           #   target: aarch64-apple-darwin
