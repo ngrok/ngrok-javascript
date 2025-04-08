@@ -130,13 +130,19 @@ jobs:
               wget https://dl.google.com/android/repository/android-ndk-r25c-linux.zip &&
               unzip android-ndk-r25c-linux.zip &&
               export ANDROID_NDK_HOME=$PWD/android-ndk-r25c &&
-              export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH &&
-              export SYSROOT=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot &&
-              export CFLAGS="$CFLAGS --sysroot=$SYSROOT -D__ANDROID_API__=21" &&
-              export CC_armv7_linux_androideabi=armv7a-linux-androideabi21-clang &&
-              export CXX_armv7_linux_androideabi=armv7a-linux-androideabi21-clang++ &&
-              export AR_armv7_linux_androideabi=llvm-ar &&
-              export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi21-clang &&
+              export TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64 &&
+              export PATH=$TOOLCHAIN/bin:$PATH &&
+              export AR=$TOOLCHAIN/bin/llvm-ar &&
+              export CC=$TOOLCHAIN/bin/armv7a-linux-androideabi21-clang &&
+              export CXX=$TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++ &&
+              export LD=$TOOLCHAIN/bin/ld.lld &&
+              export RANLIB=$TOOLCHAIN/bin/llvm-ranlib &&
+              export STRIP=$TOOLCHAIN/bin/llvm-strip &&
+              export SYSROOT=$TOOLCHAIN/sysroot &&
+              export CFLAGS="--target=armv7a-linux-androideabi21 --sysroot=$SYSROOT" &&
+              export CXXFLAGS="--target=armv7a-linux-androideabi21 --sysroot=$SYSROOT" &&
+              export LDFLAGS="--target=armv7a-linux-androideabi21 --sysroot=$SYSROOT" &&
+              export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$CC &&
               export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_RUSTFLAGS="-C link-arg=--sysroot=$SYSROOT" &&
               yarn build --target armv7-linux-androideabi
           # - host: ubuntu-latest
