@@ -66,75 +66,75 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          - host: macos-latest
-            target: x86_64-apple-darwin
-            build: yarn build
-          - host: windows-latest
-            build: yarn build
-            target: x86_64-pc-windows-msvc
-          - host: windows-latest
-            build: |
-              yarn build --target i686-pc-windows-msvc
-            target: i686-pc-windows-msvc
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-            build: yarn build --target x86_64-unknown-linux-gnu
+          # - host: macos-latest
+          #   target: x86_64-apple-darwin
+          #   build: yarn build
+          # - host: windows-latest
+          #   build: yarn build
+          #   target: x86_64-pc-windows-msvc
+          # - host: windows-latest
+          #   build: |
+          #     yarn build --target i686-pc-windows-msvc
+          #   target: i686-pc-windows-msvc
+          # - host: ubuntu-latest
+          #   target: x86_64-unknown-linux-gnu
+          #   docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+          #   build: yarn build --target x86_64-unknown-linux-gnu
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            if: ${{ github.ref == 'refs/heads/main' }}
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-            setup: |
-              sudo apt-get update &&
-              sudo apt-get install -y musl-dev &&
-              rustup target add x86_64-unknown-linux-musl
-            build: yarn build --target x86_64-unknown-linux-musl
-          - host: macos-latest
-            target: aarch64-apple-darwin
-            if: ${{ github.ref == 'refs/heads/main' }}
-            build: yarn build --target aarch64-apple-darwin
-          - host: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            if: ${{ github.ref == 'refs/heads/main' }}
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
-            build: |
-              sudo apt-get update
-              sudo apt-get install -y gcc-aarch64-linux-gnu 
-              export CFLAGS="$CFLAGS -D__GLIBC_USE(IEC_60559_BFP_EXT_C2X)=1" &&
-              yarn build --target aarch64-unknown-linux-gnu
-          - host: ubuntu-latest
-            target: armv7-unknown-linux-gnueabihf
-            if: ${{ github.ref == 'refs/heads/main' }}
-            setup: |
-              sudo apt-get update
-              sudo apt-get install gcc-arm-linux-gnueabihf -y
-            build: yarn build --target=armv7-unknown-linux-gnueabihf
-          - host: ubuntu-latest
-            target: aarch64-linux-android
-            if: ${{ github.ref == 'refs/heads/main' }}
-            build: yarn build --target aarch64-linux-android
-          - host: ubuntu-latest
-            target: armv7-linux-androideabi
-            if: ${{ github.ref == 'refs/heads/main' }}
-            build: |
-              yarn build --target armv7-linux-androideabi
-          - host: ubuntu-latest
-            target: aarch64-unknown-linux-musl
             if: ${{ github.ref == 'refs/heads/main' }}
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |
               apk add clang18 llvm18
               ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
-              rustup target add aarch64-unknown-linux-musl
-              export CC_aarch64_unknown_linux_musl=aarch64-linux-musl-gcc
-              export CXX_aarch64_unknown_linux_musl=aarch64-linux-musl-g++
-              export AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar
-              export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc
-              export RUSTFLAGS="-C linker=aarch64-linux-musl-gcc"
-              yarn build --target aarch64-unknown-linux-musl
-          - host: windows-latest
-            target: aarch64-pc-windows-msvc
-            build: yarn build --target aarch64-pc-windows-msvc
+              rustup target add x86_64-unknown-linux-musl
+               yarn build --target x86_64-unknown-linux-musl
+          # - host: macos-latest
+          #   target: aarch64-apple-darwin
+          #   if: ${{ github.ref == 'refs/heads/main' }}
+          #   build: yarn build --target aarch64-apple-darwin
+          # - host: ubuntu-latest
+          #   target: aarch64-unknown-linux-gnu
+          #   if: ${{ github.ref == 'refs/heads/main' }}
+          #   docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+          #   build: |
+          #     sudo apt-get update
+          #     sudo apt-get install -y gcc-aarch64-linux-gnu 
+          #     export CFLAGS="$CFLAGS -D__GLIBC_USE(IEC_60559_BFP_EXT_C2X)=1" &&
+          #     yarn build --target aarch64-unknown-linux-gnu
+          # - host: ubuntu-latest
+          #   target: armv7-unknown-linux-gnueabihf
+          #   if: ${{ github.ref == 'refs/heads/main' }}
+          #   setup: |
+          #     sudo apt-get update
+          #     sudo apt-get install gcc-arm-linux-gnueabihf -y
+          #   build: yarn build --target=armv7-unknown-linux-gnueabihf
+          # - host: ubuntu-latest
+          #   target: aarch64-linux-android
+          #   if: ${{ github.ref == 'refs/heads/main' }}
+          #   build: yarn build --target aarch64-linux-android
+          - host: ubuntu-latest
+            target: armv7-linux-androideabi
+            if: ${{ github.ref == 'refs/heads/main' }}
+            build: |
+              yarn build --target armv7-linux-androideabi
+          # - host: ubuntu-latest
+          #   target: aarch64-unknown-linux-musl
+          #   if: ${{ github.ref == 'refs/heads/main' }}
+          #   docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+          #   build: |
+          #     apk add clang18 llvm18
+          #     ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
+          #     rustup target add aarch64-unknown-linux-musl
+          #     export CC_aarch64_unknown_linux_musl=aarch64-linux-musl-gcc
+          #     export CXX_aarch64_unknown_linux_musl=aarch64-linux-musl-g++
+          #     export AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar
+          #     export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc
+          #     export RUSTFLAGS="-C linker=aarch64-linux-musl-gcc"
+          #     yarn build --target aarch64-unknown-linux-musl
+          # - host: windows-latest
+          #   target: aarch64-pc-windows-msvc
+          #   build: yarn build --target aarch64-pc-windows-msvc
   build-freebsd:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-22.04
