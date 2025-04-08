@@ -57,26 +57,11 @@ jobs:
         run: |
           cargo install --force --locked bindgen-cli
       - name: Install ubuntu deps
-        if: ${{ inputs.host == 'ubuntu-latest' && !inputs.docker && !inputs.target == 'armv7-linux-androideabi' }}
+        if: ${{ inputs.host == 'ubuntu-latest' && !inputs.docker && inputs.target == 'armv7-linux-androideabi' }}
         run: |
           sudo apt update
           sudo apt install -y build-essential cmake pkg-config libclang-dev clang gcc-multilib
           sudo ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
-      - name: Setup Android NDK
-        if: ${{ inputs.target == 'armv7-linux-androideabi' }}
-        run: |
-          export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/25.1.8937393
-          export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
-          export CFLAGS="$CFLAGS -D__GLIBC_USE(IEC_60559_BFP_EXT_C2X)=1 -I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi"
-          export CC_armv7_linux_androideabi=armv7a-linux-androideabi21-clang
-          export CXX_armv7_linux_androideabi=armv7a-linux-androideabi21-clang++
-          export AR_armv7_linux_androideabi=arm-linux-androideabi-ar
-          export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi21-clang
-          export RUSTFLAGS="-C linker=armv7a-linux-androideabi21-clang -C link-arg=--sysroot=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot -C link-arg=-L$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/arm-linux-androideabi/21"
-          mkdir -p $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/lib64
-          ln -sf $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.13 $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so
-          export LIBCLANG_PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/lib64
-          export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot -I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi -I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1 -I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi/c++/v1"
       - uses: mlugg/setup-zig@v1
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
@@ -107,26 +92,7 @@ jobs:
         with:
           image: ${{ inputs.docker }}
           options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-          run: |
-            if [ "${{ inputs.target }}" = "armv7-linux-androideabi" ]; then
-              # Install Android NDK
-              wget https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
-              unzip android-ndk-r25c-linux.zip
-              export ANDROID_NDK_HOME=/build/android-ndk-r25c
-              export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
-              
-              # Set up environment variables
-              export CC_armv7_linux_androideabi=armv7a-linux-androideabi21-clang
-              export CXX_armv7_linux_androideabi=armv7a-linux-androideabi21-clang++
-              export AR_armv7_linux_androideabi=arm-linux-androideabi-ar
-              export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi21-clang
-              export RUSTFLAGS="-C linker=armv7a-linux-androideabi21-clang -C link-arg=--sysroot=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
-              
-              # Set up bindgen configuration
-              export LIBCLANG_PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/lib64
-              export BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot -I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi"
-            fi
-            ${{ inputs.build }}
+          run: ${{ inputs.build }}
       - name: Build
         run: ${{ inputs.build }}
         if: ${{ !inputs.docker }}
