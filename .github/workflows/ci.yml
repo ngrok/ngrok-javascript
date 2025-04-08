@@ -89,14 +89,14 @@ jobs:
               sudo apt-get install -y musl-tools musl-dev gcc-multilib &&
               rustup target add x86_64-unknown-linux-musl &&
               wget https://ziglang.org/download/0.10.0/zig-linux-x86_64-0.10.0.tar.xz &&
-              sudo mkdir -p /usr/local/zig &&
-              sudo tar -xf zig-linux-x86_64-0.10.0.tar.xz -C /usr/local/zig --strip-components=1
+              mkdir -p $HOME/zig &&
+              tar -xf zig-linux-x86_64-0.10.0.tar.xz -C $HOME/zig --strip-components=1
             build: |
               export CC="clang" &&
               export CXX="clang++" &&
               export RUSTFLAGS="-C target-feature=-crt-static" &&
               export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=clang &&
-              export PATH="/usr/local/zig:$PATH" &&
+              export PATH="$HOME/zig:$PATH" &&
               yarn build --target x86_64-unknown-linux-musl
           # - host: macos-latest
           #   target: aarch64-apple-darwin
