@@ -117,7 +117,14 @@ jobs:
             target: armv7-linux-androideabi
             if: ${{ github.ref == 'refs/heads/main' }}
             build: |
+              export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/25.1.8937393
+              export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
               export CFLAGS="$CFLAGS -D__GLIBC_USE(IEC_60559_BFP_EXT_C2X)=1"
+              export CC_armv7_linux_androideabi=armv7a-linux-androideabi21-clang
+              export CXX_armv7_linux_androideabi=armv7a-linux-androideabi21-clang++
+              export AR_armv7_linux_androideabi=arm-linux-androideabi-ar
+              export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi21-clang
+              export RUSTFLAGS="-C linker=armv7a-linux-androideabi21-clang -C link-arg=--sysroot=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
               yarn build --target armv7-linux-androideabi
           # - host: ubuntu-latest
           #   target: aarch64-unknown-linux-musl
