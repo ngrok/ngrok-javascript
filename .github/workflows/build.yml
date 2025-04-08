@@ -58,12 +58,6 @@ jobs:
       - name: Install Bindgen
         run: |
           cargo install --force --locked bindgen-cli
-      # - name: Install ubuntu deps
-      #   if: ${{ inputs.host == 'ubuntu-latest' && !inputs.docker && inputs.target == 'armv7-linux-androideabi' }}
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y build-essential cmake pkg-config libclang-dev clang gcc-multilib
-      #     sudo ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
       - name: Install zig
         uses: mlugg/setup-zig@v1
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
