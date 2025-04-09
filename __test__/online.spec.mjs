@@ -226,15 +226,21 @@ test("proxy proto", async (t) => {
   const hasIPv6 = Object.values(os.networkInterfaces())
     .flat()
     .some((iface) => iface.family === "IPv6" && !iface.internal);
+  let firstChunk = true;
   const tcpServer = net.createServer(function (c) {
     c.on("readable", function () {
       let chunk,
         N = 10;
       while (null !== (chunk = c.read(N))) {
-        const utf8Encode = new TextEncoder();
-        const bytes = utf8Encode.encode(`PROXY TCP${hasIPv6 ? "6" : "4"}`);
-        t.deepEqual(Buffer.from(bytes), chunk);
-        break;
+        const bytes = Buffer.from(`PROXY TCP${hasIPv6 ? "6" : "4"}`);
+        if (firstChunk) {
+          t.deepEqual(bytes, chunk);
+          firstChunk = false;
+        } else {
+          t.notDeepEqual(bytes, chunk);
+        }
+        c.end();
+        return;
       }
     });
   });
@@ -245,16 +251,15 @@ test("proxy proto", async (t) => {
 
   listener.forward("localhost:" + socket.address().port);
 
-  const error = await t.throwsAsync(
-    async () => {
-      await axios.get(listener.url(), { timeout: 1000 }).catch((err) => {
-        console.log("Error:", err);
-        throw err;
-      });
-    },
-    { instanceOf: AxiosError },
-  );
-  await shutdown(listener, socket);
+  try {
+    await axios.get(listener.url(), { timeout: 1000 });
+    t.fail("Expected request to fail");
+  } catch (error) {
+    t.truthy(error instanceof AxiosError);
+  } finally {
+    tcpServer.close();
+    await shutdown(listener, socket);
+  }
 });
 
 test("ip restriction http", async (t) => {
