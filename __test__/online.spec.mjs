@@ -10,6 +10,7 @@ import * as http from "http";
 import * as net from "net";
 import * as retry from "./retry-config.mjs";
 import * as path from "path";
+import * as os from "os";
 
 axiosRetry(axios, retry.retryConfig);
 const expected = "Hello";
@@ -134,7 +135,7 @@ test("tls backend", async (t) => {
     async () => {
       await axios.get(listener.url());
     },
-    { instanceOf: AxiosError }
+    { instanceOf: AxiosError },
   );
   t.is(421, error.response.status);
   t.truthy(error.response.data.includes("different Host"));
@@ -152,7 +153,7 @@ test("unverified tls backend", async (t) => {
     async () => {
       await axios.get(listener.url());
     },
-    { instanceOf: AxiosError }
+    { instanceOf: AxiosError },
   );
   t.is(421, error.response.status);
   t.truthy(error.response.data.includes("different Host"));
@@ -222,19 +223,22 @@ test("custom domain", async (t) => {
 });
 
 test("proxy proto", async (t) => {
+  const hasIPv6 = Object.values(os.networkInterfaces())
+    .flat()
+    .some((iface) => iface.family === "IPv6" && !iface.internal);
   const tcpServer = net.createServer(function (c) {
     c.on("readable", function () {
-      var chunk,
+      let chunk,
         N = 10;
       while (null !== (chunk = c.read(N))) {
         const utf8Encode = new TextEncoder();
-        const bytes = utf8Encode.encode("PROXY TCP4");
+        const bytes = utf8Encode.encode(`PROXY TCP${hasIPv6 ? "6" : "4"}`);
         t.deepEqual(Buffer.from(bytes), chunk);
         break;
       }
     });
   });
-  const socket = await tcpServer.listen(0);
+  const socket = tcpServer.listen(0);
 
   const session = await makeSession();
   const listener = await session.httpEndpoint().proxyProto("1").listen();
@@ -243,9 +247,12 @@ test("proxy proto", async (t) => {
 
   const error = await t.throwsAsync(
     async () => {
-      await axios.get(listener.url(), { timeout: 1000 });
+      await axios.get(listener.url(), { timeout: 1000 }).catch((err) => {
+        console.log("Error:", err);
+        throw err;
+      });
     },
-    { instanceOf: AxiosError }
+    { instanceOf: AxiosError },
   );
   await shutdown(listener, socket);
 });
@@ -271,7 +278,7 @@ async function ipRestriction(t, httpServer, listenerBuilder) {
     async () => {
       await axios.get(listener.url().replace("tcp:", "http:"));
     },
-    { instanceOf: AxiosError }
+    { instanceOf: AxiosError },
   );
   await shutdown(listener, httpServer.socket);
   return error;
@@ -287,7 +294,7 @@ test("websocket conversion", async (t) => {
     async () => {
       await axios.get(listener.url());
     },
-    { instanceOf: AxiosError }
+    { instanceOf: AxiosError },
   );
   // ERR_NGROK_3206: Expected a websocket request with a "Connection: upgrade" header
   // but did not receive one.
@@ -309,7 +316,7 @@ test("useragent", async (t) => {
     async () => {
       await axios.get(listener.url());
     },
-    { instanceOf: AxiosError }
+    { instanceOf: AxiosError },
   );
   // ERR_NGROK_3211: The server does not authorize requests from your user-agent.
   t.is("ERR_NGROK_3211", error.response.headers["ngrok-error-code"]);
@@ -351,7 +358,7 @@ test("tls listener", async (t) => {
     async () => {
       await axios.get(listener.url().replace("tls:", "https:"));
     },
-    { instanceOf: AxiosError }
+    { instanceOf: AxiosError },
   );
   t.truthy(error.message.endsWith("signed certificate"), error.message);
   await shutdown(listener, httpServer.socket);
@@ -509,7 +516,7 @@ test("session ca_cert", async (t) => {
     async () => {
       await builder.authtokenFromEnv().caCert(fs.readFileSync("examples/domain.crt")).connect();
     },
-    { instanceOf: Error }
+    { instanceOf: Error },
   );
   t.truthy(error.message.includes("tls"), error.message);
 });
@@ -520,7 +527,7 @@ test("session incorrect authtoken", async (t) => {
     async () => {
       await builder.authtoken("badtoken").connect();
     },
-    { instanceOf: Error }
+    { instanceOf: Error },
   );
   t.is("ERR_NGROK_105", error.errorCode);
 });
@@ -531,7 +538,7 @@ test("listener invalid domain", async (t) => {
     async () => {
       await session.httpEndpoint().domain("1.21 gigawatts").listen();
     },
-    { instanceOf: Error }
+    { instanceOf: Error },
   );
   t.is("ERR_NGROK_326", error.errorCode);
 });
