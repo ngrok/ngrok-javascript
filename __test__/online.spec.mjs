@@ -39,7 +39,10 @@ async function makeHttp(useUnixSocket) {
 
 async function makeSession() {
   const builder = new ngrok.SessionBuilder();
-  return await builder.authtokenFromEnv().metadata("session metadata").connect();
+  return await builder
+    .authtoken(process.env["NGROK_AUTHTOKEN"])
+    .metadata("session metadata")
+    .connect();
 }
 
 async function makeHttpAndSession(useUnixSocket) {
@@ -489,7 +492,7 @@ test("unix multipass", async () => {
 
 test("connect heartbeat callbacks", async () => {
   var conn_addr, disconn_addr, test_latency;
-  const builder = new ngrok.SessionBuilder();
+  const builder = new ngrok.SessionBuilder().authtoken(process.env["NGROK_AUTHTOKEN"]);
   builder
     .clientInfo("connect_heartbeat_callbacks", "1.2.3")
     .handleHeartbeat((latency) => {
