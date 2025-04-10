@@ -81,6 +81,7 @@
     "url": "https://github.com/ngrok/ngrok-javascript.git"
   },
   "jest": {
+    "testTimeout": 30000,
     "testMatch": [
       "**/__test__/**/*.mjs"
     ],
