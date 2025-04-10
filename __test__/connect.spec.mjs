@@ -1,7 +1,4 @@
-// to run a single ava test case use the match flag: yarn test -m 'https listener'
-
 import * as ngrok from "../index.js";
-import test from "ava";
 import axios, { AxiosError } from "axios";
 import axiosRetry from "axios-retry";
 import * as fs from "fs";
@@ -9,7 +6,6 @@ import * as http from "http";
 import * as http2 from "http2";
 import * as retry from "./retry-config.mjs";
 import * as path from "path";
-import exp from "constants";
 
 axiosRetry(axios, retry.retryConfig);
 const expected = "Hello";
@@ -49,10 +45,10 @@ async function makeHttp(options = {}) {
   return server;
 }
 
-async function validateHttpRequest(t, url, axiosConfig) {
+async function validateHttpRequest(url, axiosConfig) {
   const response = await axios.get(url, axiosConfig);
-  t.is(200, response.status);
-  t.is(expected, response.data);
+  expect(200).toBe(response.status);
+  expect(expected).toBe(response.data);
   return response;
 }
 
@@ -61,13 +57,13 @@ async function shutdown(url, socket) {
   socket.close();
 }
 
-async function validateShutdown(t, httpServer, url, axiosConfig) {
-  const response = await validateHttpRequest(t, url, axiosConfig);
+async function validateShutdown(httpServer, url, axiosConfig) {
+  const response = await validateHttpRequest(url, axiosConfig);
   await shutdown(url, httpServer.socket);
   return response;
 }
 
-test("forward https", async (t) => {
+test("forward https", async () => {
   const httpServer = await makeHttp();
   const listener = await ngrok.forward({
     addr: httpServer.listenTo,
@@ -75,12 +71,12 @@ test("forward https", async (t) => {
   });
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  await validateShutdown(t, httpServer, url);
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  await validateShutdown(httpServer, url);
 });
 
-test("forward http2", async (t) => {
+test("forward http2", async () => {
   const httpServer = await makeHttp({ useHttp2: true });
   const listener = await ngrok.forward({
     // numeric port
@@ -92,14 +88,14 @@ test("forward http2", async (t) => {
   });
 
   const url = listener.url();
-  t.truthy(url.startsWith("https://"), url);
-  const res = await validateShutdown(t, httpServer, url);
+  expect(url.startsWith("https://")).toBeTruthy();
+  const res = await validateShutdown(httpServer, url);
 
-  t.assert(res.status === 200);
-  t.assert(res.data.includes(expected));
+  expect(res.status).toBe(200);
+  expect(res.data).toContain(expected);
 });
 
-test("forward http2 no cert validation", async (t) => {
+test("forward http2 no cert validation", async () => {
   const httpServer = await makeHttp({ useHttp2: true });
   const listener = await ngrok.forward({
     // numeric port
@@ -113,83 +109,83 @@ test("forward http2 no cert validation", async (t) => {
   });
 
   const url = listener.url();
-  t.truthy(url.startsWith("https://"), url);
-  const res = await validateShutdown(t, httpServer, url);
+  expect(url.startsWith("https://")).toBeTruthy();
+  const res = await validateShutdown(httpServer, url);
 
-  t.assert(res.status === 200);
-  t.assert(res.data.includes(expected));
+  expect(res.status).toBe(200);
+  expect(res.data).toContain(expected);
 });
 
-test("connect number", async (t) => {
+test("connect number", async () => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
   const listener = await ngrok.connect(parseInt(httpServer.listenTo.split(":")[1], 10));
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  await validateShutdown(t, httpServer, url);
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  await validateShutdown(httpServer, url);
 });
 
-test("forward number", async (t) => {
+test("forward number", async () => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
   const listener = await ngrok.forward(parseInt(httpServer.listenTo.split(":")[1], 10));
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  await validateShutdown(t, httpServer, url);
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  await validateShutdown(httpServer, url);
 });
 
-test("forward just string as port", async (t) => {
+test("forward just string as port", async () => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
   const listener = await ngrok.forward(httpServer.listenTo.split(":")[1]);
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  await validateShutdown(t, httpServer, url);
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  await validateShutdown(httpServer, url);
 });
 
-test("forward addr port string", async (t) => {
+test("forward addr port string", async () => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
   const listener = await ngrok.forward({ addr: httpServer.listenTo.split(":")[1] });
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  await validateShutdown(t, httpServer, url);
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  await validateShutdown(httpServer, url);
 });
 
-test("forward port string", async (t) => {
+test("forward port string", async () => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
   const listener = await ngrok.forward({ port: httpServer.listenTo.split(":")[1] });
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  await validateShutdown(t, httpServer, url);
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  await validateShutdown(httpServer, url);
 });
 
-test("forward string", async (t) => {
+test("forward string", async () => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
   const listener = await ngrok.forward(httpServer.listenTo);
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  await validateShutdown(t, httpServer, url);
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  await validateShutdown(httpServer, url);
 });
 
-test("forward vectorize", async (t) => {
+test("forward vectorize", async () => {
   const httpServer = await makeHttp();
   const listener = await ngrok.forward({
     // numeric port
@@ -220,16 +216,16 @@ test("forward vectorize", async (t) => {
   });
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  const response = await validateShutdown(t, httpServer, url, {
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  const response = await validateShutdown(httpServer, url, {
     auth: { username: "ngrok", password: "online1line" },
   });
-  t.is("true", response.headers["x-res-yup"]);
-  t.is("true2", response.headers["x-res-yup2"]);
+  expect("true").toBe(response.headers["x-res-yup"]);
+  expect("true2").toBe(response.headers["x-res-yup2"]);
 });
 
-test("forward tcp listener", async (t) => {
+test("forward tcp listener", async () => {
   const httpServer = await makeHttp();
   const listener = await ngrok.forward({
     addr: httpServer.listenTo,
@@ -239,12 +235,14 @@ test("forward tcp listener", async (t) => {
     metadata: "tcp metadata",
   });
 
-  t.truthy(listener);
+  expect(listener).toBeTruthy();
 
-  await validateShutdown(t, httpServer, listener.url().replace("tcp:", "http:"));
+  await validateShutdown(httpServer, listener.url().replace("tcp:", "http:"), {
+    auth: { username: "ngrok", password: "online1line" },
+  });
 });
 
-test("forward tls listener", async (t) => {
+test("forward tls listener", async () => {
   const httpServer = await makeHttp();
   const listener = await ngrok.forward({
     addr: httpServer.listenTo,
@@ -257,35 +255,27 @@ test("forward tls listener", async (t) => {
   });
   const url = listener.url();
 
-  t.truthy(url);
+  expect(url).toBeTruthy();
 
-  const error = await t.throwsAsync(
-    async () => {
-      await axios.get(url.replace("tls:", "https:"));
-    },
-    { instanceOf: AxiosError }
-  );
-  t.truthy(error.message.endsWith("signed certificate"), error.message);
+  const error = await expect(axios.get(url.replace("tls:", "https:"))).rejects.toThrow(AxiosError);
+  expect(error.message.endsWith("signed certificate")).toBeTruthy();
   await shutdown(url, httpServer.socket);
 });
 
 // serial to not run into double error on a session issue
-test.serial("forward bad domain", async (t) => {
+test("forward bad domain", async () => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const error = await t.throwsAsync(
-    async () => {
-      await ngrok.forward({ addr: httpServer.listenTo, domain: "1.21 gigawatts" });
-    },
-    { instanceOf: Error }
-  );
-  t.is("ERR_NGROK_326", error.errorCode, error.message);
+  const error = await expect(
+    ngrok.forward({ addr: httpServer.listenTo, domain: "1.21 gigawatts" }),
+  ).rejects.toThrow(Error);
+  expect("ERR_NGROK_326").toBe(error.errorCode);
 
   await shutdown(null, httpServer.socket);
 });
 
 // serial to not run into double error on a session issue
-test.skip("root_cas", async (t) => {
+test.skip("root_cas", async () => {
   // remove any lingering sessions
   await ngrok.disconnect();
 
@@ -293,35 +283,29 @@ test.skip("root_cas", async (t) => {
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
 
   // tls error connecting to marketing site
-  var error = await t.throwsAsync(
-    async () => {
-      await ngrok.forward({
-        addr: httpServer.listenTo,
-        force_new_session: true,
-        root_cas: "trusted",
-        server_addr: "ngrok.com:443",
-      });
-    },
-    { instanceOf: Error }
-  );
-  t.true(error.message.includes("tls handshake"), error.message);
+  var error = await expect(
+    ngrok.forward({
+      addr: httpServer.listenTo,
+      force_new_session: true,
+      root_cas: "trusted",
+      server_addr: "ngrok.com:443",
+    }),
+  ).rejects.toThrow(Error);
+  expect(error.message.includes("tls handshake")).toBe(true);
 
   // non-tls error connecting to marketing site with "host" root_cas
-  error = await t.throwsAsync(
-    async () => {
-      await ngrok.forward({
-        addr: httpServer.listenTo,
-        force_new_session: true,
-        root_cas: "host",
-        server_addr: "ngrok.com:443",
-      });
-    },
-    { instanceOf: Error }
-  );
-  t.false(error.message.includes("tls handshake"), error.message);
+  error = await expect(
+    ngrok.forward({
+      addr: httpServer.listenTo,
+      force_new_session: true,
+      root_cas: "host",
+      server_addr: "ngrok.com:443",
+    }),
+  ).rejects.toThrow(Error);
+  expect(error.message.includes("tls handshake")).toBe(false);
 });
 
-test("policy", async (t) => {
+test("policy", async () => {
   const policy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
 
   const httpServer = await makeHttp();
@@ -333,13 +317,13 @@ test("policy", async (t) => {
   });
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  const response = await validateShutdown(t, httpServer, url);
-  t.is("bar", response.headers["foo"]);
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  const response = await validateShutdown(httpServer, url);
+  expect("bar").toBe(response.headers["foo"]);
 });
 
-test("traffic policy", async (t) => {
+test("traffic policy", async () => {
   const trafficPolicy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
 
   const httpServer = await makeHttp();
@@ -351,8 +335,8 @@ test("traffic policy", async (t) => {
   });
   const url = listener.url();
 
-  t.truthy(url);
-  t.truthy(url.startsWith("https://"), url);
-  const response = await validateShutdown(t, httpServer, url);
-  t.is("bar", response.headers["foo"]);
+  expect(url).toBeTruthy();
+  expect(url.startsWith("https://")).toBeTruthy();
+  const response = await validateShutdown(httpServer, url);
+  expect("bar").toBe(response.headers["foo"]);
 });

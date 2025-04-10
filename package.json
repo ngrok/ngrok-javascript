@@ -34,12 +34,18 @@
   "unused-for-now": "aarch64-pc-windows-msvc",
   "license": "(MIT OR Apache-2.0)",
   "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
     "@napi-rs/cli": "^2.18.4",
     "@types/node": "^22.13.0",
     "ava": "^6.2.0",
     "axios": "^1.8.3",
     "axios-retry": "^4.5.0",
+    "babel-jest": "^29.7.0",
+    "expect": "^29.7.0",
     "express": "^4.21.2",
+    "jest": "^29.7.0",
+    "jest-mock": "^29.7.0",
     "prettier": "^3.5.3",
     "typedoc": "^0.28.0",
     "typescript": "^5.8.2"
@@ -58,7 +64,7 @@
     "docs": "mv trailer.d.ts trailer.d.hidden; mv examples .examples; npx typedoc index.d.ts --navigation.includeGroups; mv .examples examples; mv trailer.d.hidden trailer.d.ts",
     "prepublishOnly": "napi prepublish -t npm",
     "prettier": "prettier --write .",
-    "test": "tsc --strict index.d.ts && ava",
+    "test": "jest",
     "universal": "napi universal",
     "version": "napi version"
   },
@@ -74,5 +80,19 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/ngrok/ngrok-javascript.git"
+  },
+  "jest": {
+    "testMatch": [
+      "**/__test__/**/*.mjs"
+    ],
+    "testPathIgnorePatterns": [
+      "/__test__/retry-config.mjs$"
+    ],
+    "transform": {
+      "^.+\\.(mjs)$": "babel-jest"
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    }
   }
 }
