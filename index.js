@@ -388,9 +388,14 @@ async function ngrokBind(bind) {
 
 /// Begin listening for new connections on this listener and forwarding them to the given server.
 async function listenAndServe(server) {
-  const listener = await this._listen();
-  listener.socket = await ngrokListen(server, listener);
-  return listener;
+  try {
+    const listener = await this._listen();
+    listener.socket = await ngrokListen(server, listener);
+    return listener;
+  } catch (err) {
+    populateErrorCode(err);
+    throw err;
+  }
 }
 
 function populateErrorCode(err) {
@@ -419,7 +424,12 @@ function defineListenerHandle(listener, socket) {
 
 // generate a net.Server listening to a random port
 async function randomTcpSocket() {
-  return await asyncListen(new net.Server(), { host: "localhost", port: 0 });
+  try {
+    return await asyncListen(new net.Server(), { host: "localhost", port: 0 });
+  } catch (err) {
+    populateErrorCode(err);
+    throw err;
+  }
 }
 
 // NodeJS has not promisified 'net': https://github.com/nodejs/node/issues/21482
@@ -439,55 +449,76 @@ function asyncListen(server, options) {
 // Make a session using NGROK_AUTHTOKEN from the environment,
 // and then return a listening HTTP listener.
 async function defaultListener(bind) {
-  // set up a default session and listener
-  var builder = new SessionBuilder();
-  builder.authtokenFromEnv();
-  var session = await builder.connect();
-  var listener = await session.httpEndpoint().listen(bind);
-  listener.session = session; // surface to caller
-  return listener;
+  try {
+    // set up a default session and listener
+    var builder = new SessionBuilder();
+    builder.authtokenFromEnv();
+    var session = await builder.connect();
+    var listener = await session.httpEndpoint().listen(bind);
+    listener.session = session; // surface to caller
+    return listener;
+  } catch (err) {
+    populateErrorCode(err);
+    throw err;
+  }
 }
 
 // Get a listenable ngrok listener, suitable for passing to net.Server.listen().
 // Uses the NGROK_AUTHTOKEN environment variable to authenticate.
 async function listenable() {
-  return await defaultListener();
+  try {
+    return await defaultListener();
+  } catch (err) {
+    populateErrorCode(err);
+    throw err;
+  }
 }
 
 // Bind a server to a new ngrok listener, optionally passing in a pre-existing listener instead.
 // Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new listener is created.
 async function ngrokListen(server, listener) {
-  if (listener && listener.socket) {
-    // close the default bound port
-    listener.socket.close();
-  }
-  if (!listener) {
-    // turn off automatic bind
-    listener = await defaultListener(false);
-  }
-
-  // attempt pipe socket
   try {
-    socket = await ngrokLinkPipe(listener, server);
-  } catch (err) {
-    console.debug("Using TCP socket. " + err);
-    // fallback to tcp socket
-    socket = await ngrokLinkTcp(listener, server);
-  }
-  registerCleanup(listener, socket);
+    if (listener && listener.socket) {
+      // close the default bound port
+      listener.socket.close();
+    }
+    if (!listener) {
+      // turn off automatic bind
+      listener = await defaultListener(false);
+    }
 
-  server.listener = listener; // surface to caller
-  socket.listener = listener; // surface to caller
-  // return the newly created net.Server, which will be different in the express case
-  return socket;
+    // attempt pipe socket
+    let socket;
+    try {
+      socket = await ngrokLinkPipe(listener, server);
+    } catch (err) {
+      console.debug("Using TCP socket. " + err);
+      // fallback to tcp socket
+      socket = await ngrokLinkTcp(listener, server);
+    }
+    registerCleanup(listener, socket);
+
+    server.listener = listener; // surface to caller
+    socket.listener = listener; // surface to caller
+    // return the newly created net.Server, which will be different in the express case
+    return socket;
+  } catch (err) {
+    populateErrorCode(err);
+    throw err;
+  }
 }
 
 async function ngrokLinkTcp(listener, server) {
-  // random local port
-  const socket = await asyncListen(server, { host: "localhost", port: 0 });
-  // forward to socket
-  listener.forward("localhost:" + socket.address().port);
-  return socket;
+  try {
+    // random local port
+    const socket = await asyncListen(server, { host: "localhost", port: 0 });
+    // forward to socket
+    listener.forward("localhost:" + socket.address().port);
+    return socket;
+  } catch (err) {
+    populateErrorCode(err);
+    throw err;
+  }
 }
 
 function generatePipeFilename(listener, server) {
@@ -535,27 +566,32 @@ function generatePipeFilename(listener, server) {
 }
 
 async function ngrokLinkPipe(listener, server) {
-  var filename = generatePipeFilename(listener);
-  // begin listening
-  const socket = await asyncListen(server, { path: filename });
-  // tighten permissions
   try {
-    if (platform != "win32") {
-      fs.chmodSync(filename, fs.constants.S_IRWXU);
+    var filename = generatePipeFilename(listener);
+    // begin listening
+    const socket = await asyncListen(server, { path: filename });
+    // tighten permissions
+    try {
+      if (platform != "win32") {
+        fs.chmodSync(filename, fs.constants.S_IRWXU);
+      }
+    } catch (err) {
+      console.debug("Cannot change permissions of file: " + filename);
     }
-  } catch (err) {
-    console.debug("Cannot change permissions of file: " + filename);
-  }
-  // forward listener
-  var addr = "unix:" + filename;
-  if (platform == "win32") {
-    // convert pipe path to url
-    addr = "pipe:" + filename.replace("\\\\.\\pipe\\", "//./");
-  }
-  listener.forward(addr);
-  socket.path = filename; // surface to caller
+    // forward listener
+    var addr = "unix:" + filename;
+    if (platform == "win32") {
+      // convert pipe path to url
+      addr = "pipe:" + filename.replace("\\\\.\\pipe\\", "//./");
+    }
+    listener.forward(addr);
+    socket.path = filename; // surface to caller
 
-  return socket;
+    return socket;
+  } catch (err) {
+    populateErrorCode(err);
+    throw err;
+  }
 }
 
 // protect against multiple calls, for instance from npm
@@ -595,93 +631,93 @@ function consoleLog(level) {
 // wrap forward with code to vectorize and split out functions
 const _forward = forward;
 async function ngrokForward(config) {
-  if (config == undefined) config = 80;
-  if (Number.isInteger(config) || typeof config === "string" || config instanceof String) {
-    address = String(config);
-    if (Number.isInteger(config) && !address.includes(":")) {
-      address = `localhost:${address}`;
-    }
-    config = { addr: address };
-  }
-  if (typeof config["port"] === "string" || config["port"] instanceof String) {
-    const num = parseInt(config["port"], 10);
-    if (isNaN(num)) {
-      throw new Error(`port must be a number: '${config["port"]}'`);
-    }
-    config["port"] = num;
-  }
-  // Convert addr to string to allow for numeric port numbers
-  const addr = config["addr"];
-  if (Number.isInteger(addr)) config["addr"] = "localhost:" + String(config["addr"]);
-  // convert scalar values to arrays to meet what napi-rs expects
-  [
-    "allow_user_agent",
-    "auth",
-    "basic_auth",
-    "deny_user_agent",
-    "ip_restriction.allow_cidrs",
-    "ip_restriction.deny_cidrs",
-    "labels",
-    "oauth.allow_domains",
-    "oauth.allow_emails",
-    "oauth.scopes",
-    "oidc.scopes",
-    "oidc.allow_domains",
-    "oidc.allow_emails",
-    "request_header.add",
-    "request_header.remove",
-    "response_header.add",
-    "response_header.remove",
-    "schemes",
-  ].forEach((key) => {
-    vectorize(config, key);
-  });
-  // convert dotted values to underscores for backwards compatibility
-  [
-    "ip_restriction.allow_cidrs",
-    "ip_restriction.deny_cidrs",
-    "oauth.allow_domains",
-    "oauth.allow_emails",
-    "oauth.scopes",
-    "oauth.provider",
-    "oidc.client_id",
-    "oidc.client_secret",
-    "oidc.scopes",
-    "oidc.issuer_url",
-    "oidc.allow_domains",
-    "oidc.allow_emails",
-    "request_header.add",
-    "request_header.remove",
-    "response_header.add",
-    "response_header.remove",
-    "verify_webhook.provider",
-    "verify_webhook.secret",
-  ].forEach((key) => {
-    undot(config, key);
-  });
-  // break out the logging callback function to meet what napi-rs expects
-  var on_log_event;
-  if (config["onLogEvent"]) {
-    const onLogEvent = config.onLogEvent;
-    on_log_event = (level, target, message) => {
-      onLogEvent(`${level} ${target} - ${message}`);
-    };
-    config["onLogEvent"] = true;
-  }
-  // break out the status change callback functions to what napi-rs expects
-  var on_connection, on_disconnection;
-  if (config["onStatusChange"]) {
-    const onStatusChange = config.onStatusChange;
-    on_connection = (status, err) => {
-      onStatusChange(status);
-    };
-    on_disconnection = (addr, err) => {
-      onStatusChange("closed");
-    };
-    config["onStatusChange"] = true;
-  }
-  // call into rust
   try {
+    if (config == undefined) config = 80;
+    if (Number.isInteger(config) || typeof config === "string" || config instanceof String) {
+      address = String(config);
+      if (Number.isInteger(config) && !address.includes(":")) {
+        address = `localhost:${address}`;
+      }
+      config = { addr: address };
+    }
+    if (typeof config["port"] === "string" || config["port"] instanceof String) {
+      const num = parseInt(config["port"], 10);
+      if (isNaN(num)) {
+        throw new Error(`port must be a number: '${config["port"]}'`);
+      }
+      config["port"] = num;
+    }
+    // Convert addr to string to allow for numeric port numbers
+    const addr = config["addr"];
+    if (Number.isInteger(addr)) config["addr"] = "localhost:" + String(config["addr"]);
+    // convert scalar values to arrays to meet what napi-rs expects
+    [
+      "allow_user_agent",
+      "auth",
+      "basic_auth",
+      "deny_user_agent",
+      "ip_restriction.allow_cidrs",
+      "ip_restriction.deny_cidrs",
+      "labels",
+      "oauth.allow_domains",
+      "oauth.allow_emails",
+      "oauth.scopes",
+      "oidc.scopes",
+      "oidc.allow_domains",
+      "oidc.allow_emails",
+      "request_header.add",
+      "request_header.remove",
+      "response_header.add",
+      "response_header.remove",
+      "schemes",
+    ].forEach((key) => {
+      vectorize(config, key);
+    });
+    // convert dotted values to underscores for backwards compatibility
+    [
+      "ip_restriction.allow_cidrs",
+      "ip_restriction.deny_cidrs",
+      "oauth.allow_domains",
+      "oauth.allow_emails",
+      "oauth.scopes",
+      "oauth.provider",
+      "oidc.client_id",
+      "oidc.client_secret",
+      "oidc.scopes",
+      "oidc.issuer_url",
+      "oidc.allow_domains",
+      "oidc.allow_emails",
+      "request_header.add",
+      "request_header.remove",
+      "response_header.add",
+      "response_header.remove",
+      "verify_webhook.provider",
+      "verify_webhook.secret",
+    ].forEach((key) => {
+      undot(config, key);
+    });
+    // break out the logging callback function to meet what napi-rs expects
+    var on_log_event;
+    if (config["onLogEvent"]) {
+      const onLogEvent = config.onLogEvent;
+      on_log_event = (level, target, message) => {
+        onLogEvent(`${level} ${target} - ${message}`);
+      };
+      config["onLogEvent"] = true;
+    }
+    // break out the status change callback functions to what napi-rs expects
+    var on_connection, on_disconnection;
+    if (config["onStatusChange"]) {
+      const onStatusChange = config.onStatusChange;
+      on_connection = (status, err) => {
+        onStatusChange(status);
+      };
+      on_disconnection = (addr, err) => {
+        onStatusChange("closed");
+      };
+      config["onStatusChange"] = true;
+    }
+    // call into rust
     return await _forward(config, on_log_event, on_connection, on_disconnection);
   } catch (err) {
     populateErrorCode(err);

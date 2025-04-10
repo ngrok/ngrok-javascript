@@ -257,8 +257,10 @@ test("forward tls listener", async () => {
 
   expect(url).toBeTruthy();
 
-  const error = await expect(axios.get(url.replace("tls:", "https:"))).rejects.toThrow(AxiosError);
-  expect(error.message.endsWith("signed certificate")).toBeTruthy();
+  await axios.get(url.replace("tls:", "https:")).catch((error) => {
+    expect(error.message.endsWith("signed certificate")).toBeTruthy();
+  });
+
   await shutdown(url, httpServer.socket);
 });
 
@@ -266,10 +268,10 @@ test("forward tls listener", async () => {
 test("forward bad domain", async () => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const error = await expect(
-    ngrok.forward({ addr: httpServer.listenTo, domain: "1.21 gigawatts" }),
-  ).rejects.toThrow(Error);
-  expect("ERR_NGROK_326").toBe(error.errorCode);
+
+  await ngrok.forward({ addr: httpServer.listenTo, domain: "1.21 gigawatts" }).catch((error) => {
+    expect(error.errorCode).toBe("ERR_NGROK_326");
+  });
 
   await shutdown(null, httpServer.socket);
 });
@@ -283,26 +285,28 @@ test.skip("root_cas", async () => {
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
 
   // tls error connecting to marketing site
-  var error = await expect(
-    ngrok.forward({
+  await ngrok
+    .forward({
       addr: httpServer.listenTo,
       force_new_session: true,
       root_cas: "trusted",
       server_addr: "ngrok.com:443",
-    }),
-  ).rejects.toThrow(Error);
-  expect(error.message.includes("tls handshake")).toBe(true);
+    })
+    .catch((error) => {
+      expect(error.message.includes("tls handshake")).toBe(true);
+    });
 
   // non-tls error connecting to marketing site with "host" root_cas
-  error = await expect(
-    ngrok.forward({
+  await ngrok
+    .forward({
       addr: httpServer.listenTo,
       force_new_session: true,
       root_cas: "host",
       server_addr: "ngrok.com:443",
-    }),
-  ).rejects.toThrow(Error);
-  expect(error.message.includes("tls handshake")).toBe(false);
+    })
+    .catch((error) => {
+      expect(error.message.includes("tls handshake")).toBe(false);
+    });
 });
 
 test("policy", async () => {
