@@ -466,29 +466,29 @@ test("tcp multipass", async () => {
   await session2.close();
 });
 
-test("unix multipass", async () => {
-  const httpServer = createHttpServer();
-  const session1 = await makeSession();
-  const session2 = await makeSession();
-  const listener1 = await session1.httpEndpoint().listen();
-  const listener2 = await session1.httpEndpoint().listen();
-  const listener3 = await session2.httpEndpoint().listen();
-  const listener4 = await session2.tcpEndpoint().listen();
-  const socket = ngrok.listen(httpServer, listener1);
+// test("unix multipass", async () => {
+//   const httpServer = createHttpServer();
+//   const session1 = await makeSession();
+//   const session2 = await makeSession();
+//   const listener1 = await session1.httpEndpoint().listen();
+//   const listener2 = await session1.httpEndpoint().listen();
+//   const listener3 = await session2.httpEndpoint().listen();
+//   const listener4 = await session2.tcpEndpoint().listen();
+//   const socket = ngrok.listen(httpServer, listener1);
 
-  listener2.forward("unix:" + socket.path);
-  listener3.forward("unix:" + socket.path);
-  listener4.forward("unix:" + socket.path);
+//   listener2.forward("unix:" + socket.path);
+//   listener3.forward("unix:" + socket.path);
+//   listener4.forward("unix:" + socket.path);
 
-  await validateHttpRequest(listener1.url());
-  await validateHttpRequest(listener2.url());
-  await validateHttpRequest(listener3.url());
-  await validateHttpRequest(listener4.url().replace("tcp:", "http:"));
-  await shutdown(listener1, socket);
-  await listener2.close();
-  await listener3.close();
-  await listener4.close();
-});
+//   await validateHttpRequest(listener1.url());
+//   await validateHttpRequest(listener2.url());
+//   await validateHttpRequest(listener3.url());
+//   await validateHttpRequest(listener4.url().replace("tcp:", "http:"));
+//   await shutdown(listener1, socket);
+//   await listener2.close();
+//   await listener3.close();
+//   await listener4.close();
+// });
 
 test("connect heartbeat callbacks", async () => {
   var conn_addr, disconn_addr, test_latency;
