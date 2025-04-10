@@ -178,7 +178,7 @@ jobs:
             yarn install
             yarn build
             strip -x *.node
-            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -m smoke
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
             rm -rf examples
             rm -rf node.core
             rm -rf node_modules
@@ -231,7 +231,7 @@ jobs:
         env:
           NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
         run: |
-          yarn test -m smoke
+          yarn test -t smoke
 
   test-linux-x64-gnu-binding:
     name: Test bindings on Linux-x64-gnu - node@${{ matrix.node }}
@@ -267,7 +267,7 @@ jobs:
         shell: bash
 
       - name: Test bindings
-        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test -m smoke
+        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test -t smoke
 
       - name: Full Test Suite
         # run full suite of online tests
@@ -310,7 +310,7 @@ jobs:
         shell: bash
 
       - name: Test bindings
-        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -m smoke
+        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -t smoke
 
   test-linux-aarch64-gnu-binding:
     if: github.ref == 'refs/heads/main'
@@ -356,7 +356,7 @@ jobs:
           options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
           run: |
             set -e
-            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -m smoke
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
             ls -la
 
   test-linux-aarch64-musl-binding:
@@ -403,7 +403,7 @@ jobs:
           options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
           run: |
             set -e
-            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -m smoke
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
 
   test-linux-arm-gnueabihf-binding:
     if: github.ref == 'refs/heads/main'
@@ -448,7 +448,7 @@ jobs:
           options: '--platform linux/arm/v7 -v ${{ github.workspace }}:/build -w /build'
           run: |
             set -e
-            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -m smoke
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
             ls -la
 
   universal-macOS:
