@@ -155,12 +155,13 @@ jobs:
           usesh: true
           mem: 3000
           prepare: |
-            pkg install -y -f curl node libnghttp2 cmake llvm-compiler
+            pkg install -y -f curl node libnghttp2 cmake llvm
             alias curl="curl --retry 5 --retry-all-errors"
             curl -qL https://www.npmjs.com/install.sh | sh
             npm install --location=global --ignore-scripts yarn
             curl https://sh.rustup.rs -sSf --output rustup.sh
             sh rustup.sh -y --profile minimal --default-toolchain beta
+            export LIBCLANG_PATH=/usr/local/lib
             export PATH="/usr/local/cargo/bin:$PATH"
             echo "~~~~ rustc --version ~~~~"
             rustc --version
