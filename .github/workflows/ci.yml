@@ -52,89 +52,89 @@ jobs:
         with:
           command: clippy
           args: '--all-targets --all-features --workspace -- -D warnings'
-  # build:
-  #   uses: ./.github/workflows/build.yml
-  #   with:
-  #     app-name: ngrok
-  #     build: ${{ matrix.settings.build }}
-  #     docker: ${{ matrix.settings.docker }}
-  #     host: ${{ matrix.settings.host }}
-  #     if: ${{ matrix.settings.if || true }}
-  #     setup: ${{ matrix.settings.setup }}
-  #     target: ${{ matrix.settings.target }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       settings:
-  #         - host: macos-latest
-  #           target: x86_64-apple-darwin
-  #           build: yarn build
-  #         - host: windows-latest
-  #           build: yarn build
-  #           target: x86_64-pc-windows-msvc
-  #         - host: windows-latest
-  #           build: |
-  #             yarn build --target i686-pc-windows-msvc
-  #           target: i686-pc-windows-msvc
-  #         - host: ubuntu-latest
-  #           target: x86_64-unknown-linux-gnu
-  #           docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-  #           build: yarn build --target x86_64-unknown-linux-gnu
-  #         - host: ubuntu-latest
-  #           target: x86_64-unknown-linux-musl
-  #           if: ${{ github.ref == 'refs/heads/main' }}
-  #           docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-  #           build: |
-  #             sudo apt-get update &&
-  #             sudo apt-get install -y musl-tools musl-dev gcc-multilib libclang-dev &&
-  #             rustup target add x86_64-unknown-linux-musl &&
-  #             export CC="clang" &&
-  #             export CXX="clang++" &&
-  #             yarn build --target x86_64-unknown-linux-musl
-  #         - host: macos-latest
-  #           target: aarch64-apple-darwin
-  #           if: ${{ github.ref == 'refs/heads/main' }}
-  #           build: yarn build --target aarch64-apple-darwin
-  #         - host: ubuntu-latest
-  #           target: aarch64-unknown-linux-gnu
-  #           if: ${{ github.ref == 'refs/heads/main' }}
-  #           docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
-  #           build: |
-  #             sudo apt-get update
-  #             sudo apt-get install -y gcc-aarch64-linux-gnu 
-  #             export CFLAGS="$CFLAGS -D__GLIBC_USE(IEC_60559_BFP_EXT_C2X)=1" &&
-  #             yarn build --target aarch64-unknown-linux-gnu
-  #         - host: ubuntu-latest
-  #           target: armv7-unknown-linux-gnueabihf
-  #           if: ${{ github.ref == 'refs/heads/main' }}
-  #           setup: |
-  #             sudo apt-get update
-  #             sudo apt-get install gcc-arm-linux-gnueabihf -y
-  #           build: yarn build --target=armv7-unknown-linux-gnueabihf
-  #         - host: ubuntu-latest
-  #           target: aarch64-linux-android
-  #           if: ${{ github.ref == 'refs/heads/main' }}
-  #           build: yarn build --target aarch64-linux-android
-  #         # - host: ubuntu-latest
-  #         #   target: armv7-linux-androideabi
-  #         #   if: false
-  #         #   build: |
-  #         #     yarn build --target armv7-linux-androideabi
-  #         - host: ubuntu-latest
-  #           target: aarch64-unknown-linux-musl
-  #           if: ${{ github.ref == 'refs/heads/main' }}
-  #           docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-  #           build: |
-  #             apk add clang18 llvm18
-  #             ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
-  #             rustup target add aarch64-unknown-linux-musl
-  #             export CC_aarch64_unknown_linux_musl=aarch64-linux-musl-gcc
-  #             export CXX_aarch64_unknown_linux_musl=aarch64-linux-musl-g++
-  #             export AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar
-  #             yarn build --target aarch64-unknown-linux-musl
-  #         - host: windows-latest
-  #           target: aarch64-pc-windows-msvc
-  #           build: yarn build --target aarch64-pc-windows-msvc
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      app-name: ngrok
+      build: ${{ matrix.settings.build }}
+      docker: ${{ matrix.settings.docker }}
+      host: ${{ matrix.settings.host }}
+      if: ${{ matrix.settings.if || true }}
+      setup: ${{ matrix.settings.setup }}
+      target: ${{ matrix.settings.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-latest
+            target: x86_64-apple-darwin
+            build: yarn build
+          - host: windows-latest
+            build: yarn build
+            target: x86_64-pc-windows-msvc
+          - host: windows-latest
+            build: |
+              yarn build --target i686-pc-windows-msvc
+            target: i686-pc-windows-msvc
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            build: yarn build --target x86_64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            if: ${{ github.ref == 'refs/heads/main' }}
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            build: |
+              sudo apt-get update &&
+              sudo apt-get install -y musl-tools musl-dev gcc-multilib libclang-dev &&
+              rustup target add x86_64-unknown-linux-musl &&
+              export CC="clang" &&
+              export CXX="clang++" &&
+              yarn build --target x86_64-unknown-linux-musl
+          - host: macos-latest
+            target: aarch64-apple-darwin
+            if: ${{ github.ref == 'refs/heads/main' }}
+            build: yarn build --target aarch64-apple-darwin
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            if: ${{ github.ref == 'refs/heads/main' }}
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+            build: |
+              sudo apt-get update
+              sudo apt-get install -y gcc-aarch64-linux-gnu 
+              export CFLAGS="$CFLAGS -D__GLIBC_USE(IEC_60559_BFP_EXT_C2X)=1" &&
+              yarn build --target aarch64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            if: ${{ github.ref == 'refs/heads/main' }}
+            setup: |
+              sudo apt-get update
+              sudo apt-get install gcc-arm-linux-gnueabihf -y
+            build: yarn build --target=armv7-unknown-linux-gnueabihf
+          - host: ubuntu-latest
+            target: aarch64-linux-android
+            if: ${{ github.ref == 'refs/heads/main' }}
+            build: yarn build --target aarch64-linux-android
+          # - host: ubuntu-latest
+          #   target: armv7-linux-androideabi
+          #   if: false
+          #   build: |
+          #     yarn build --target armv7-linux-androideabi
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            if: ${{ github.ref == 'refs/heads/main' }}
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            build: |
+              apk add clang18 llvm18
+              ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
+              rustup target add aarch64-unknown-linux-musl
+              export CC_aarch64_unknown_linux_musl=aarch64-linux-musl-gcc
+              export CXX_aarch64_unknown_linux_musl=aarch64-linux-musl-g++
+              export AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar
+              yarn build --target aarch64-unknown-linux-musl
+          - host: windows-latest
+            target: aarch64-pc-windows-msvc
+            build: yarn build --target aarch64-pc-windows-msvc
   build-freebsd:
     if: true
     runs-on: ubuntu-22.04
@@ -155,7 +155,7 @@ jobs:
           usesh: true
           mem: 3000
           prepare: |
-            pkg install -y -f curl node libnghttp2 cmake
+            pkg install -y -f curl node libnghttp2 cmake lang/gcc
             alias curl="curl --retry 5 --retry-all-errors"
             curl -qL https://www.npmjs.com/install.sh | sh
             npm install --location=global --ignore-scripts yarn
@@ -190,311 +190,306 @@ jobs:
           name: bindings-freebsd
           path: ${{ env.APP_NAME }}.*.node
           if-no-files-found: error
-  # test-macOS-windows-binding:
-  #   name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
-  #   needs:
-  #     - build
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       settings:
-  #         - host: macos-latest
-  #           target: x86_64-apple-darwin
-  #         - host: windows-latest
-  #           target: x86_64-pc-windows-msvc
-  #       node:
-  #         - '18'
-  #   runs-on: ${{ matrix.settings.host }}
-  #   steps:
-  #     - uses: actions/checkout@v4
+  test-macOS-windows-binding:
+    name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-latest
+            target: x86_64-apple-darwin
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+        node:
+          - '18'
+    runs-on: ${{ matrix.settings.host }}
+    steps:
+      - uses: actions/checkout@v4
       
-  #     - name: Setup node
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 18
-  #         cache: yarn
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: yarn
 
-  #     - name: Install dependencies
-  #       run: yarn install
+      - name: Install dependencies
+        run: yarn install
 
-  #     - name: Download artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: bindings-${{ matrix.settings.target }}
-  #         path: .
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: .
 
-  #     - name: List packages
-  #       run: ls -R .
-  #       shell: bash
+      - name: List packages
+        run: ls -R .
+        shell: bash
 
-  #     - name: Test bindings
-  #       env:
-  #         NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
-  #       run: |
-  #         yarn test -t smoke
+      - name: Test bindings
+        env:
+          NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        run: |
+          yarn test -t smoke
 
-  # test-linux-x64-gnu-binding:
-  #   name: Test bindings on Linux-x64-gnu - node@${{ matrix.node }}
-  #   needs:
-  #     - build
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       node:
-  #         - '18'
-  #   runs-on: ubuntu-latest
+  test-linux-x64-gnu-binding:
+    name: Test bindings on Linux-x64-gnu - node@${{ matrix.node }}
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - '18'
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Setup node
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #         cache: yarn
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: yarn
 
-  #     - name: Install dependencies
-  #       run: yarn install
+      - name: Install dependencies
+        run: yarn install
 
-  #     - name: Download artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: bindings-x86_64-unknown-linux-gnu
-  #         path: .
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-x86_64-unknown-linux-gnu
+          path: .
 
-  #     - name: List packages
-  #       run: ls -R .
-  #       shell: bash
+      - name: List packages
+        run: ls -R .
+        shell: bash
 
-  #     - name: Test bindings
-  #       run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test -t smoke
+      - name: Test bindings
+        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test -t smoke
 
-  #     - name: Full Test Suite
-  #       # run full suite of online tests
-  #       run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
+      - name: Full Test Suite
+        # run full suite of online tests
+        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
 
-  # test-linux-x64-musl-binding:
-  #   if: github.ref == 'refs/heads/main'
-  #   name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
-  #   needs:
-  #     - build
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       node:
-  #         - '18'
-  #   runs-on: ubuntu-latest
+  test-linux-x64-musl-binding:
+    name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - '18'
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Setup node
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #         cache: yarn
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: yarn
 
-  #     - name: Install dependencies
-  #       run: |
-  #         yarn config set supportedArchitectures.libc "musl"
-  #         yarn install
+      - name: Install dependencies
+        run: |
+          yarn config set supportedArchitectures.libc "musl"
+          yarn install
 
-  #     - name: Download artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: bindings-x86_64-unknown-linux-musl
-  #         path: .
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-x86_64-unknown-linux-musl
+          path: .
 
-  #     - name: List packages
-  #       run: ls -R .
-  #       shell: bash
+      - name: List packages
+        run: ls -R .
+        shell: bash
 
-  #     - name: Test bindings
-  #       run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -t smoke
+      - name: Test bindings
+        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -t smoke
 
-  # test-linux-aarch64-gnu-binding:
-  #   if: github.ref == 'refs/heads/main'
-  #   name: Test bindings on aarch64-unknown-linux-gnu - node@${{ matrix.node }}
-  #   needs:
-  #     - build
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       node:
-  #         - '18'
-  #   runs-on: ubuntu-latest
+  test-linux-aarch64-gnu-binding:
+    name: Test bindings on aarch64-unknown-linux-gnu - node@${{ matrix.node }}
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - '18'
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Download artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: bindings-aarch64-unknown-linux-gnu
-  #         path: .
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-aarch64-unknown-linux-gnu
+          path: .
 
-  #     - name: List packages
-  #       run: ls -R .
-  #       shell: bash
+      - name: List packages
+        run: ls -R .
+        shell: bash
 
-  #     - name: Install dependencies
-  #       run: |
-  #         yarn config set supportedArchitectures.cpu "arm64"
-  #         yarn config set supportedArchitectures.libc "glibc"
-  #         yarn install
+      - name: Install dependencies
+        run: |
+          yarn config set supportedArchitectures.cpu "arm64"
+          yarn config set supportedArchitectures.libc "glibc"
+          yarn install
 
-  #     - name: Set up QEMU
-  #       uses: docker/setup-qemu-action@v3
-  #       with:
-  #         platforms: arm64
-  #     - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
      
-  #     - name: Setup and run tests
-  #       uses: addnab/docker-run-action@v3
-  #       with:
-  #         image: node:${{ matrix.node }}-slim
-  #         options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
-  #         run: |
-  #           set -e
-  #           NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
-  #           ls -la
+      - name: Setup and run tests
+        uses: addnab/docker-run-action@v3
+        with:
+          image: node:${{ matrix.node }}-slim
+          options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
+          run: |
+            set -e
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
+            ls -la
 
-  # test-linux-aarch64-musl-binding:
-  #   if: github.ref == 'refs/heads/main'
-  #   name: Test bindings on aarch64-unknown-linux-musl - node@${{ matrix.node }}
-  #   needs:
-  #     - build
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       node:
-  #         - '18'
-  #   runs-on: ubuntu-latest
+  test-linux-aarch64-musl-binding:
+    name: Test bindings on aarch64-unknown-linux-musl - node@${{ matrix.node }}
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - '18'
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Download artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: bindings-aarch64-unknown-linux-musl
-  #         path: .
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-aarch64-unknown-linux-musl
+          path: .
       
-  #     - name: List packages
-  #       run: ls -R .
-  #       shell: bash
+      - name: List packages
+        run: ls -R .
+        shell: bash
 
-  #     - name: Install dependencies
-  #       run: |
-  #         yarn config set supportedArchitectures.cpu "arm64"
-  #         yarn config set supportedArchitectures.libc "musl"
-  #         yarn install
+      - name: Install dependencies
+        run: |
+          yarn config set supportedArchitectures.cpu "arm64"
+          yarn config set supportedArchitectures.libc "musl"
+          yarn install
 
-  #     - name: Set up QEMU
-  #       uses: docker/setup-qemu-action@v3
-  #       with:
-  #         platforms: arm64
-  #     - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
       
-  #     - name: Setup and run tests
-  #       uses: addnab/docker-run-action@v3
-  #       with:
-  #         image: node:lts-alpine
-  #         options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
-  #         run: |
-  #           set -e
-  #           NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
+      - name: Setup and run tests
+        uses: addnab/docker-run-action@v3
+        with:
+          image: node:lts-alpine
+          options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
+          run: |
+            set -e
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
 
-  # test-linux-arm-gnueabihf-binding:
-  #   if: github.ref == 'refs/heads/main'
-  #   name: Test bindings on armv7-unknown-linux-gnueabihf - node@${{ matrix.node }}
-  #   needs:
-  #     - build
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       node:
-  #         - '18'
-  #   runs-on: ubuntu-latest
+  test-linux-arm-gnueabihf-binding:
+    name: Test bindings on armv7-unknown-linux-gnueabihf - node@${{ matrix.node }}
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - '18'
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Download artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: bindings-armv7-unknown-linux-gnueabihf
-  #         path: .
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-armv7-unknown-linux-gnueabihf
+          path: .
 
-  #     - name: List packages
-  #       run: ls -R .
-  #       shell: bash
+      - name: List packages
+        run: ls -R .
+        shell: bash
 
-  #     - name: Install dependencies
-  #       run: |
-  #         yarn config set supportedArchitectures.cpu "arm"
-  #         yarn install
+      - name: Install dependencies
+        run: |
+          yarn config set supportedArchitectures.cpu "arm"
+          yarn install
 
-  #     - name: Set up QEMU
-  #       uses: docker/setup-qemu-action@v3
-  #       with:
-  #         platforms: arm
-  #     - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
+      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
       
-  #     - name: Setup and run tests
-  #       uses: addnab/docker-run-action@v3
-  #       with:
-  #         image: node:${{matrix.node}}-bullseye-slim
-  #         options: '--platform linux/arm/v7 -v ${{ github.workspace }}:/build -w /build'
-  #         run: |
-  #           set -e
-  #           NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
-  #           ls -la
+      - name: Setup and run tests
+        uses: addnab/docker-run-action@v3
+        with:
+          image: node:${{matrix.node}}-bullseye-slim
+          options: '--platform linux/arm/v7 -v ${{ github.workspace }}:/build -w /build'
+          run: |
+            set -e
+            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
+            ls -la
 
-  # universal-macOS:
-  #   if: github.ref == 'refs/heads/main'
-  #   name: Build universal macOS binary
-  #   needs:
-  #     - build
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       node:
-  #         - '18'
-  #   runs-on: macos-latest
+  universal-macOS:
+    name: Build universal macOS binary
+    needs:
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - '18'
+    runs-on: macos-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Setup node
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 18
-  #         cache: yarn
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: yarn
 
-  #     - name: Install dependencies
-  #       run: yarn install
+      - name: Install dependencies
+        run: yarn install
         
-  #     - name: Download macOS x64 artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: bindings-x86_64-apple-darwin
-  #         path: artifacts
-  #     - name: Download macOS arm64 artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: bindings-aarch64-apple-darwin
-  #         path: artifacts
+      - name: Download macOS x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-x86_64-apple-darwin
+          path: artifacts
+      - name: Download macOS arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-aarch64-apple-darwin
+          path: artifacts
 
-  #     - name: Combine binaries
-  #       run: yarn universal
+      - name: Combine binaries
+        run: yarn universal
 
-  #     - name: Upload artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: bindings-universal-apple-darwin
-  #         path: ${{ env.APP_NAME }}.*.node
-  #         if-no-files-found: error
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-universal-apple-darwin
+          path: ${{ env.APP_NAME }}.*.node
+          if-no-files-found: error
 
   # publish:
   #   if: github.ref == 'refs/heads/main' && github.repository == 'ngrok/ngrok-javascript'
