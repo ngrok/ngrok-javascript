@@ -30,14 +30,15 @@ jobs:
     name: stable - ${{ inputs.target }} - node@18
     runs-on: ${{ inputs.host }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Setup node
         uses: actions/setup-node@v4
         if: ${{ !inputs.docker }}
         with:
           node-version: 18
           cache: yarn
-      - name: Install
+      - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
         if: ${{ !inputs.docker }}
         with:
@@ -53,19 +54,26 @@ jobs:
             .cargo-cache
             target/
           key: ${{ inputs.target }}-cargo-${{ inputs.host }}
-      - uses: mlugg/setup-zig@v1
+      - name: Install Bindgen
+        run: |
+          cargo install --force --locked bindgen-cli
+      - name: Install zig
+        uses: mlugg/setup-zig@v1
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
           version: 0.10.0
-      - name: Setup toolchain
+      - name: Setup build toolchain
         run: ${{ inputs.setup }}
         if: ${{ inputs.setup }}
         shell: bash
+      - name: Install nasm
+        uses: ilammy/setup-nasm@v1
+        if: inputs.target == 'i686-pc-windows-msvc'
       - name: Setup node x86
         if: inputs.target == 'i686-pc-windows-msvc'
         run: yarn config set supportedArchitectures.cpu "ia32"
         shell: bash
-      - name: Install dependencies
+      - name: Install js dependencies
         run: yarn install
       - name: Setup node x86
         uses: actions/setup-node@v4
@@ -76,7 +84,7 @@ jobs:
           architecture: x86
       - name: Build in docker
         uses: addnab/docker-run-action@v3
-        if: ${{ inputs.docker }}
+        if: ${{ inputs.docker}}
         with:
           image: ${{ inputs.docker }}
           options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
@@ -84,8 +92,7 @@ jobs:
       - name: Build
         run: ${{ inputs.build }}
         if: ${{ !inputs.docker }}
-        shell: bash
-      - name: Upload artifact
+      - name: Upload bindings artifact
         uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ inputs.target }}

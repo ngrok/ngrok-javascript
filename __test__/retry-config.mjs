@@ -2,7 +2,6 @@
 export const retryConfig = {
   retries: 3, // number of retries
   retryDelay: (retryCount) => {
-    console.log(`axios retry attempt: ${retryCount}`);
     return retryCount * 2000; // time interval between retries
   },
   retryCondition: (error) => {
