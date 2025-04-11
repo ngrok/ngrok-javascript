@@ -191,7 +191,8 @@ jobs:
           name: bindings-freebsd
           path: ${{ env.APP_NAME }}.*.node
           if-no-files-found: error
-  test-macOS-windows-binding:
+
+  test-windows-msvc-binding:
     if: true
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
     needs:
@@ -200,40 +201,49 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          - host: macos-latest
-            target: x86_64-apple-darwin
           - host: windows-latest
             target: x86_64-pc-windows-msvc
+          - host: windows-latest
+            target: i686-pc-windows-msvc
         node:
           - '18'
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup node
+      - name: Setup node x86_64
         uses: actions/setup-node@v4
+        if: matrix.settings.target == 'x86_64-pc-windows-msvc'
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+          cache: yarn
+      - name: Setup node x86
+        uses: actions/setup-node@v4
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
           node-version: 18
+          check-latest: true
           cache: yarn
-
+          architecture: x86
+      - name: yarn config x86
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
+        run: yarn config set supportedArchitectures.cpu "ia32"
+        shell: bash
       - name: Install dependencies
         run: yarn install
-
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
           path: .
-
       - name: List packages
         run: ls -R .
         shell: bash
-
       - name: Test bindings
         env:
           NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
         run: |
-          yarn test -t smoke
+          yarn test -m smoke
 
   test-linux-x64-gnu-binding:
     if: true
@@ -465,7 +475,6 @@ jobs:
         node:
           - '18'
     runs-on: macos-latest
-
     steps:
       - uses: actions/checkout@v4
 
