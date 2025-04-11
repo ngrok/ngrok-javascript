@@ -311,6 +311,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          yarn config set supportedArchitectures.cpu "x64"
           yarn config set supportedArchitectures.libc "musl"
           yarn install
 
@@ -325,7 +326,7 @@ jobs:
         shell: bash
 
       - name: Test bindings
-        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -t smoke
+        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-debian yarn test -t smoke
 
   test-linux-aarch64-gnu-binding:
     if: true
