@@ -68,7 +68,9 @@ jobs:
         settings:
           - host: macos-latest
             target: x86_64-apple-darwin
-            build: yarn build
+            build: |
+              rustup target add x86_64-apple-darwin
+              yarn build --target x86_64-apple-darwin
           - host: windows-latest
             build: yarn build
             target: x86_64-pc-windows-msvc
@@ -243,7 +245,7 @@ jobs:
         env:
           NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
         run: |
-          yarn test -m smoke
+          yarn test -t smoke
 
   test-linux-x64-gnu-binding:
     if: true
