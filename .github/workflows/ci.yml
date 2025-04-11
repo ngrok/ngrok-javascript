@@ -155,7 +155,7 @@ jobs:
           usesh: true
           mem: 3000
           prepare: |
-            pkg install -y -f curl node libnghttp2 cmake lang/gcc
+            pkg install -y -f curl node libnghttp2 cmake lang/gcc aarch64-gcc14-14.1.0
             alias curl="curl --retry 5 --retry-all-errors"
             curl -qL https://www.npmjs.com/install.sh | sh
             npm install --location=global --ignore-scripts yarn
