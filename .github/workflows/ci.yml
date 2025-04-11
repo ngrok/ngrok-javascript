@@ -155,7 +155,7 @@ jobs:
           usesh: true
           mem: 3000
           prepare: |
-            pkg install -y -f curl node libnghttp2 cmake lang/gcc aarch64-gcc14-14.1.0
+            pkg install -y -f curl node libnghttp2 cmake llvm-compiler
             alias curl="curl --retry 5 --retry-all-errors"
             curl -qL https://www.npmjs.com/install.sh | sh
             npm install --location=global --ignore-scripts yarn
@@ -191,6 +191,7 @@ jobs:
           path: ${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   test-macOS-windows-binding:
+    if: true
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
     needs:
       - build
@@ -234,6 +235,7 @@ jobs:
           yarn test -t smoke
 
   test-linux-x64-gnu-binding:
+    if: true
     name: Test bindings on Linux-x64-gnu - node@${{ matrix.node }}
     needs:
       - build
@@ -274,6 +276,7 @@ jobs:
         run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
 
   test-linux-x64-musl-binding:
+    if: true
     name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
@@ -312,6 +315,7 @@ jobs:
         run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -t smoke
 
   test-linux-aarch64-gnu-binding:
+    if: true
     name: Test bindings on aarch64-unknown-linux-gnu - node@${{ matrix.node }}
     needs:
       - build
@@ -358,6 +362,7 @@ jobs:
             ls -la
 
   test-linux-aarch64-musl-binding:
+    if: true
     name: Test bindings on aarch64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
@@ -403,6 +408,7 @@ jobs:
             NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
 
   test-linux-arm-gnueabihf-binding:
+    if: true
     name: Test bindings on armv7-unknown-linux-gnueabihf - node@${{ matrix.node }}
     needs:
       - build
@@ -448,6 +454,7 @@ jobs:
             ls -la
 
   universal-macOS:
+    if: true
     name: Build universal macOS binary
     needs:
       - build
