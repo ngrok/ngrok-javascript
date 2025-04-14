@@ -20,6 +20,7 @@
       "additional": [
         "aarch64-apple-darwin",
         "aarch64-linux-android",
+        "aarch64-pc-windows-msvc",
         "aarch64-unknown-linux-gnu",
         "aarch64-unknown-linux-musl",
         "armv7-unknown-linux-gnueabihf",
@@ -31,7 +32,6 @@
       ]
     }
   },
-  "unused-for-now": "aarch64-pc-windows-msvc",
   "license": "(MIT OR Apache-2.0)",
   "devDependencies": {
     "@babel/core": "^7.26.10",
