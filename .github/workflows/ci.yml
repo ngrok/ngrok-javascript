@@ -68,7 +68,9 @@ jobs:
         settings:
           - host: macos-latest
             target: x86_64-apple-darwin
-            build: yarn build
+            build: |
+              rustup target add x86_64-apple-darwin
+              yarn build --target x86_64-apple-darwin
           - host: windows-latest
             build: yarn build
             target: x86_64-pc-windows-msvc
@@ -83,13 +85,14 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             if: ${{ github.ref == 'refs/heads/main' }}
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |
-              sudo apt-get update &&
-              sudo apt-get install -y musl-tools musl-dev gcc-multilib libclang-dev &&
-              rustup target add x86_64-unknown-linux-musl &&
-              export CC="clang" &&
-              export CXX="clang++" &&
+              apk add musl-dev gcc make cmake clang llvm build-base
+              rustup target add x86_64-unknown-linux-musl
+              export CARGO_BUILD_TARGET="x86_64-unknown-linux-musl"
+              ln -s /usr/lib/gcc/x86_64-alpine-linux-musl/14.2.0/crtbeginS.o /usr/lib
+              ln -s /usr/lib/gcc/x86_64-alpine-linux-musl/14.2.0/crtendS.o /usr/lib
+              ln -s /usr/lib/gcc/x86_64-alpine-linux-musl/14.2.0/libgcc.a /usr/lib
               yarn build --target x86_64-unknown-linux-musl
           - host: macos-latest
             target: aarch64-apple-darwin
@@ -136,7 +139,7 @@ jobs:
             target: aarch64-pc-windows-msvc
             build: yarn build --target aarch64-pc-windows-msvc
   build-freebsd:
-    if: github.ref == 'refs/heads/main'
+    if: true
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     name: Build FreeBSD
@@ -155,12 +158,13 @@ jobs:
           usesh: true
           mem: 3000
           prepare: |
-            pkg install -y -f curl node libnghttp2
+            pkg install -y -f curl node libnghttp2 cmake llvm
             alias curl="curl --retry 5 --retry-all-errors"
             curl -qL https://www.npmjs.com/install.sh | sh
             npm install --location=global --ignore-scripts yarn
             curl https://sh.rustup.rs -sSf --output rustup.sh
             sh rustup.sh -y --profile minimal --default-toolchain beta
+            export LIBCLANG_PATH=/usr/local/lib
             export PATH="/usr/local/cargo/bin:$PATH"
             echo "~~~~ rustc --version ~~~~"
             rustc --version
@@ -190,7 +194,9 @@ jobs:
           name: bindings-freebsd
           path: ${{ env.APP_NAME }}.*.node
           if-no-files-found: error
-  test-macOS-windows-binding:
+
+  test-windows-msvc-binding:
+    if: true
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
     needs:
       - build
@@ -198,35 +204,44 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          - host: macos-latest
-            target: x86_64-apple-darwin
           - host: windows-latest
             target: x86_64-pc-windows-msvc
+          - host: windows-latest
+            target: i686-pc-windows-msvc
         node:
           - '18'
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup node
+      - name: Setup node x86_64
         uses: actions/setup-node@v4
+        if: matrix.settings.target == 'x86_64-pc-windows-msvc'
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+          cache: yarn
+      - name: Setup node x86
+        uses: actions/setup-node@v4
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
           node-version: 18
+          check-latest: true
           cache: yarn
-
+          architecture: x86
+      - name: yarn config x86
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
+        run: yarn config set supportedArchitectures.cpu "ia32"
+        shell: bash
       - name: Install dependencies
         run: yarn install
-
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
           path: .
-
       - name: List packages
         run: ls -R .
         shell: bash
-
       - name: Test bindings
         env:
           NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
@@ -234,6 +249,7 @@ jobs:
           yarn test -t smoke
 
   test-linux-x64-gnu-binding:
+    if: true
     name: Test bindings on Linux-x64-gnu - node@${{ matrix.node }}
     needs:
       - build
@@ -274,7 +290,7 @@ jobs:
         run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
 
   test-linux-x64-musl-binding:
-    if: github.ref == 'refs/heads/main'
+    if: true
     name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
@@ -313,7 +329,7 @@ jobs:
         run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -t smoke
 
   test-linux-aarch64-gnu-binding:
-    if: github.ref == 'refs/heads/main'
+    if: true
     name: Test bindings on aarch64-unknown-linux-gnu - node@${{ matrix.node }}
     needs:
       - build
@@ -360,7 +376,7 @@ jobs:
             ls -la
 
   test-linux-aarch64-musl-binding:
-    if: github.ref == 'refs/heads/main'
+    if: true
     name: Test bindings on aarch64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
@@ -406,7 +422,7 @@ jobs:
             NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
 
   test-linux-arm-gnueabihf-binding:
-    if: github.ref == 'refs/heads/main'
+    if: true
     name: Test bindings on armv7-unknown-linux-gnueabihf - node@${{ matrix.node }}
     needs:
       - build
@@ -452,7 +468,7 @@ jobs:
             ls -la
 
   universal-macOS:
-    if: github.ref == 'refs/heads/main'
+    if: true
     name: Build universal macOS binary
     needs:
       - build
@@ -462,7 +478,6 @@ jobs:
         node:
           - '18'
     runs-on: macos-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -505,7 +520,7 @@ jobs:
       - fmt
       - clippy
       - build-freebsd
-      - test-macOS-windows-binding
+      - test-windows-msvc-binding
       - test-linux-x64-gnu-binding
       - test-linux-x64-musl-binding
       - test-linux-aarch64-gnu-binding
