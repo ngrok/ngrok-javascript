@@ -26,6 +26,8 @@ tokio = { version = "1.23.0", features = ["sync"] }
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 url = "2.4.0"
+aws-lc-rs = "=1.13.0"
+aws-lc-sys = "=0.28.0"
 
 [build-dependencies]
 napi-build = "2.0.1"
