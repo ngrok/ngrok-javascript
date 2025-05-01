@@ -1,4 +1,4 @@
-# Javascript SDK for ngrok
+# JavaScript SDK for ngrok
 
 [![npm.rs][npm-badge]][npm-url]
 [![MIT licensed][mit-badge]][mit-url]
