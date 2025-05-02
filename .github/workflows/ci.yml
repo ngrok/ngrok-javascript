@@ -15,6 +15,7 @@ on:
       - '**/*.gitignore'
       - .editorconfig
       - docs/**
+  workflow_dispatch:
   pull_request:
     types: [opened, reopened] # when a pull request is opened or reopened
     branches:
