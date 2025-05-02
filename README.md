@@ -41,7 +41,7 @@ pnpm add @ngrok/ngrok
 # Quickstart
 
 1. [Install `@ngrok/ngrok`](#installation)
-2. Export your [authtoken from the ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken) as `NGROK_AUTHTOKEN` in your terminal
+2. Export your authtoken from [the ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken) as `NGROK_AUTHTOKEN` in your terminal
 3. Add the following code to your application to establish connectivity via the [forward method](https://github.com/ngrok/ngrok-javascript/blob/main/examples/ngrok-forward-minimal.js) through port `8080` over `localhost`:
 
     ```jsx
