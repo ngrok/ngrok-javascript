@@ -170,7 +170,7 @@ A minimal example using the builder class looks like [the following](https://git
 
 ```jsx
 async function create_listener() {
-  const session = await new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect();
+  const session = await new ngrok.SessionBuilder().authtokenFromEnv().connect();
   const listener = await session.httpEndpoint().listen();
   console.log("Ingress established at:", listener.url());
   listener.forward("localhost:8081");
@@ -201,14 +201,13 @@ All asynchronous functions will throw an error on failure to set up a session or
 which can be caught and dealt with using try/catch or then/catch statements:
 
 ```jsx
-new ngrok.NgrokSessionBuilder().authtokenFromEnv().connect()
+await new ngrok.SessionBuilder().authtokenFromEnv().connect()
     .then((session) => {
         session.httpEndpoint().listen()
             .then((tun) => {})
             .catch(err => console.log('listener setup error: ' + err))
     })
-    .catch(err => console.log('session setup error: ' + err))
-    .await;
+    .catch(err => console.log('session setup error: ' + err));
 ```
 
 ### Full Configuration
@@ -221,8 +220,8 @@ const listener = await ngrok.forward({
   addr: `localhost:8080`, // or `8080` or `unix:${UNIX_SOCKET}`
   authtoken: "<authtoken>",
   authtoken_from_env: true,
-  on_status_change: (addr, error) => {
-    console.log(`disconnected, addr ${addr} error: ${error}`);
+  onStatusChange: (status) => {
+    console.log(`Ngrok status changed: ${status}`);
   },
   session_metadata: "Online in One Line",
   // advanced session connection configuration
@@ -260,7 +259,6 @@ const listener = await ngrok.forward({
   oidc_allow_domains: ["<domain>"],
   oidc_allow_emails: ["<email>"],
   oidc_scopes: ["<scope>"],
-  pooling_enabled: false,
   traffic_policy: "<policy_json>",
   request_header_remove: ["X-Req-Nope"],
   response_header_remove: ["X-Res-Nope"],
