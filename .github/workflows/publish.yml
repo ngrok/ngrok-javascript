@@ -1,0 +1,89 @@
+on:
+  workflow_dispatch:
+name: Publish
+
+jobs:
+  ci:
+    name: Run CI
+    uses: ./.github/workflows/ci.yml
+    secrets:
+      NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+  
+  publish:
+    if: github.repository == 'ngrok/ngrok-javascript'
+    name: Publish
+    runs-on: ubuntu-latest
+    needs:
+      - udeps
+      - fmt
+      - clippy
+      - build-freebsd
+      - test-windows-msvc-binding
+      - test-linux-x64-gnu-binding
+      - test-linux-x64-musl-binding
+      - test-linux-aarch64-gnu-binding
+      - test-linux-aarch64-musl-binding
+      - test-linux-arm-gnueabihf-binding
+      - universal-macOS
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Move artifacts
+        run: yarn artifacts
+
+      - name: List packages
+        run: ls -R ./npm
+        shell: bash
+
+      - name: Publish
+        run: |
+          # extract version from Cargo.toml
+          version=$(grep '^version =' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+          echo "Package version: $VERSION"
+          npm publish --access public
+          # check version variable and publish accordingly
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            npm publish --access public
+          elif [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            npm publish --tag next --access public
+          else
+            echo "Not a release, skipping publish"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    
+      - name: Tag Release
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email noreply@ngrok.com
+          version=$(grep '^version =' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+          tag="v$version"
+          echo "Tagging release: $tag"
+          echo "Fetching all tags in the repository"
+          git fetch --tags
+          if git rev-parse "$tag" > /dev/null 2>&1; then
+            echo "Tag $tag already exists, skipping tag creation."
+          else
+            echo "Tag $tag does not exist, pushing tag."
+            git tag -a -m "Version ${version}" $tag
+            git push --tags
+          fi
+
+
