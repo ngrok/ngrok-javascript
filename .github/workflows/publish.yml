@@ -1,6 +1,7 @@
+name: Publish All
 on:
-  workflow_dispatch:
-name: Publish
+  pull_request:
+    branches: [main]
 
 jobs:
   ci:
@@ -53,7 +54,7 @@ jobs:
         run: |
           # extract version from Cargo.toml
           version=$(grep '^version =' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
-          echo "Package version: $VERSION"
+          echo "Package version: $version"
           npm publish --access public
           # check version variable and publish accordingly
           if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
