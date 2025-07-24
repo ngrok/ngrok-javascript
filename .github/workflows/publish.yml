@@ -9,7 +9,8 @@ jobs:
   ci:
     name: Run CI checks
     uses: ./.github/workflows/ci.yml
-    secrets: inherit
+    secrets:
+      NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
 
   publish:
     name: Publish
