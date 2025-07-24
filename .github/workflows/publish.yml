@@ -4,31 +4,91 @@ on:
     branches: [main]
 
 jobs:
-  ci:
-    name: Run CI
-    uses: ./.github/workflows/ci.yml
-    secrets:
-      NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
-  
   publish:
     if: github.repository == 'ngrok/ngrok-javascript'
     name: Publish
-    runs-on: ubuntu-latest
-    needs:
-      - udeps
-      - fmt
-      - clippy
-      - build-freebsd
-      - test-windows-msvc-binding
-      - test-linux-x64-gnu-binding
-      - test-linux-x64-musl-binding
-      - test-linux-aarch64-gnu-binding
-      - test-linux-aarch64-musl-binding
-      - test-linux-arm-gnueabihf-binding
-      - universal-macOS
+    uses: ./.github/workflows/build.yml
+    with:
+      app-name: ngrok
+      build: ${{ matrix.settings.build }}
+      docker: ${{ matrix.settings.docker }}
+      host: ${{ matrix.settings.host }}
+      if: ${{ matrix.settings.if || true }}
+      setup: ${{ matrix.settings.setup }}
+      target: ${{ matrix.settings.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-latest
+            target: x86_64-apple-darwin
+            build: |
+              rustup target add x86_64-apple-darwin
+              yarn build --target x86_64-apple-darwin
+          - host: windows-latest
+            build: yarn build
+            target: x86_64-pc-windows-msvc
+          - host: windows-latest
+            build: |
+              yarn build --target i686-pc-windows-msvc
+            target: i686-pc-windows-msvc
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            build: yarn build --target x86_64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            if: ${{ github.ref == 'refs/heads/main' }}
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            build: |
+              apk add musl-dev gcc make cmake clang llvm build-base
+              rustup target add x86_64-unknown-linux-musl
+              export CARGO_BUILD_TARGET="x86_64-unknown-linux-musl"
+              ln -s /usr/lib/gcc/x86_64-alpine-linux-musl/14.2.0/crtbeginS.o /usr/lib
+              ln -s /usr/lib/gcc/x86_64-alpine-linux-musl/14.2.0/crtendS.o /usr/lib
+              ln -s /usr/lib/gcc/x86_64-alpine-linux-musl/14.2.0/libgcc.a /usr/lib
+              yarn build --target x86_64-unknown-linux-musl
+          - host: macos-latest
+            target: aarch64-apple-darwin
+            if: ${{ github.ref == 'refs/heads/main' }}
+            build: yarn build --target aarch64-apple-darwin
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            if: ${{ github.ref == 'refs/heads/main' }}
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+            build: |
+              sudo apt-get update
+              sudo apt-get install -y gcc-aarch64-linux-gnu 
+              export CFLAGS="$CFLAGS -D__GLIBC_USE(IEC_60559_BFP_EXT_C2X)=1" &&
+              yarn build --target aarch64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            if: ${{ github.ref == 'refs/heads/main' }}
+            setup: |
+              sudo apt-get update
+              sudo apt-get install gcc-arm-linux-gnueabihf -y
+            build: yarn build --target=armv7-unknown-linux-gnueabihf
+          - host: ubuntu-latest
+            target: aarch64-linux-android
+            if: ${{ github.ref == 'refs/heads/main' }}
+            build: yarn build --target aarch64-linux-android
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            if: ${{ github.ref == 'refs/heads/main' }}
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            build: |
+              apk add clang18 llvm18
+              ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
+              rustup target add aarch64-unknown-linux-musl
+              export CC_aarch64_unknown_linux_musl=aarch64-linux-musl-gcc
+              export CXX_aarch64_unknown_linux_musl=aarch64-linux-musl-g++
+              export AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar
+              yarn build --target aarch64-unknown-linux-musl
+          - host: windows-latest
+            target: aarch64-pc-windows-msvc
+            build: yarn build --target aarch64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup node
         uses: actions/setup-node@v4
         with:
@@ -86,5 +146,3 @@ jobs:
             git tag -a -m "Version ${version}" $tag
             git push --tags
           fi
-
-
