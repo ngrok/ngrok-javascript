@@ -122,6 +122,7 @@ jobs:
           - host: ubuntu-latest
             target: aarch64-linux-android
             if: ${{ github.ref == 'refs/heads/main' }}
+          - host: ubuntu-latest
             build: yarn build --target aarch64-linux-android
             target: aarch64-unknown-linux-musl
             if: ${{ github.ref == 'refs/heads/main' }}
