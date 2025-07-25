@@ -44,13 +44,18 @@ jobs:
           # extract version from Cargo.toml
           version=$(grep '^version =' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
           echo "Package version: $version"
-          npm publish --access public
-          # check version variable and publish accordingly
-          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            npm publish --access public
+
+          # npm auth
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+
+          # check if version already exists, if not, publish it
+          if npm view "@ngrok/ngrok@${version}" > /dev/null 2>&1; then
+            echo "@ngrok/ngrok@${version} already exists on npm. Skipping publish."
           elif [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            echo "Publishing release version $version"
+            npm publish --access public
+          elif [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "Publishing version $version with tag 'next'"
             npm publish --tag next --access public
           else
             echo "Not a release, skipping publish"
