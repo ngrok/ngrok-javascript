@@ -105,6 +105,7 @@ macro_rules! config_common {
         plumb!($builder, $config, traffic_policy);
         // policy is in the process of being deprecated. for now, we just remap it to traffic_policy
         plumb!($builder, $config, traffic_policy, policy);
+        plumb!($builder, $config, binding);
     };
 }
 
