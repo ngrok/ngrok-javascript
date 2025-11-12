@@ -1,5 +1,12 @@
+## 1.6.0
+
+- Updated the internal ngrok SDK
+- Added support for internal endpoints
+
 ## 1.5.0
-Adds `poolingEnabled` to listener builders, allowing the endpoint to pool with other endpoints with the same host/port/binding
+
+- Adds `poolingEnabled` to listener builders, allowing the endpoint to pool with
+  other endpoints with the same host/port/binding
 
 ## 1.4.1
 
@@ -9,24 +16,33 @@ Adds `poolingEnabled` to listener builders, allowing the endpoint to pool with o
 
 - Rename `policy` to `traffic_policy`
 - Fix quickstart example in README
-- Add Microsoft Visual C++ Redistributable requirement for Windows to documentation
+- Add Microsoft Visual C++ Redistributable requirement for Windows to
+  documentation
 
 ## 1.3.0:
 
-- Add `rootCas` to session builder and `root_cas` to `ngrok.forward`. Setting this to `host` will use the host's trusted certificates to connect for the ngrok session.
-- Add `session_ca_cert` and `server_addr` to `ngrok.forward`, which correspond to the same functions in the session builder.
+- Add `rootCas` to session builder and `root_cas` to `ngrok.forward`. Setting
+  this to `host` will use the host's trusted certificates to connect for the
+  ngrok session.
+- Add `session_ca_cert` and `server_addr` to `ngrok.forward`, which correspond
+  to the same functions in the session builder.
 
 ## 1.2.0:
 
-- Add `verifyUpstreamTls` to listener builders and `verify_upstream_tls` to `ngrok.forward`. Setting this to false will skip verification of the upstream application's TLS certificate.
+- Add `verifyUpstreamTls` to listener builders and `verify_upstream_tls` to
+  `ngrok.forward`. Setting this to false will skip verification of the upstream
+  application's TLS certificate.
 
 ## 1.1.1:
 
-- Add `appProtocol(string)` to the labeled listener builder. Setting this to "http2" will enable HTTP/2 support to the backend application.
+- Add `appProtocol(string)` to the labeled listener builder. Setting this to
+  "http2" will enable HTTP/2 support to the backend application.
 
 ## 1.1.0:
 
-- Add `appProtocol(string)` to http listener builder, and `app_protocol: string` as a `ngrok.forward()` argument. Setting this to "http2" will enable HTTP/2 support to the backend application.
+- Add `appProtocol(string)` to http listener builder, and `app_protocol: string`
+  as a `ngrok.forward()` argument. Setting this to "http2" will enable HTTP/2
+  support to the backend application.
 
 ## 1.0.0:
 
@@ -58,8 +74,10 @@ Adds `poolingEnabled` to listener builders, allowing the endpoint to pool with o
 
 ## 0.6.0:
 
-- Flattened `listener.forwardPipe()` and `listener.forwardTcp()` into `listener.forward()`. Determination will be made based on `addr` input.
-- Add `ngrok.listeners()` and `session.listeners()` to get a list of current non-closed listeners for the process or session, respectively.
+- Flattened `listener.forwardPipe()` and `listener.forwardTcp()` into
+  `listener.forward()`. Determination will be made based on `addr` input.
+- Add `ngrok.listeners()` and `session.listeners()` to get a list of current
+  non-closed listeners for the process or session, respectively.
 - Add `errorCode` field to thrown errors, where possible.
 - More heuristics for automatic unix socket file placement.
 - Connect heuristic improved for strings parseable as numbers.
@@ -89,12 +107,14 @@ Adds `poolingEnabled` to listener builders, allowing the endpoint to pool with o
 
 ## 0.3.0:
 
-- Added `ngrok.connect(Config)`, `ngrok.authtoken()`, and `ngrok.disconnect(url)`.
+- Added `ngrok.connect(Config)`, `ngrok.authtoken()`, and
+  `ngrok.disconnect(url)`.
 - Examples cleanup.
 
 ## 0.2.0:
 
-- Now have examples for Express, Fastify, Hapi, Koa, Nest.js, Next.js, Remix, Svelte, and Vue.
+- Now have examples for Express, Fastify, Hapi, Koa, Nest.js, Next.js, Remix,
+  Svelte, and Vue.
 - Add `prettier` auto code formatting.
 
 ## 0.1.1:
@@ -132,7 +152,8 @@ Adds `poolingEnabled` to listener builders, allowing the endpoint to pool with o
 
 ## 0.0.7:
 
-- Improved memory management, removing need to keep NodeJS from garbage collecting certain objects.
+- Improved memory management, removing need to keep NodeJS from garbage
+  collecting certain objects.
 - Support callbacks for remote operations (stop, restart, update).
 - Typescript support for getSocket and listen.
 
