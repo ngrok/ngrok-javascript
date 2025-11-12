@@ -1,3 +1,7 @@
+## Unreleased
+
+- Support manually specifying bindings
+
 ## 1.6.0
 
 - Updated the internal ngrok SDK

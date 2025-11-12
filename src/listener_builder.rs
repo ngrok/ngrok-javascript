@@ -176,6 +176,15 @@ macro_rules! make_listener_builder {
                 builder.traffic_policy(traffic_policy);
                 self
             }
+            /// Sets the ingress configuration for this endpoint.
+            /// Valid values: "public", "internal", "kubernetes"
+            /// If not specified, the ngrok service will use its default binding configuration.
+            #[napi]
+            pub fn binding(&mut self, binding: String) -> &Self {
+                let mut builder = self.listener_builder.lock();
+                builder.binding(binding);
+                self
+            }
         }
     };
 
