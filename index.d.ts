@@ -345,6 +345,12 @@ export interface Config {
   web_addr?: string
   /** Convert incoming websocket connections to TCP-like streams. */
   websocket_tcp_converter?: boolean
+  /**
+   * Sets the ingress configuration for this endpoint.
+   * Valid values: "public", "internal", "kubernetes"
+   * If not specified, the ngrok service will use its default binding configuration.
+   */
+  binding?: string
 }
 /**
  * Alias for {@link forward}.
@@ -592,6 +598,12 @@ export declare class HttpListenerBuilder {
   forwardsTo(forwardsTo: string): this
   policy(policy: string): this
   trafficPolicy(trafficPolicy: string): this
+  /**
+   * Sets the ingress configuration for this endpoint.
+   * Valid values: "public", "internal", "kubernetes"
+   * If not specified, the ngrok service will use its default binding configuration.
+   */
+  binding(binding: string): this
 }
 /**
  *r" An ngrok listener backing a TCP endpoint.
@@ -644,6 +656,12 @@ export declare class TcpListenerBuilder {
   forwardsTo(forwardsTo: string): this
   policy(policy: string): this
   trafficPolicy(trafficPolicy: string): this
+  /**
+   * Sets the ingress configuration for this endpoint.
+   * Valid values: "public", "internal", "kubernetes"
+   * If not specified, the ngrok service will use its default binding configuration.
+   */
+  binding(binding: string): this
   /**
    * The TCP address to request for this edge.
    * These addresses can be reserved in the [ngrok dashboard] to use across sessions. For example: remote_addr("2.tcp.ngrok.io:21746")
@@ -705,6 +723,12 @@ export declare class TlsListenerBuilder {
   forwardsTo(forwardsTo: string): this
   policy(policy: string): this
   trafficPolicy(trafficPolicy: string): this
+  /**
+   * Sets the ingress configuration for this endpoint.
+   * Valid values: "public", "internal", "kubernetes"
+   * If not specified, the ngrok service will use its default binding configuration.
+   */
+  binding(binding: string): this
   /**
    * The domain to request for this edge, any valid domain or hostname that you have
    * previously registered with ngrok. If using a custom domain, this requires

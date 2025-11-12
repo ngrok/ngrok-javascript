@@ -325,4 +325,8 @@ pub struct Config {
     /// Convert incoming websocket connections to TCP-like streams.
     #[napi(js_name = "websocket_tcp_converter")]
     pub websocket_tcp_converter: Option<bool>,
+    /// Sets the ingress configuration for this endpoint.
+    /// Valid values: "public", "internal", "kubernetes"
+    /// If not specified, the ngrok service will use its default binding configuration.
+    pub binding: Option<String>,
 }
