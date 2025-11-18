@@ -56,7 +56,7 @@
   },
   "scripts": {
     "artifacts": "napi artifacts",
-    "build": "napi build --platform --release --js gen.js --dts gen.d.ts --pipe 'node post-build.js trailer index'",
+    "build": "AWS_LC_SYS_CC_aarch64_unknown_linux_musl=aarch64-linux-musl-gcc AWS_LC_SYS_CXX_aarch64_unknown_linux_musl=aarch64-linux-musl-g++ napi build --platform --release --js gen.js --dts gen.d.ts --pipe 'node post-build.js trailer index'",
     "build:debug": "napi build --platform",
     "clean": "rm -rf node_modules/ target/",
     "docs": "mv trailer.d.ts trailer.d.hidden; mv examples .examples; npx typedoc index.d.ts --navigation.includeGroups; mv .examples examples; mv trailer.d.hidden trailer.d.ts",
