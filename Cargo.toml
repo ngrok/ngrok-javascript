@@ -36,4 +36,4 @@ napi-build = "2.0.1"
 lto = true
 
 [package.metadata.cargo-udeps.ignore]
-normal = ["mio"]
+normal = ["mio", "aws-lc-sys"]
