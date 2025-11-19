@@ -27,7 +27,7 @@ tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 url = "2.4.0"
 aws-lc-rs = "=1.13.0"
-aws-lc-sys = "=0.29.0"
+aws-lc-sys = "=0.28.0"
 
 [build-dependencies]
 napi-build = "2.0.1"
@@ -36,4 +36,4 @@ napi-build = "2.0.1"
 lto = true
 
 [package.metadata.cargo-udeps.ignore]
-normal = ["mio", "aws-lc-sys"]
+normal = ["mio"]
