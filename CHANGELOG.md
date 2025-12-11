@@ -1,11 +1,12 @@
-## Unreleased
+## 1.6.1
 
-- Support manually specifying bindings
+- Update Next.js version to 14.0.5 to avoid being flagged for CVE-2025-55183 and CVE-2025-55184
 
 ## 1.6.0
 
 - Updated the internal ngrok SDK
 - Added support for internal endpoints
+- Support manually specifying bindings
 
 ## 1.5.0
 
