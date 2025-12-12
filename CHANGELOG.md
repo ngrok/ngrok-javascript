@@ -1,6 +1,6 @@
 ## 1.6.1
 
-- Update Next.js version to 14.0.5 to avoid being flagged for CVE-2025-55183 and CVE-2025-55184
+- Update Next.js version to 14.2.35 to avoid being flagged for CVE-2025-55183 and CVE-2025-55184
 
 ## 1.6.0
 
