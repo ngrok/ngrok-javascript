@@ -1,3 +1,10 @@
+## 1.7.0 
+
+- Add support for CEL filtering when listing resources.
+- Add support for service users
+- Add support for `vault_name` on Secrets
+- Make `pooling_enabled` on Endpoints optional
+
 ## 1.6.1
 
 - Update Next.js version to 14.2.35 to avoid being flagged for CVE-2025-55183 and CVE-2025-55184
