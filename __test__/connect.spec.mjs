@@ -270,7 +270,7 @@ test("forward bad domain", async () => {
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
 
   await ngrok.forward({ addr: httpServer.listenTo, domain: "1.21 gigawatts" }).catch((error) => {
-    expect(error.errorCode).toBe("ERR_NGROK_326");
+    expect(error.errorCode).toBe("ERR_NGROK_9034");
   });
 
   await shutdown(null, httpServer.socket);

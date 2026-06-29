@@ -529,7 +529,7 @@ test("listener invalid domain", async () => {
   try {
     await session.httpEndpoint().domain("1.21 gigawatts").listen();
   } catch (error) {
-    expect(error.errorCode).toBe("ERR_NGROK_326");
+    expect(error.errorCode).toBe("ERR_NGROK_9034");
   }
 });
 
