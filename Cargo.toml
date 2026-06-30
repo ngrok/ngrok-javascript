@@ -1,5 +1,6 @@
 [package]
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 name = "ngrok-javascript"
 version = "1.7.0"
 
