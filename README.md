@@ -345,7 +345,6 @@ Changes to `ngrok-javascript` are tracked under [CHANGELOG.md](https://github.co
 - Check out [our official docs](https://docs.ngrok.com)
 - Read about updates on [our blog](https://blog.ngrok.com)
 - Open an [issue](https://github.com/ngrok/ngrok-javascript/issues) or [pull request](https://github.com/ngrok/ngrok-javascript/pulls)
-- Join our [Slack community](https://ngrok.com/slack)
 - Follow us on [X / Twitter (@ngrokHQ)](https://twitter.com/ngrokhq)
 - Subscribe to our [Youtube channel (@ngrokHQ)](https://www.youtube.com/@ngrokhq)
 
