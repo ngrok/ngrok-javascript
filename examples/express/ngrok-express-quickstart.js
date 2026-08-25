@@ -6,6 +6,6 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-ngrok.listen(app).then(() => {
-  console.log("established listener at: " + app.listener.url());
+ngrok.listen(app).then((endpoint) => {
+  console.log("established ingress at: " + endpoint.url());
 });

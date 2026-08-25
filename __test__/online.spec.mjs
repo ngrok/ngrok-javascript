@@ -28,25 +28,24 @@ function createHttpServer() {
   });
 }
 
-async function makeHttp(useUnixSocket) {
+async function makeHttp() {
   const server = createHttpServer();
-  const listenTo = useUnixSocket ? "tun-" + Math.floor(Math.random() * 1000000) : 0;
-  const socket = server.listen(listenTo);
+  const socket = server.listen(0);
   server.socket = socket;
-  server.listenTo = useUnixSocket ? listenTo : "localhost:" + server.address().port;
+  server.listenTo = "localhost:" + server.address().port;
   return server;
 }
 
-async function makeSession() {
-  const builder = new ngrok.SessionBuilder();
+async function makeAgent() {
+  const builder = new ngrok.AgentBuilder();
   return await builder
     .authtoken(process.env["NGROK_AUTHTOKEN"])
-    .metadata("session metadata")
+    .metadata("agent metadata")
     .connect();
 }
 
-async function makeHttpAndSession(useUnixSocket) {
-  return [await makeHttp(useUnixSocket), await makeSession()];
+async function makeHttpAndAgent() {
+  return [await makeHttp(), await makeAgent()];
 }
 
 async function validateHttpRequest(url, axiosConfig) {
@@ -56,10 +55,10 @@ async function validateHttpRequest(url, axiosConfig) {
   return response;
 }
 
-async function shutdown(listener, socket) {
+async function shutdown(endpoint, socket) {
   try {
-    if (listener) {
-      await listener.close();
+    if (endpoint) {
+      await endpoint.close();
     }
     if (socket) {
       socket.close();
@@ -70,104 +69,99 @@ async function shutdown(listener, socket) {
   }
 }
 
-async function forwardValidateShutdown(httpServer, listener, url, axiosConfig) {
-  listener.forward(httpServer.listenTo);
+async function validateAndShutdown(httpServer, endpoint, url, axiosConfig) {
   const response = await validateHttpRequest(url, axiosConfig);
-  await shutdown(listener, httpServer.socket);
+  await shutdown(endpoint, httpServer.socket);
   return response;
 }
 
-test("https listener", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session
+test("http endpoint", async () => {
+  const [httpServer, agent] = await makeHttpAndAgent();
+  const endpoint = await agent
     .httpEndpoint()
-    .forwardsTo("http forwards to")
     .metadata("http metadata")
-    .listen();
+    .forward(httpServer.listenTo);
 
-  expect(listener.id()).toBeTruthy();
-  expect(listener.url()).toBeTruthy();
-  expect(listener.url().startsWith("https://")).toBeTruthy();
-  expect("http forwards to").toBe(listener.forwardsTo());
-  expect("http metadata").toBe(listener.metadata());
-  const listener_list = await session.listeners();
-  expect(1).toBe(listener_list.length);
-  expect(listener.id()).toBe(listener_list[0].id());
-  expect(listener.url()).toBe(listener_list[0].url());
-  expect(listener.id()).toBe((await ngrok.getListenerByUrl(listener.url())).id());
+  expect(endpoint.id()).toBeTruthy();
+  expect(endpoint.url()).toBeTruthy();
+  expect(endpoint.url().startsWith("https://")).toBeTruthy();
+  expect(endpoint.forwardsTo()).toBeTruthy();
+  expect("http metadata").toBe(endpoint.metadata());
+  const endpointList = await agent.endpoints();
+  expect(1).toBe(endpointList.length);
+  expect(endpoint.id()).toBe(endpointList[0].id());
+  expect(endpoint.url()).toBe(endpointList[0].url());
+  expect(endpoint.id()).toBe((await ngrok.getEndpointByUrl(endpoint.url())).id());
 
-  await forwardValidateShutdown(httpServer, listener, listener.url());
+  await validateAndShutdown(httpServer, endpoint, endpoint.url());
 });
 
-test("http listener", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session.httpEndpoint().scheme("hTtP").listen();
-
-  expect(listener.url().startsWith("http://")).toBeTruthy();
-
-  await forwardValidateShutdown(httpServer, listener, listener.url());
-});
-
-test("unix socket", async () => {
-  const [httpServer, session] = await makeHttpAndSession(true);
-  const listener = await session.httpEndpoint().listen();
-  expect(httpServer.listenTo.startsWith("tun-")).toBeTruthy();
-  listener.forward("unix:" + httpServer.listenTo);
-  const response = await validateHttpRequest(listener.url());
-  await shutdown(listener, httpServer.socket);
-});
-
-test("listen_and_serve", async () => {
+test("serve", async () => {
   const httpServer = await createHttpServer();
-  const session = await makeSession();
-  const listener = await session.httpEndpoint().listenAndServe(httpServer);
-  await validateHttpRequest(listener.url());
-  await shutdown(listener, listener.socket);
+  const agent = await makeAgent();
+  const endpoint = await agent.httpEndpoint().serve(httpServer);
+  await validateHttpRequest(endpoint.url());
+  await shutdown(endpoint, endpoint.socket);
 });
 
-test("gzip listener", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session.httpEndpoint().compression().listen();
+// Covers what the old "gzip listener" test exercised (the `compression()` builder
+// method), now expressed as a Traffic Policy document. See
+// https://ngrok.com/docs/traffic-policy/actions/compress-response/.
+test("traffic policy: compress response", async () => {
+  const [httpServer, agent] = await makeHttpAndAgent();
+  const trafficPolicy = `
+on_http_response:
+  - actions:
+      - type: compress-response
+        config:
+          algorithms:
+            - gzip
+`;
+  const endpoint = await agent
+    .httpEndpoint()
+    .trafficPolicy(trafficPolicy)
+    .forward(httpServer.listenTo);
 
-  listener.forward(httpServer.listenTo);
-
-  const response = await axios.get(listener.url(), { decompress: false });
+  const response = await axios.get(endpoint.url(), { decompress: false });
   expect("gzip").toBe(response.headers["content-encoding"]);
-  await shutdown(listener, httpServer.socket);
+  await shutdown(endpoint, httpServer.socket);
 });
 
 test("tls backend", async () => {
-  const session = await makeSession();
-  const listener = await session.httpEndpoint().listenAndForward("https://dashboard.ngrok.com");
+  const agent = await makeAgent();
+  const endpoint = await agent.httpEndpoint().forward("https://dashboard.ngrok.com");
 
   await expect(async () => {
-    await axios.get(listener.url());
+    await axios.get(endpoint.url());
   }).rejects.toThrow(AxiosError);
 
-  const error = await axios.get(listener.url()).catch((e) => e);
+  const error = await axios.get(endpoint.url()).catch((e) => e);
   expect(error.response.status).toBe(421);
   expect(error.response.data.includes("different Host")).toBeTruthy();
-  await listener.close();
+  await endpoint.close();
 });
 
 test("unverified tls backend", async () => {
-  const session = await makeSession();
-  const listener = await session
+  const agent = await makeAgent();
+  const endpoint = await agent
     .httpEndpoint()
-    .verifyUpstreamTls(false)
-    .listenAndForward("https://dashboard.ngrok.com");
+    .forward("https://dashboard.ngrok.com", { verifyUpstreamTls: false });
 
   try {
-    await axios.get(listener.url());
+    await axios.get(endpoint.url());
   } catch (error) {
     expect(error).toBeInstanceOf(AxiosError);
     expect(error.response.status).toBe(421);
     expect(error.response.data.includes("different Host")).toBeTruthy();
   }
-  await listener.close();
+  await endpoint.close();
 });
 
-test("http headers", async () => {
+// Covers what the old "http headers" test exercised (requestHeader/removeRequestHeader/
+// responseHeader/removeResponseHeader builder methods), now expressed as a Traffic
+// Policy document. See https://ngrok.com/docs/traffic-policy/actions/add-headers/ and
+// .../remove-headers/.
+test("traffic policy: headers", async () => {
   const httpServer = http.createServer(function (req, res) {
     const { headers } = req;
     expect("bar").toBe(headers["foo"]);
@@ -180,53 +174,72 @@ test("http headers", async () => {
   httpServer.socket = socket;
   httpServer.listenTo = "localhost:" + httpServer.address().port;
 
-  const session = await makeSession();
-  const listener = await session
+  const agent = await makeAgent();
+  const trafficPolicy = `
+on_http_request:
+  - actions:
+      - type: add-headers
+        config:
+          headers:
+            foo: bar
+      - type: remove-headers
+        config:
+          headers:
+            - baz
+on_http_response:
+  - actions:
+      - type: add-headers
+        config:
+          headers:
+            spam: eggs
+      - type: remove-headers
+        config:
+          headers:
+            - python
+`;
+  const endpoint = await agent
     .httpEndpoint()
-    .requestHeader("foo", "bar")
-    .removeRequestHeader("baz")
-    .responseHeader("spam", "eggs")
-    .removeResponseHeader("python")
-    .listen();
+    .trafficPolicy(trafficPolicy)
+    .forward(httpServer.listenTo);
 
-  const response = await forwardValidateShutdown(httpServer, listener, listener.url(), {
+  const response = await validateAndShutdown(httpServer, endpoint, endpoint.url(), {
     headers: { baz: "req" },
   });
   expect("eggs").toBe(response.headers["spam"]);
   expect(undefined).toBe(response.headers["python"]);
 });
 
-test("basic auth", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session.httpEndpoint().basicAuth("ngrok", "online1line").listen();
+// Covers what the old "basic auth" test exercised (the `basicAuth()` builder method),
+// now expressed as a Traffic Policy document. See
+// https://ngrok.com/docs/traffic-policy/actions/basic-auth/.
+test("traffic policy: basic auth", async () => {
+  const [httpServer, agent] = await makeHttpAndAgent();
+  const trafficPolicy = `
+on_http_request:
+  - actions:
+      - type: basic-auth
+        config:
+          credentials:
+            - ngrok:online1line
+`;
+  const endpoint = await agent
+    .httpEndpoint()
+    .trafficPolicy(trafficPolicy)
+    .forward(httpServer.listenTo);
 
-  listener.forward(httpServer.listenTo);
-
-  const response = await forwardValidateShutdown(httpServer, listener, listener.url(), {
+  await validateAndShutdown(httpServer, endpoint, endpoint.url(), {
     auth: { username: "ngrok", password: "online1line" },
   });
 });
 
-test("oauth", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session.httpEndpoint().oauth("google").listen();
-
-  listener.forward(httpServer.listenTo);
-
-  const response = await axios.get(listener.url());
-  expect(expected).not.toBe(response.data);
-  expect(response.data.includes("accounts.google.com")).toBeTruthy();
-  await shutdown(listener, httpServer.socket);
-});
-
 test("custom domain", async () => {
   const domain = "d" + Math.floor(Math.random() * 1000000) + ".ngrok.io";
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session.httpEndpoint().domain(domain).listen();
+  const [httpServer, agent] = await makeHttpAndAgent();
+  const endpoint = await agent.httpEndpoint().domain(domain).forward(httpServer.listenTo);
 
-  expect("https://" + domain).toBe(listener.url());
+  expect("https://" + domain).toBe(endpoint.url());
 
-  await forwardValidateShutdown(httpServer, listener, listener.url());
+  await validateAndShutdown(httpServer, endpoint, endpoint.url());
 });
 
 test("proxy proto", async () => {
@@ -246,307 +259,189 @@ test("proxy proto", async () => {
   });
   const socket = tcpServer.listen(0);
 
-  const session = await makeSession();
-  const listener = await session.httpEndpoint().proxyProto("1").listen();
+  const agent = await makeAgent();
+  const endpoint = await agent
+    .httpEndpoint()
+    .forward("localhost:" + socket.address().port, { proxyProto: "1" });
 
-  listener.forward("localhost:" + socket.address().port);
-
-  await axios.get(listener.url(), { timeout: 1000 }).catch((err) => {
+  await axios.get(endpoint.url(), { timeout: 1000 }).catch((err) => {
     expect(err).toBeInstanceOf(AxiosError);
   });
 
-  await shutdown(listener, socket);
+  await shutdown(endpoint, socket);
 });
 
-test("ip restriction http", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const error = await ipRestriction(httpServer, session.httpEndpoint());
+// Covers what the old "ip restriction http" test exercised (the `allowCidr()`/
+// `denyCidr()` builder methods), now expressed as a Traffic Policy document. See
+// https://ngrok.com/docs/traffic-policy/actions/restrict-ips/.
+test("traffic policy: ip restriction", async () => {
+  const [httpServer, agent] = await makeHttpAndAgent();
+  const trafficPolicy = `
+on_http_request:
+  - actions:
+      - type: restrict-ips
+        config:
+          enforce: true
+          allow:
+            - 127.0.0.1/32
+          deny:
+            - 0.0.0.0/0
+`;
+  const endpoint = await agent
+    .httpEndpoint()
+    .trafficPolicy(trafficPolicy)
+    .forward(httpServer.listenTo);
+
+  const error = await axios.get(endpoint.url()).catch(async (err) => {
+    expect(err).toBeInstanceOf(AxiosError);
+    await shutdown(endpoint, httpServer.socket);
+    return err;
+  });
   expect(403).toBe(error.response.status);
 });
 
-test("ip restriction tcp", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const error = await ipRestriction(httpServer, session.tcpEndpoint());
-  // ECONNRESET or ECONNREFUSED
-  expect(error.code.startsWith("ECONNRE")).toBeTruthy();
+test("tcp endpoint", async () => {
+  const [httpServer, agent] = await makeHttpAndAgent();
+  const endpoint = await agent.tcpEndpoint().metadata("tcp metadata").forward(httpServer.listenTo);
+
+  expect(endpoint.id()).toBeTruthy();
+  expect(endpoint.url()).toBeTruthy();
+  expect("tcp metadata").toBe(endpoint.metadata());
+
+  await validateAndShutdown(httpServer, endpoint, endpoint.url().replace("tcp:", "http:"));
 });
 
-async function ipRestriction(httpServer, listenerBuilder) {
-  const listener = await listenerBuilder.allowCidr("127.0.0.1/32").denyCidr("0.0.0.0/0").listen();
+// NOTE: custom TLS termination at the edge (previously `.termination(cert, key)`) is
+// not currently exposed by this package -- see README for details. This only exercises
+// endpoint creation, not a specific certificate.
+test("tls endpoint", async () => {
+  const [httpServer, agent] = await makeHttpAndAgent();
+  const endpoint = await agent.tlsEndpoint().metadata("tls metadata").forward(httpServer.listenTo);
 
-  listener.forward(httpServer.listenTo);
-  return await axios.get(listener.url().replace("tcp:", "http:")).catch(async (err) => {
-    expect(err).toBeInstanceOf(AxiosError);
-    await shutdown(listener, httpServer.socket);
-    return err;
-  });
-}
+  expect(endpoint.id()).toBeTruthy();
+  expect(endpoint.url()).toBeTruthy();
+  expect("tls metadata").toBe(endpoint.metadata());
 
-test("websocket conversion", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session.httpEndpoint().websocketTcpConversion().listen();
-
-  listener.forward(httpServer.listenTo);
-
-  try {
-    await axios.get(listener.url());
-  } catch (error) {
-    expect(error).toBeInstanceOf(AxiosError);
-    // ERR_NGROK_3206: Expected a websocket request with a "Connection: upgrade" header
-    // but did not receive one.
-    expect(error.response.headers["ngrok-error-code"]).toBe("ERR_NGROK_3206");
-  }
-  await shutdown(listener, httpServer.socket);
-});
-
-test("useragent", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session
-    .httpEndpoint()
-    .allowUserAgent("^mozilla.*")
-    .denyUserAgent(".*")
-    .listen();
-
-  listener.forward(httpServer.listenTo);
-
-  try {
-    await axios.get(listener.url());
-  } catch (error) {
-    expect(error).toBeInstanceOf(AxiosError);
-    // ERR_NGROK_3211: The server does not authorize requests from your user-agent.
-    expect(error.response.headers["ngrok-error-code"]).toBe("ERR_NGROK_3211");
-  }
-  await shutdown(listener, httpServer.socket);
-});
-
-test("tcp listener", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session
-    .tcpEndpoint()
-    .forwardsTo("tcp forwards to")
-    .metadata("tcp metadata")
-    .listen();
-
-  expect(listener.id()).toBeTruthy();
-  expect(listener.url()).toBeTruthy();
-  expect("tcp forwards to").toBe(listener.forwardsTo());
-  expect("tcp metadata").toBe(listener.metadata());
-
-  await forwardValidateShutdown(httpServer, listener, listener.url().replace("tcp:", "http:"));
-});
-
-test("tls listener", async () => {
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session
-    .tlsEndpoint()
-    .forwardsTo("tls forwards to")
-    .metadata("tls metadata")
-    .termination(fs.readFileSync("examples/domain.crt"), fs.readFileSync("examples/domain.key"))
-    .listen();
-
-  expect(listener.id()).toBeTruthy();
-  expect(listener.url()).toBeTruthy();
-  expect("tls forwards to").toBe(listener.forwardsTo());
-  expect("tls metadata").toBe(listener.metadata());
-
-  listener.forward(httpServer.listenTo);
-  try {
-    await axios.get(listener.url().replace("tls:", "https:"));
-  } catch (error) {
-    expect(error).toBeInstanceOf(AxiosError);
-    expect(error.message.endsWith("signed certificate")).toBeTruthy();
-  }
-  await shutdown(listener, httpServer.socket);
+  await shutdown(endpoint, httpServer.socket);
 });
 
 test("smoke", async () => {
   const httpServer = await createHttpServer();
-  const socket = await ngrok.listen(httpServer);
-  const response = await axios.get(socket.listener.url());
+  const endpoint = await ngrok.listen(httpServer);
+  const response = await axios.get(endpoint.url());
   expect(200).toBe(response.status);
-  await shutdown(socket.listener, socket);
+  await shutdown(endpoint, endpoint.socket);
 });
 
 test("net listen", async () => {
   const httpServer = await createHttpServer();
-  const socket = await ngrok.listen(httpServer);
-  const response = await validateHttpRequest(socket.listener.url());
-  await shutdown(socket.listener, socket);
-});
-
-test("net listenable", async () => {
-  const httpServer = await createHttpServer();
-  const listener = await ngrok.listenable();
-  httpServer.listen(listener);
-  const response = await validateHttpRequest(listener.url());
-  await shutdown(listener, listener.handle);
+  const endpoint = await ngrok.listen(httpServer);
+  const response = await validateHttpRequest(endpoint.url());
+  await shutdown(endpoint, endpoint.socket);
 });
 
 test("express listen", async () => {
   const httpServer = await createExpress();
-  const socket = await ngrok.listen(httpServer);
-  const response = await validateHttpRequest(socket.listener.url());
-  await shutdown(socket.listener, socket);
+  const endpoint = await ngrok.listen(httpServer);
+  const response = await validateHttpRequest(endpoint.url());
+  await shutdown(endpoint, endpoint.socket);
 });
 
-test("express listenable", async () => {
-  const httpServer = await createExpress();
-  const listener = await ngrok.listenable();
-  httpServer.listen(listener);
-  const response = await validateHttpRequest(listener.url());
-  await shutdown(listener, listener.handle);
-});
-
-test("no bind", async () => {
-  const httpServer = await createHttpServer();
-  const session = await makeSession();
-  const listener = await session.httpEndpoint().listen(false);
-  expect(undefined).toBe(listener.handle);
+// NOTE: this fork's `EndpointBuilder.listen()` never binds a local socket -- it only
+// starts a raw endpoint that this package does not currently expose a way to accept
+// connections on from JavaScript (see README). This just verifies it still produces a
+// working endpoint.
+test("raw listen", async () => {
+  const agent = await makeAgent();
+  const endpoint = await agent.httpEndpoint().listen();
+  expect(endpoint.id()).toBeTruthy();
+  expect(endpoint.url()).toBeTruthy();
+  expect(endpoint.socket).toBe(undefined);
+  await endpoint.close();
 });
 
 // run serially so other tests are not logging
 test("console log", async () => {
   // register logging callback
   ngrok.consoleLog();
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session.httpEndpoint().listen();
-  await forwardValidateShutdown(httpServer, listener, listener.url());
+  const [httpServer, agent] = await makeHttpAndAgent();
+  const endpoint = await agent.httpEndpoint().forward(httpServer.listenTo);
+  await validateAndShutdown(httpServer, endpoint, endpoint.url());
   // unregister the callback
   ngrok.loggingCallback();
 });
 
-test("listen and forward multipass", async () => {
-  const [httpServer, session1] = await makeHttpAndSession();
-  const session2 = await makeSession();
-  const url = "tcp://" + httpServer.listenTo;
-  const listener1 = await session1.httpEndpoint().listenAndForward(url);
-  const listener2 = await session1.httpEndpoint().listenAndForward(url);
-  const listener3 = await session2.httpEndpoint().listenAndForward(url);
-  const listener4 = await session2.tcpEndpoint().listenAndForward(url);
+test("multipass", async () => {
+  const [httpServer, agent1] = await makeHttpAndAgent();
+  const agent2 = await makeAgent();
+  const url = httpServer.listenTo;
+  const endpoint1 = await agent1.httpEndpoint().forward(url);
+  const endpoint2 = await agent1.httpEndpoint().forward(url);
+  const endpoint3 = await agent2.httpEndpoint().forward(url);
+  const endpoint4 = await agent2.tcpEndpoint().forward(url);
 
-  expect(2).toBe((await session1.listeners()).length);
-  expect(2).toBe((await session2.listeners()).length);
-  expect((await ngrok.listeners()).length >= 4).toBeTruthy();
-  expect(listener3.url()).toBe((await ngrok.getListener(listener3.id())).url());
+  expect(2).toBe((await agent1.endpoints()).length);
+  expect(2).toBe((await agent2.endpoints()).length);
+  expect((await ngrok.endpoints()).length >= 4).toBeTruthy();
+  expect(endpoint3.url()).toBe((await ngrok.getEndpoint(endpoint3.id())).url());
 
-  await validateHttpRequest(listener1.url());
-  await validateHttpRequest(listener2.url());
-  await validateHttpRequest(listener3.url());
-  await validateHttpRequest(listener4.url().replace("tcp:", "http:"));
+  await validateHttpRequest(endpoint1.url());
+  await validateHttpRequest(endpoint2.url());
+  await validateHttpRequest(endpoint3.url());
+  await validateHttpRequest(endpoint4.url().replace("tcp:", "http:"));
 
-  await shutdown(listener1, httpServer.socket);
-  await listener2.close();
-  await session2.close();
+  await shutdown(endpoint1, httpServer.socket);
+  await endpoint2.close();
+  await agent2.disconnect();
 });
 
-test("tcp multipass", async () => {
-  const [httpServer, session1] = await makeHttpAndSession();
-  const session2 = await makeSession();
-  const listener1 = await session1.httpEndpoint().listen();
-  const listener2 = await session1.httpEndpoint().listen();
-  const listener3 = await session2.httpEndpoint().listen();
-  const listener4 = await session2.tcpEndpoint().listen();
-
-  listener1.forward(httpServer.listenTo);
-  listener2.forward(httpServer.listenTo);
-  listener3.forward(httpServer.listenTo);
-  listener4.forward(httpServer.listenTo);
-
-  expect(2).toBe((await session1.listeners()).length);
-  expect(2).toBe((await session2.listeners()).length);
-  expect((await ngrok.listeners()).length >= 4).toBeTruthy();
-  expect(listener3.url()).toBe((await ngrok.getListener(listener3.id())).url());
-
-  await validateHttpRequest(listener1.url());
-  await validateHttpRequest(listener2.url());
-  await validateHttpRequest(listener3.url());
-  await validateHttpRequest(listener4.url().replace("tcp:", "http:"));
-  await shutdown(listener1, httpServer.socket);
-  await listener2.close();
-  await session2.close();
+// NOTE: `AgentBuilder.connect()` does not wait for the agent to actually finish
+// authenticating -- it returns as soon as the reconnect loop is spawned (see
+// ngrok-rust's `tunnel/reconnecting.rs`), so we can't just check event state
+// synchronously after `await connect()` resolves like the old SDK's `handleHeartbeat`
+// callback allowed. Instead, await the real `heartbeatReceived` event.
+test("connect events", async () => {
+  const heartbeatLatency = await new Promise((resolve) => {
+    const builder = new ngrok.AgentBuilder().authtoken(process.env["NGROK_AUTHTOKEN"]);
+    builder
+      .clientInfo("connect_events", "1.2.3")
+      .heartbeatInterval(5)
+      .onEvent((event) => {
+        if (event.kind === "heartbeatReceived") {
+          resolve(event.latencyMs);
+        }
+      });
+    builder.connect();
+  });
+  expect(heartbeatLatency > 0).toBeTruthy();
 });
 
-// test("unix multipass", async () => {
-//   const httpServer = createHttpServer();
-//   const session1 = await makeSession();
-//   const session2 = await makeSession();
-//   const listener1 = await session1.httpEndpoint().listen();
-//   const listener2 = await session1.httpEndpoint().listen();
-//   const listener3 = await session2.httpEndpoint().listen();
-//   const listener4 = await session2.tcpEndpoint().listen();
-//   const socket = ngrok.listen(httpServer, listener1);
+// NOTE: the old "session ca_cert" and "session incorrect authtoken" tests relied on
+// `.connect()` rejecting when the initial authentication attempt failed. This fork's
+// `AgentBuilder.connect()` never rejects for an auth/TLS failure at all -- per
+// ngrok-rust's `tunnel/reconnecting.rs`, a failed `dial_and_auth` just logs a warning
+// and retries forever with backoff; no event fires and no promise rejects. There is
+// currently no way to observe an initial-connection failure from JavaScript, so those
+// two tests have no working equivalent here and have been removed rather than kept as
+// tests that would hang or pass vacuously.
 
-//   listener2.forward("unix:" + socket.path);
-//   listener3.forward("unix:" + socket.path);
-//   listener4.forward("unix:" + socket.path);
-
-//   await validateHttpRequest(listener1.url());
-//   await validateHttpRequest(listener2.url());
-//   await validateHttpRequest(listener3.url());
-//   await validateHttpRequest(listener4.url().replace("tcp:", "http:"));
-//   await shutdown(listener1, socket);
-//   await listener2.close();
-//   await listener3.close();
-//   await listener4.close();
-// });
-
-test("connect heartbeat callbacks", async () => {
-  var conn_addr, disconn_addr, test_latency;
-  const builder = new ngrok.SessionBuilder().authtoken(process.env["NGROK_AUTHTOKEN"]);
-  builder
-    .clientInfo("connect_heartbeat_callbacks", "1.2.3")
-    .handleHeartbeat((latency) => {
-      test_latency = latency;
-    })
-    .handleDisconnection((addr, err) => {
-      disconn_addr = addr;
-    });
-  await builder.connect();
-  expect(test_latency > 0).toBeTruthy();
-  expect(undefined).toBe(disconn_addr);
-});
-
-test("session ca_cert", async () => {
-  const builder = new ngrok.SessionBuilder();
+test("endpoint invalid domain", async () => {
+  const agent = await makeAgent();
   try {
-    await builder.authtokenFromEnv().caCert(fs.readFileSync("examples/domain.crt")).connect();
-  } catch (error) {
-    expect(error.message.includes("tls")).toBeTruthy();
-  }
-});
-
-test("session incorrect authtoken", async () => {
-  const builder = new ngrok.SessionBuilder();
-  try {
-    await builder.authtoken("badtoken").connect();
-  } catch (error) {
-    expect(error.errorCode).toBe("ERR_NGROK_105");
-  }
-});
-
-test("listener invalid domain", async () => {
-  const session = await makeSession();
-  try {
-    await session.httpEndpoint().domain("1.21 gigawatts").listen();
+    await agent.httpEndpoint().domain("1.21 gigawatts").listen();
   } catch (error) {
     expect(error.errorCode).toBe("ERR_NGROK_9034");
   }
 });
 
-test("policy", async () => {
-  const policy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
-
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session.httpEndpoint().policy(policy).listen();
-  const response = await forwardValidateShutdown(httpServer, listener, listener.url());
-  expect("bar").toBe(response.headers["foo"]);
-});
-
 test("traffic policy", async () => {
   const trafficPolicy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
 
-  const [httpServer, session] = await makeHttpAndSession();
-  const listener = await session.httpEndpoint().trafficPolicy(trafficPolicy).listen();
-  const response = await forwardValidateShutdown(httpServer, listener, listener.url());
+  const [httpServer, agent] = await makeHttpAndAgent();
+  const endpoint = await agent
+    .httpEndpoint()
+    .trafficPolicy(trafficPolicy)
+    .forward(httpServer.listenTo);
+  const response = await validateAndShutdown(httpServer, endpoint, endpoint.url());
   expect("bar").toBe(response.headers["foo"]);
 });

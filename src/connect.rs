@@ -5,108 +5,29 @@ use napi::{
 };
 use napi_derive::napi;
 use tokio::sync::Mutex;
-use tracing::warn;
 
 use crate::{
+    agent::{
+        Agent,
+        AgentBuilder,
+    },
     config::Config,
-    listener::{
+    endpoint::{
         self,
-        Listener,
+        Endpoint,
         TCP_PREFIX,
+    },
+    endpoint_builder::{
+        EndpointBuilder,
+        UpstreamOptions,
     },
     logging::logging_callback,
     napi_err,
-    session::{
-        Session,
-        SessionBuilder,
-    },
 };
 
 lazy_static! {
-    // Save a user-facing NgrokSession to use for connect use cases
-    pub(crate) static ref SESSION: Mutex<Option<Session>> = Mutex::new(None);
-}
-
-/// Single string configuration
-macro_rules! plumb {
-    ($builder:tt, $config:tt, $name:tt) => {
-        plumb!($builder, $config, $name, $name)
-    };
-    ($builder:tt, $config:tt, $name:tt, $config_name:tt) => {
-        if let Some(ref $name) = $config.$config_name {
-            $builder.$name($name.clone());
-        }
-    };
-}
-
-/// Single string configuration with result
-macro_rules! plumb_with_result {
-    ($builder:tt, $config:tt, $name:tt, $config_name:tt) => {
-        if let Some(ref $name) = $config.$config_name {
-            $builder.$name($name.clone())?;
-        }
-    };
-}
-
-/// Boolean configuration
-macro_rules! plumb_bool {
-    ($builder:tt, $config:tt, $name:tt) => {
-        plumb_bool!($builder, $config, $name, $name)
-    };
-    ($builder:tt, $config:tt, $name:tt, $config_name:tt) => {
-        if let Some($name) = $config.$config_name {
-            if $name {
-                $builder.$name();
-            }
-        }
-    };
-}
-
-/// Vector configuration
-macro_rules! plumb_vec {
-    ($builder:tt, $config:tt, $name:tt) => {
-        plumb_vec!($builder, $config, $name, $name)
-    };
-    ($builder:tt, $config:tt, $name:tt, $config_name:tt) => {
-        if let Some(ref $name) = $config.$config_name {
-            for val in $name {
-                $builder.$name(val.clone());
-            }
-        }
-    };
-    ($builder:tt, $config:tt, $name:tt, $config_name:tt, vecu8) => {
-        if let Some(ref $name) = $config.$config_name {
-            for val in $name {
-                $builder.$name(Uint8Array::new(val.as_bytes().to_vec()));
-            }
-        }
-    };
-    ($builder:tt, $config:tt, $name:tt, $config_name:tt, $split:tt) => {
-        if let Some(ref $name) = $config.$config_name {
-            for val in $name {
-                let (a, b) = val
-                    .split_once($split)
-                    .expect("split of value failed: ${val}");
-                $builder.$name(a.to_string(), b.to_string());
-            }
-        }
-    };
-}
-
-/// All non-labeled listeners have these common configuration options
-macro_rules! config_common {
-    ($builder:tt, $config:tt) => {
-        plumb!($builder, $config, metadata);
-        plumb_vec!($builder, $config, allow_cidr);
-        plumb_vec!($builder, $config, deny_cidr);
-        plumb!($builder, $config, proxy_proto);
-        plumb!($builder, $config, forwards_to);
-        plumb!($builder, $config, verify_upstream_tls);
-        plumb!($builder, $config, traffic_policy);
-        // policy is in the process of being deprecated. for now, we just remap it to traffic_policy
-        plumb!($builder, $config, traffic_policy, policy);
-        plumb!($builder, $config, binding);
-    };
+    // Save a user-facing Agent to use for connect use cases
+    pub(crate) static ref AGENT: Mutex<Option<Agent>> = Mutex::new(None);
 }
 
 /// Alias for {@link forward}.
@@ -114,194 +35,152 @@ macro_rules! config_common {
 /// See {@link forward} for the full set of options.
 #[napi(
     ts_args_type = "config: Config|string|number",
-    ts_return_type = "Promise<Listener>"
+    ts_return_type = "Promise<Endpoint>"
 )]
 pub fn connect(
     env: Env,
     cfg: Config,
     on_log_event: Option<JsFunction>,
-    on_connection: Option<JsFunction>,
-    on_disconnection: Option<JsFunction>,
+    on_status_change: Option<JsFunction>,
 ) -> Result<JsObject> {
-    forward(env, cfg, on_log_event, on_connection, on_disconnection)
+    forward(env, cfg, on_log_event, on_status_change)
 }
 
-/// Transform a json object configuration into a listener.
+/// Transform a json object configuration into an endpoint.
 /// See {@link Config} for the full set of options.
 ///
 /// Examples:<br>
-/// listener = await ngrok.forward("localhost:4242");<br>
-/// listener = await ngrok.forward({addr: "https://localhost:8443", authtoken_from_env: true});<br>
-/// listener = await ngrok.forward({addr: "unix:///path/to/unix.socket", basic_auth: "ngrok:online1line", authtoken_from_env: true});
+/// endpoint = await ngrok.forward("localhost:4242");<br>
+/// endpoint = await ngrok.forward({addr: "https://localhost:8443", authtoken_from_env: true});<br>
+/// endpoint = await ngrok.forward({addr: "localhost:8080", trafficPolicy: myPolicyYaml, authtoken_from_env: true});
 #[napi(
     ts_args_type = "config: Config|string|number",
-    ts_return_type = "Promise<Listener>"
+    ts_return_type = "Promise<Endpoint>"
 )]
 pub fn forward(
     env: Env,
     mut cfg: Config,
     on_log_event: Option<JsFunction>,
-    on_connection: Option<JsFunction>,
-    on_disconnection: Option<JsFunction>,
+    on_status_change: Option<JsFunction>,
 ) -> Result<JsObject> {
     // do logging configuration before anything else
     if on_log_event.is_some() {
         logging_callback(env, on_log_event, None)?;
     }
-    warn_unused(&cfg);
     set_defaults(&mut cfg);
 
-    // session configuration
-    let mut s_builder = SessionBuilder::new();
-    plumb!(s_builder, cfg, authtoken);
-    plumb_bool!(s_builder, cfg, authtoken_from_env);
-    plumb!(s_builder, cfg, metadata, session_metadata);
-    if let Some(ref ca_cert) = cfg.session_ca_cert {
-        s_builder.ca_cert(Uint8Array::new(ca_cert.as_bytes().to_vec()));
+    // agent configuration
+    let mut a_builder = AgentBuilder::new();
+    if let Some(ref authtoken) = cfg.authtoken {
+        a_builder.authtoken(authtoken.clone());
     }
-    plumb_with_result!(s_builder, cfg, root_cas, root_cas);
-    plumb_with_result!(s_builder, cfg, server_addr, server_addr);
-    if let Some(func) = on_connection {
-        s_builder.handle_connection(env, func);
+    if let Some(true) = cfg.authtoken_from_env {
+        a_builder.authtoken_from_env();
     }
-    if let Some(func) = on_disconnection {
-        s_builder.handle_disconnection(env, func);
+    if let Some(ref metadata) = cfg.session_metadata {
+        a_builder.metadata(metadata.clone());
+    }
+    if let Some(ref connect_url) = cfg.connect_url {
+        a_builder.connect_url(connect_url.clone());
+    }
+    if let Some(func) = on_status_change {
+        a_builder.set_status_handler(env, func);
     }
 
-    // no longer need Env, hand off to async for listener creation, returning the promise to nodejs.
-    env.spawn_future(async_connect(s_builder, cfg))
+    // no longer need Env, hand off to async for endpoint creation, returning the promise to nodejs.
+    env.spawn_future(async_connect(a_builder, cfg))
 }
 
-/// Connect the session, configure and start the listener
-async fn async_connect(s_builder: SessionBuilder, config: Config) -> Result<Listener> {
+/// Connect the agent, configure and start the endpoint
+async fn async_connect(a_builder: AgentBuilder, config: Config) -> Result<Endpoint> {
     let force_new_session = config.force_new_session.unwrap_or(false);
 
-    // Using a singleton session for connect use cases
-    let mut opt = SESSION.lock().await;
+    // Using a singleton agent for connect use cases
+    let mut opt = AGENT.lock().await;
     if opt.is_none() || force_new_session {
-        opt.replace(s_builder.connect().await?);
+        opt.replace(a_builder.connect().await?);
     }
-    let session = opt.as_ref().unwrap();
+    let agent = opt.as_ref().unwrap();
 
-    // listener configuration dispatch
     let proto = config.proto.as_ref().unwrap();
-    let id = match proto.as_str() {
-        "http" => http_endpoint(session, &config).await?,
-        "tcp" => tcp_endpoint(session, &config).await?,
-        "tls" => tls_endpoint(session, &config).await?,
-        "labeled" => labeled_listener(session, &config).await?,
-        _ => return Err(napi_err(format!("unhandled protocol {proto}"))),
-    };
-
-    let listener = listener::get_listener(id.clone())
-        .await
-        .ok_or(napi_err("failed to start listener".to_string()))?;
-
-    // move forwarding to another task
-    if let Some(addr) = config.addr {
-        tokio::spawn(async move { listener::forward(&id, addr).await });
+    match proto.as_str() {
+        "http" => http_endpoint(agent, &config).await,
+        "tcp" => tcp_endpoint(agent, &config).await,
+        "tls" => tls_endpoint(agent, &config).await,
+        _ => Err(napi_err(format!("unhandled protocol {proto}"))),
     }
-
-    Ok(listener)
 }
 
-/// HTTP Listener configuration
-async fn http_endpoint(session: &Session, cfg: &Config) -> Result<String> {
-    let mut bld = session.http_endpoint();
-    config_common!(bld, cfg);
-    plumb_vec!(bld, cfg, scheme, schemes);
-    plumb!(bld, cfg, domain, hostname); // synonym for domain
-    plumb!(bld, cfg, domain);
-    plumb!(bld, cfg, app_protocol);
-    plumb_vec!(bld, cfg, mutual_tlsca, mutual_tls_cas, vecu8);
-    plumb_bool!(bld, cfg, compression);
-    plumb_bool!(bld, cfg, websocket_tcp_conversion, websocket_tcp_converter);
-    plumb_vec!(bld, cfg, request_header, request_header_add, ":");
-    plumb_vec!(bld, cfg, response_header, response_header_add, ":");
-    plumb_vec!(bld, cfg, remove_request_header, request_header_remove);
-    plumb_vec!(bld, cfg, remove_response_header, response_header_remove);
-    plumb_vec!(bld, cfg, basic_auth, basic_auth, ":");
-    plumb_vec!(bld, cfg, allow_user_agent, allow_user_agent);
-    plumb_vec!(bld, cfg, deny_user_agent, deny_user_agent);
-    // circuit breaker
-    if let Some(circuit_breaker) = cfg.circuit_breaker {
-        bld.circuit_breaker(circuit_breaker);
+/// HTTP endpoint configuration
+async fn http_endpoint(agent: &Agent, cfg: &Config) -> Result<Endpoint> {
+    let bld = agent.http_endpoint();
+    apply_common(&bld, cfg);
+    if let Some(domain) = cfg.domain.clone().or_else(|| cfg.hostname.clone()) {
+        bld.domain(domain);
     }
-    // oauth
-    if let Some(ref provider) = cfg.oauth_provider {
-        bld.oauth(
-            provider.clone(),
-            cfg.oauth_allow_emails.clone(),
-            cfg.oauth_allow_domains.clone(),
-            cfg.oauth_scopes.clone(),
-            cfg.oauth_client_id.clone(),
-            cfg.oauth_client_secret.clone(),
-        );
+    listen_or_forward(&bld, cfg).await
+}
+
+/// TCP endpoint configuration
+async fn tcp_endpoint(agent: &Agent, cfg: &Config) -> Result<Endpoint> {
+    let bld = agent.tcp_endpoint();
+    apply_common(&bld, cfg);
+    if let Some(ref remote_addr) = cfg.remote_addr {
+        bld.remote_addr(remote_addr.clone());
     }
-    // oidc
-    if let Some(ref issuer_url) = cfg.oidc_issuer_url {
-        if cfg.oidc_client_id.is_none() {
-            return Err(napi_err("Missing client id for oidc"));
-        }
-        if cfg.oidc_client_secret.is_none() {
-            return Err(napi_err("Missing client secret for oidc"));
-        }
-        bld.oidc(
-            issuer_url.clone(),
-            cfg.oidc_client_id.clone().unwrap(),
-            cfg.oidc_client_secret.clone().unwrap(),
-            cfg.oidc_allow_emails.clone(),
-            cfg.oidc_allow_domains.clone(),
-            cfg.oidc_scopes.clone(),
-        );
+    listen_or_forward(&bld, cfg).await
+}
+
+/// TLS endpoint configuration
+async fn tls_endpoint(agent: &Agent, cfg: &Config) -> Result<Endpoint> {
+    let bld = agent.tls_endpoint();
+    apply_common(&bld, cfg);
+    if let Some(domain) = cfg.domain.clone().or_else(|| cfg.hostname.clone()) {
+        bld.domain(domain);
     }
-    // webhook verification
-    if let Some(ref provider) = cfg.verify_webhook_provider {
-        if let Some(ref secret) = cfg.verify_webhook_secret {
-            bld.webhook_verification(provider.clone(), secret.clone());
+    listen_or_forward(&bld, cfg).await
+}
+
+/// Configuration options common to all endpoint types.
+fn apply_common(bld: &EndpointBuilder, cfg: &Config) {
+    if let Some(ref name) = cfg.name {
+        bld.name(name.clone());
+    }
+    if let Some(ref description) = cfg.description {
+        bld.description(description.clone());
+    }
+    if let Some(ref metadata) = cfg.metadata {
+        bld.metadata(metadata.clone());
+    }
+    if let Some(ref traffic_policy) = cfg.traffic_policy {
+        bld.traffic_policy(traffic_policy.clone());
+    }
+    if let Some(pooling_enabled) = cfg.pooling_enabled {
+        bld.pooling_enabled(pooling_enabled);
+    }
+    if let Some(ref binding) = cfg.binding {
+        bld.binding(binding.clone());
+    }
+}
+
+async fn listen_or_forward(bld: &EndpointBuilder, cfg: &Config) -> Result<Endpoint> {
+    if let Some(ref addr) = cfg.addr {
+        let upstream = if cfg.upstream_protocol.is_some()
+            || cfg.verify_upstream_tls.is_some()
+            || cfg.proxy_proto.is_some()
+        {
+            Some(UpstreamOptions {
+                protocol: cfg.upstream_protocol.clone(),
+                verify_upstream_tls: cfg.verify_upstream_tls,
+                proxy_proto: cfg.proxy_proto.clone(),
+            })
         } else {
-            return Err(napi_err("Missing secret for webhook verification"));
-        }
+            None
+        };
+        bld.forward(addr.clone(), upstream).await
+    } else {
+        bld.listen().await
     }
-    Ok(bld.listen(None).await?.id())
-}
-
-/// TCP Listener configuration
-async fn tcp_endpoint(session: &Session, cfg: &Config) -> Result<String> {
-    let mut bld = session.tcp_endpoint();
-    config_common!(bld, cfg);
-    plumb!(bld, cfg, remote_addr);
-    Ok(bld.listen(None).await?.id())
-}
-
-/// TLS Listener configuration
-async fn tls_endpoint(session: &Session, cfg: &Config) -> Result<String> {
-    let mut bld = session.tls_endpoint();
-    config_common!(bld, cfg);
-    plumb!(bld, cfg, domain, hostname); // synonym for domain
-    plumb!(bld, cfg, domain);
-    plumb_vec!(bld, cfg, mutual_tlsca, mutual_tls_cas, vecu8);
-    if let Some(ref crt) = cfg.crt {
-        if let Some(ref key) = cfg.key {
-            bld.termination(
-                Uint8Array::new(crt.as_bytes().to_vec()),
-                Uint8Array::new(key.as_bytes().to_vec()),
-            );
-        } else {
-            return Err(napi_err("Missing key for tls termination"));
-        }
-    }
-    Ok(bld.listen(None).await?.id())
-}
-
-/// Labeled Listener configuration
-async fn labeled_listener(session: &Session, cfg: &Config) -> Result<String> {
-    let mut bld = session.labeled_listener();
-    plumb!(bld, cfg, metadata);
-    plumb!(bld, cfg, app_protocol);
-    plumb!(bld, cfg, verify_upstream_tls);
-    plumb_vec!(bld, cfg, label, labels, ":");
-    Ok(bld.listen(None).await?.id())
 }
 
 /// Set the expected defaults for configuration values
@@ -330,59 +209,23 @@ fn set_defaults(config: &mut Config) {
     }
 }
 
-/// Warn about unused configuration values
-fn warn_unused(config: &Config) {
-    if config.bin_path.is_some() {
-        warn!("bin_path is unused");
-    }
-    if config.config_path.is_some() {
-        warn!("config_path is unused");
-    }
-    if config.host_header.is_some() {
-        warn!("host_header is unused");
-    }
-    if config.inspect.is_some() {
-        warn!("inspect is unused");
-    }
-    if config.name.is_some() {
-        warn!("name is unused");
-    }
-    if config.region.is_some() {
-        warn!("region is unused");
-    }
-    if let Some(ref schemes) = config.schemes {
-        if schemes.len() > 1 {
-            warn!("Multiple schemes set, only last one will be used");
-        }
-    }
-    if config.subdomain.is_some() {
-        warn!("subdomain is unused");
-    }
-    if config.terminate_at.is_some() {
-        warn!("terminate_at is unused");
-    }
-    if config.web_addr.is_some() {
-        warn!("web_addr is unused");
-    }
-}
-
-/// Close a listener with the given url, or all listeners if no url is defined.
+/// Close an endpoint with the given url, or all endpoints if no url is defined.
 #[napi]
 #[allow(dead_code)]
 pub async fn disconnect(url: Option<String>) -> Result<()> {
-    listener::close_url(url.clone()).await?;
+    endpoint::close_url(url.clone()).await?;
 
-    // if closing every listener, close and remove the stored session
+    // if closing every endpoint, disconnect and remove the stored agent
     if url.as_ref().is_none() {
-        if let Some(session) = SESSION.lock().await.take() {
-            session.close().await?;
+        if let Some(agent) = AGENT.lock().await.take() {
+            agent.disconnect().await?;
         }
     }
 
     Ok(())
 }
 
-/// Close all listeners.
+/// Disconnect and close all endpoints.
 #[napi]
 #[allow(dead_code)]
 pub async fn kill() -> Result<()> {

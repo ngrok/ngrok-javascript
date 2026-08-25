@@ -14,10 +14,9 @@ const start = async () => {
     await fastify.listen({ port: port });
 
     // Establish ingress
-    const session = await new ngrok.SessionBuilder().authtokenFromEnv().connect();
-    const listener = await session.httpEndpoint().listen();
-    listener.forward(`localhost:${port}`);
-    fastify.log.info(`Ingress established at: ${listener.url()}`);
+    const agent = await new ngrok.AgentBuilder().authtokenFromEnv().connect();
+    const endpoint = await agent.httpEndpoint().forward(`localhost:${port}`);
+    fastify.log.info(`Ingress established at: ${endpoint.url()}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

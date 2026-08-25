@@ -2,38 +2,23 @@ use napi::{
     Error,
     Status,
 };
-use ngrok::prelude::Error as NgrokError;
 
+pub mod agent;
 pub mod config;
 pub mod connect;
-pub mod http;
-pub mod listener;
-pub mod listener_builder;
+pub mod endpoint;
+pub mod endpoint_builder;
 pub mod logging;
-pub mod session;
-pub mod tcp;
-pub mod tls;
 
 pub(crate) fn napi_err(message: impl Into<String>) -> Error {
     Error::new(Status::GenericFailure, message.into())
 }
 
-pub(crate) fn napi_ngrok_err(message: impl Into<String>, err: &impl NgrokError) -> Error {
-    let py_err = if let Some(error_code) = err.error_code() {
-        Error::new(
-            Status::GenericFailure,
-            format!(
-                "{}: {} error_code: {}",
-                message.into(),
-                err.msg(),
-                error_code
-            ),
-        )
+pub(crate) fn napi_ngrok_err(message: impl Into<String>, err: &ngrok::Error) -> Error {
+    let msg = if let Some(code) = err.code() {
+        format!("{}: {} error_code: {}", message.into(), err, code)
     } else {
-        Error::new(
-            Status::GenericFailure,
-            format!("{}: {}", message.into(), err.msg()),
-        )
+        format!("{}: {}", message.into(), err)
     };
-    py_err
+    Error::new(Status::GenericFailure, msg)
 }

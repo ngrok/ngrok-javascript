@@ -6,7 +6,7 @@ app.use(async (ctx) => {
   ctx.body = "Hello World";
 });
 
-ngrok.listen(app).then((socket) => {
-  console.log(`Ingress established at: ${app.listener.url()}`);
-  console.log(`Koa listening on: ${socket.address()}`);
+ngrok.listen(app).then((endpoint) => {
+  console.log(`Ingress established at: ${endpoint.url()}`);
+  console.log(`Koa listening on: ${endpoint.socket.address()}`);
 });

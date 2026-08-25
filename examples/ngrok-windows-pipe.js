@@ -1,25 +1,7 @@
-const PIPE = "\\\\.\\pipe\\ngrok_pipe";
-
-const http = require("http");
-http
-  .createServer(function (req, res) {
-    res.writeHead(200);
-    res.write("Hello");
-    res.end();
-  })
-  .listen(PIPE);
-
-const ngrok = require("@ngrok/ngrok");
-ngrok.consoleLog(); // turn on info logging
-new ngrok.SessionBuilder()
-  .authtokenFromEnv()
-  .connect()
-  .then((session) => {
-    session
-      .httpEndpoint()
-      .listen()
-      .then((listener) => {
-        console.log("Ingress established at:", listener.url());
-        listener.forward(PIPE);
-      });
-  });
+// Forwarding to a Windows named pipe (or, on other platforms, a unix domain socket) is
+// not currently supported by this package's underlying ngrok-rust fork -- its `Upstream`
+// dialer only ever dials plain TCP (see `resolve_upstream_addr` in ngrok-rust's
+// agent.rs). A `unix:...` address is rejected up front with a clear error. A
+// `\\.\pipe\...` address is not caught by that same guard and will still silently
+// resolve to `localhost:80` instead of reaching your server. Point your local server at
+// a TCP port and forward to `localhost:<port>` instead -- see ngrok-http-minimum.js.

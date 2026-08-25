@@ -13,12 +13,12 @@ ngrok.loggingCallback(function (level, target, message) {
   logger.log(level, message, { target: target });
 }, "TRACE");
 
-// set up listener
+// set up endpoint
 const server = require("http").createServer(function (req, res) {
   res.writeHead(200);
   res.write("Hello");
   res.end();
 });
-ngrok.listen(server).then((socket) => {
-  logger.info("Ingress established at:", socket.listener.url());
+ngrok.listen(server).then((endpoint) => {
+  logger.info("Ingress established at:", endpoint.url());
 });

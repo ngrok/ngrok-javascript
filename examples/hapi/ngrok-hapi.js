@@ -21,10 +21,9 @@ const init = async () => {
   await server.start();
   console.log("Server running on %s", server.info.uri);
 
-  const session = await new ngrok.SessionBuilder().authtokenFromEnv().connect();
-  const listener = await session.httpEndpoint().listen();
-  console.log(`Ingress established at: ${listener.url()}`);
-  listener.forward(`localhost:${port}`);
+  const agent = await new ngrok.AgentBuilder().authtokenFromEnv().connect();
+  const endpoint = await agent.httpEndpoint().forward(`localhost:${port}`);
+  console.log(`Ingress established at: ${endpoint.url()}`);
 };
 
 process.on("unhandledRejection", (err) => {

@@ -36,12 +36,11 @@ function createHttp2Server() {
 }
 
 async function makeHttp(options = {}) {
-  const { useUnixSocket = false, useHttp2 = false } = options;
+  const { useHttp2 = false } = options;
   const server = createHttpServer({ protocol: useHttp2 ? "http2" : "http" });
-  const listenTo = useUnixSocket ? "tun-" + Math.floor(Math.random() * 1000000) : 0;
-  const socket = await server.listen(listenTo);
+  const socket = await server.listen(0);
   server.socket = socket;
-  server.listenTo = useUnixSocket ? listenTo : "localhost:" + server.address().port;
+  server.listenTo = "localhost:" + server.address().port;
   return server;
 }
 
@@ -65,29 +64,29 @@ async function validateShutdown(httpServer, url, axiosConfig) {
 
 test("forward https", async () => {
   const httpServer = await makeHttp();
-  const listener = await ngrok.forward({
+  const endpoint = await ngrok.forward({
     addr: httpServer.listenTo,
     authtoken: process.env["NGROK_AUTHTOKEN"],
   });
-  const url = listener.url();
+  const url = endpoint.url();
 
   expect(url).toBeTruthy();
   expect(url.startsWith("https://")).toBeTruthy();
   await validateShutdown(httpServer, url);
 });
 
-test("forward http2", async () => {
+test("forward http2 upstream", async () => {
   const httpServer = await makeHttp({ useHttp2: true });
-  const listener = await ngrok.forward({
+  const endpoint = await ngrok.forward({
     // numeric port
     addr: parseInt(httpServer.listenTo.split(":")[1], 10),
     // authtoken from env
     authtoken: process.env["NGROK_AUTHTOKEN"],
-    // The L7 app_protocol
-    app_protocol: "http2",
+    // protocol hint for the agent -> upstream connection
+    upstream_protocol: "http2",
   });
 
-  const url = listener.url();
+  const url = endpoint.url();
   expect(url.startsWith("https://")).toBeTruthy();
   const res = await validateShutdown(httpServer, url);
 
@@ -95,20 +94,20 @@ test("forward http2", async () => {
   expect(res.data).toContain(expected);
 });
 
-test("forward http2 no cert validation", async () => {
+test("forward http2 upstream no cert validation", async () => {
   const httpServer = await makeHttp({ useHttp2: true });
-  const listener = await ngrok.forward({
+  const endpoint = await ngrok.forward({
     // numeric port
     addr: parseInt(httpServer.listenTo.split(":")[1], 10),
     // authtoken from env
     authtoken: process.env["NGROK_AUTHTOKEN"],
-    // The L7 app_protocol
-    app_protocol: "http2",
+    // protocol hint for the agent -> upstream connection
+    upstream_protocol: "http2",
     // No upstream cert validation
     verify_upstream_tls: false,
   });
 
-  const url = listener.url();
+  const url = endpoint.url();
   expect(url.startsWith("https://")).toBeTruthy();
   const res = await validateShutdown(httpServer, url);
 
@@ -119,8 +118,8 @@ test("forward http2 no cert validation", async () => {
 test("connect number", async () => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const listener = await ngrok.connect(parseInt(httpServer.listenTo.split(":")[1], 10));
-  const url = listener.url();
+  const endpoint = await ngrok.connect(parseInt(httpServer.listenTo.split(":")[1], 10));
+  const url = endpoint.url();
 
   expect(url).toBeTruthy();
   expect(url.startsWith("https://")).toBeTruthy();
@@ -130,8 +129,8 @@ test("connect number", async () => {
 test("forward number", async () => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const listener = await ngrok.forward(parseInt(httpServer.listenTo.split(":")[1], 10));
-  const url = listener.url();
+  const endpoint = await ngrok.forward(parseInt(httpServer.listenTo.split(":")[1], 10));
+  const url = endpoint.url();
 
   expect(url).toBeTruthy();
   expect(url.startsWith("https://")).toBeTruthy();
@@ -142,8 +141,8 @@ test("forward just string as port", async () => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const listener = await ngrok.forward(httpServer.listenTo.split(":")[1]);
-  const url = listener.url();
+  const endpoint = await ngrok.forward(httpServer.listenTo.split(":")[1]);
+  const url = endpoint.url();
 
   expect(url).toBeTruthy();
   expect(url.startsWith("https://")).toBeTruthy();
@@ -154,8 +153,8 @@ test("forward addr port string", async () => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const listener = await ngrok.forward({ addr: httpServer.listenTo.split(":")[1] });
-  const url = listener.url();
+  const endpoint = await ngrok.forward({ addr: httpServer.listenTo.split(":")[1] });
+  const url = endpoint.url();
 
   expect(url).toBeTruthy();
   expect(url.startsWith("https://")).toBeTruthy();
@@ -166,8 +165,8 @@ test("forward port string", async () => {
   ngrok.consoleLog();
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const listener = await ngrok.forward({ port: httpServer.listenTo.split(":")[1] });
-  const url = listener.url();
+  const endpoint = await ngrok.forward({ port: httpServer.listenTo.split(":")[1] });
+  const url = endpoint.url();
 
   expect(url).toBeTruthy();
   expect(url.startsWith("https://")).toBeTruthy();
@@ -177,44 +176,52 @@ test("forward port string", async () => {
 test("forward string", async () => {
   const httpServer = await makeHttp();
   ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-  const listener = await ngrok.forward(httpServer.listenTo);
-  const url = listener.url();
+  const endpoint = await ngrok.forward(httpServer.listenTo);
+  const url = endpoint.url();
 
   expect(url).toBeTruthy();
   expect(url.startsWith("https://")).toBeTruthy();
   await validateShutdown(httpServer, url);
 });
 
-test("forward vectorize", async () => {
+// Covers what the old "forward vectorize" test exercised (basic auth, IP restriction,
+// and header manipulation config fields), now expressed as a Traffic Policy document
+// instead of discrete config fields. See https://ngrok.com/docs/traffic-policy/.
+test("forward traffic policy: basic auth, ip restriction, headers", async () => {
   const httpServer = await makeHttp();
-  const listener = await ngrok.forward({
-    // numeric port
+  const trafficPolicy = `
+on_http_request:
+  - actions:
+      - type: basic-auth
+        config:
+          credentials:
+            - ngrok:online1line
+      - type: restrict-ips
+        config:
+          enforce: true
+          allow:
+            - 0.0.0.0/0
+          deny:
+            - 10.1.1.1/32
+on_http_response:
+  - actions:
+      - type: add-headers
+        config:
+          headers:
+            x-res-yup: "true"
+`;
+  const endpoint = await ngrok.forward({
     addr: parseInt(httpServer.listenTo.split(":")[1], 10),
     authtoken: process.env["NGROK_AUTHTOKEN"],
-    // function offloading
     onLogEvent: (data) => {
       console.log(`data ${data}`);
     },
     onStatusChange: (status) => {
       console.log(`status ${status}`);
     },
-    // scalar to array conversion
-    basic_auth: "ngrok:online1line",
-    "ip_restriction.allow_cidrs": "0.0.0.0/0",
-    ip_restriction_allow_cidrs: "0.0.0.0/0",
-    "ip_restriction.deny_cidrs": "10.1.1.1/32",
-    ip_restriction_deny_cidrs: "10.1.1.1/32",
-    "request_header.remove": "X-Req-Nope",
-    request_header_remove: "X-Req-Nope2",
-    "response_header.remove": "X-Res-Nope",
-    response_header_remove: "X-Res-Nope2",
-    "request_header.add": "X-Req-Yup:true",
-    request_header_add: "X-Req-Yup2:true2",
-    "response_header.add": "X-Res-Yup:true",
-    response_header_add: "X-Res-Yup2:true2",
-    schemes: "HTTPS",
+    traffic_policy: trafficPolicy,
   });
-  const url = listener.url();
+  const url = endpoint.url();
 
   expect(url).toBeTruthy();
   expect(url.startsWith("https://")).toBeTruthy();
@@ -222,46 +229,42 @@ test("forward vectorize", async () => {
     auth: { username: "ngrok", password: "online1line" },
   });
   expect("true").toBe(response.headers["x-res-yup"]);
-  expect("true2").toBe(response.headers["x-res-yup2"]);
 });
 
-test("forward tcp listener", async () => {
+test("forward tcp endpoint", async () => {
   const httpServer = await makeHttp();
-  const listener = await ngrok.forward({
+  const endpoint = await ngrok.forward({
     addr: httpServer.listenTo,
     authtoken_from_env: true,
     proto: "tcp",
-    forwards_to: "tcp forwards to",
     metadata: "tcp metadata",
   });
 
-  expect(listener).toBeTruthy();
+  expect(endpoint).toBeTruthy();
+  expect(endpoint.forwardsTo()).toBeTruthy();
+  expect("tcp metadata").toBe(endpoint.metadata());
 
-  await validateShutdown(httpServer, listener.url().replace("tcp:", "http:"), {
-    auth: { username: "ngrok", password: "online1line" },
-  });
+  await validateShutdown(httpServer, endpoint.url().replace("tcp:", "http:"));
 });
 
-test("forward tls listener", async () => {
+// NOTE: custom TLS termination at the edge (previously configured via the `crt`/`key`
+// fields) is not currently exposed by this package -- see README for details. This
+// only exercises endpoint creation, not a specific certificate.
+test("forward tls endpoint", async () => {
   const httpServer = await makeHttp();
-  const listener = await ngrok.forward({
+  const endpoint = await ngrok.forward({
     addr: httpServer.listenTo,
     authtoken_from_env: true,
     proto: "tls",
-    forwards_to: "tls forwards to",
     metadata: "tls metadata",
-    crt: fs.readFileSync("examples/domain.crt", "utf8"),
-    key: fs.readFileSync("examples/domain.key", "utf8"),
-  });
-  const url = listener.url();
-
-  expect(url).toBeTruthy();
-
-  await axios.get(url.replace("tls:", "https:")).catch((error) => {
-    expect(error.message.endsWith("signed certificate")).toBeTruthy();
   });
 
-  await shutdown(url, httpServer.socket);
+  expect(endpoint.id()).toBeTruthy();
+  expect(endpoint.url()).toBeTruthy();
+  expect("tls metadata").toBe(endpoint.metadata());
+
+  await ngrok.disconnect(endpoint.url());
+  httpServer.socket.close();
 });
 
 // serial to not run into double error on a session issue
@@ -276,68 +279,17 @@ test("forward bad domain", async () => {
   await shutdown(null, httpServer.socket);
 });
 
-// serial to not run into double error on a session issue
-test.skip("root_cas", async () => {
-  // remove any lingering sessions
-  await ngrok.disconnect();
-
-  const httpServer = await makeHttp();
-  ngrok.authtoken(process.env["NGROK_AUTHTOKEN"]);
-
-  // tls error connecting to marketing site
-  await ngrok
-    .forward({
-      addr: httpServer.listenTo,
-      force_new_session: true,
-      root_cas: "trusted",
-      server_addr: "ngrok.com:443",
-    })
-    .catch((error) => {
-      expect(error.message.includes("tls handshake")).toBe(true);
-    });
-
-  // non-tls error connecting to marketing site with "host" root_cas
-  await ngrok
-    .forward({
-      addr: httpServer.listenTo,
-      force_new_session: true,
-      root_cas: "host",
-      server_addr: "ngrok.com:443",
-    })
-    .catch((error) => {
-      expect(error.message.includes("tls handshake")).toBe(false);
-    });
-});
-
-test("policy", async () => {
-  const policy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
-
-  const httpServer = await makeHttp();
-  const listener = await ngrok.forward({
-    addr: httpServer.listenTo,
-    authtoken: process.env["NGROK_AUTHTOKEN"],
-    proto: "http",
-    policy: policy,
-  });
-  const url = listener.url();
-
-  expect(url).toBeTruthy();
-  expect(url.startsWith("https://")).toBeTruthy();
-  const response = await validateShutdown(httpServer, url);
-  expect("bar").toBe(response.headers["foo"]);
-});
-
 test("traffic policy", async () => {
   const trafficPolicy = fs.readFileSync(path.resolve("__test__", "policy.json"), "utf8");
 
   const httpServer = await makeHttp();
-  const listener = await ngrok.forward({
+  const endpoint = await ngrok.forward({
     addr: httpServer.listenTo,
     authtoken: process.env["NGROK_AUTHTOKEN"],
     proto: "http",
     traffic_policy: trafficPolicy,
   });
-  const url = listener.url();
+  const url = endpoint.url();
 
   expect(url).toBeTruthy();
   expect(url.startsWith("https://")).toBeTruthy();

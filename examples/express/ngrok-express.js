@@ -6,23 +6,32 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
+// Restrictions, headers, auth, etc. that used to be chained builder methods
+// (.allowCidr()/.oauth()/.requestHeader()/...) are now expressed as a Traffic Policy
+// document. See https://ngrok.com/docs/traffic-policy/.
+const trafficPolicy = `
+on_http_request:
+  - actions:
+      - type: restrict-ips
+        config:
+          enforce: true
+          allow:
+            - 0.0.0.0/0
+      - type: add-headers
+        config:
+          headers:
+            x-req-yup: "true"
+`;
+
 async function setup() {
-  // create session
-  const session = await new ngrok.SessionBuilder()
+  // create agent
+  const agent = await new ngrok.AgentBuilder()
     .authtokenFromEnv()
     .metadata("Online in One Line")
     .connect();
-  // create listener
-  const listener = await session
-    .httpEndpoint()
-    .allowCidr("0.0.0.0/0")
-    .oauth("google")
-    .requestHeader("X-Req-Yup", "true")
-    .listen();
-  // link listener to app
-  const socket = await ngrok.listen(app, listener);
-  console.log(`Ingress established at: ${listener.url()}`);
-  console.log(`Express listening on: ${socket.address()}`);
+  // build an endpoint and serve this express app on it directly
+  const endpoint = await agent.httpEndpoint().trafficPolicy(trafficPolicy).serve(app);
+  console.log(`Ingress established at: ${endpoint.url()}`);
 }
 
 setup();

@@ -14,14 +14,12 @@ server.on("stream", (stream, headers) => {
 });
 
 async function setup() {
-  // create session
-  const session = await new ngrok.SessionBuilder().authtokenFromEnv().connect();
-  // create listener
-  const listener = await session.httpEndpoint().appProtocol("http2").listen();
-
-  await ngrok.listen(server, listener);
-  console.log(`Ingress established at: ${listener.url()}`);
-  console.log(`Server listening on: ${socket.address()}`);
+  // create agent
+  const agent = await new ngrok.AgentBuilder().authtokenFromEnv().connect();
+  // NOTE: setting the edge-facing L7 app protocol to http2 (previously
+  // `.appProtocol("http2")`) is not currently exposed by this package.
+  const endpoint = await agent.httpEndpoint().serve(server);
+  console.log(`Ingress established at: ${endpoint.url()}`);
 }
 
 setup();

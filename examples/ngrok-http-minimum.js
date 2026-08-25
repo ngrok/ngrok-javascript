@@ -9,10 +9,9 @@ http
 
 var ngrok = require("@ngrok/ngrok");
 
-async function create_listener() {
-  const session = await new ngrok.SessionBuilder().authtokenFromEnv().connect();
-  const listener = await session.httpEndpoint().listen();
-  console.log("Ingress established at:", listener.url());
-  listener.forward("localhost:8081");
+async function create_endpoint() {
+  const agent = await new ngrok.AgentBuilder().authtokenFromEnv().connect();
+  const endpoint = await agent.httpEndpoint().forward("localhost:8081");
+  console.log("Ingress established at:", endpoint.url());
 }
-create_listener();
+create_endpoint();

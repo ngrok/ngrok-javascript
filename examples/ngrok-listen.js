@@ -6,6 +6,6 @@ const server = require("http").createServer(function (req, res) {
 const ngrok = require("@ngrok/ngrok");
 
 (async function () {
-  await ngrok.listen(server);
-  console.log(`Ingress established at: ${server.listener.url()}`);
+  const endpoint = await ngrok.listen(server);
+  console.log(`Ingress established at: ${endpoint.url()}`);
 })();

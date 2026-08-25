@@ -1,13 +1,9 @@
 /**
- * Get a listenable ngrok listener, suitable for passing to net.Server.listen().
- * Uses the NGROK_AUTHTOKEN environment variable to authenticate.
+ * Bind `server` to a local socket, create/reuse the default agent (via NGROK_AUTHTOKEN),
+ * and forward a new endpoint to it in one step. Surfaces the created endpoint as
+ * `server.endpoint`/`socket.endpoint`/`endpoint.socket`.
  */
-export function listenable(): Listener;
-/**
- * Start the given net.Server listening to a generated, or passed in, listener.
- * Uses the NGROK_AUTHTOKEN environment variable to authenticate if a new listener is created.
- */
-export function listen(server: import("net").Server, listener?: Listener): Listener;
+export function listen(server: import("net").Server, config?: Config): Promise<Endpoint>;
 /**
  * Register a console.log callback for ngrok INFO logging.
  * Optionally set the logging level to one of ERROR, WARN, INFO, DEBUG, or TRACE.

@@ -12,55 +12,37 @@ ngrok.consoleLog();
 
 const run = async (): Promise<void> => {
   // await listenServer();
-  // await listenable();
-  // await listen();
+  // await forwardExisting();
   await standardConfig();
 };
 
 async function listenServer() {
-  const listener = await ngrok.listen(httpServer);
-  if (typeof listener["url"] === "function") {
-    console.log("Ingress established at: ", listener["url"]());
-  }
+  const endpoint = await ngrok.listen(httpServer);
+  console.log("Ingress established at: ", endpoint.url());
 }
 
-async function listenable() {
-  const listener = await ngrok.listenable();
-  httpServer.listen(listener);
-}
-
-async function listen() {
-  const sessionBuilder = new ngrok.SessionBuilder().authtokenFromEnv();
-  const session = await sessionBuilder.connect();
-  const listener = await session.httpEndpoint().listen();
-  httpServer.listen(listener);
+async function forwardExisting() {
+  const agentBuilder = new ngrok.AgentBuilder().authtokenFromEnv();
+  const agent = await agentBuilder.connect();
+  httpServer.listen(8081);
+  const endpoint = await agent.httpEndpoint().forward("localhost:8081");
+  console.log("Ingress established at:", endpoint.url());
 }
 
 async function standardConfig() {
   ngrok.loggingCallback(function (level, target, message) {
     console.log(level, target, "-", message);
   });
-  const sessionBuilder = new ngrok.SessionBuilder()
+  const agentBuilder = new ngrok.AgentBuilder()
     .authtokenFromEnv()
-    .handleStopCommand(() => {
-      console.log("stop command");
-    })
-    .handleRestartCommand(() => {
-      console.log("restart command");
-    })
-    .handleUpdateCommand((update) => {
-      console.log(
-        "update command, version: " +
-          update.version +
-          " permitMajorVersion: " +
-          update.permitMajorVersion
-      );
+    .onRpc((request) => {
+      // request.method is one of "stop", "restart", "update"
+      console.log("agent rpc request:", request.method);
     });
-  const session = await sessionBuilder.connect();
-  const listener = await session.httpEndpoint().listen();
-  console.log("Ingress established at:", listener.url());
+  const agent = await agentBuilder.connect();
   httpServer.listen(8081);
-  listener.forward("localhost:8081");
+  const endpoint = await agent.httpEndpoint().forward("localhost:8081");
+  console.log("Ingress established at:", endpoint.url());
 
   // unregister logging callback
   ngrok.loggingCallback();

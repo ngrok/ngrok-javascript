@@ -1,8 +1,4 @@
-const UNIX_SOCKET = "/tmp/http.socket";
-const fs = require("fs");
-try {
-  fs.unlinkSync(UNIX_SOCKET);
-} catch {}
+const PORT = 8080;
 
 // make webserver
 const http = require("http");
@@ -12,58 +8,55 @@ http
     res.write("Congrats you have a created an ngrok web server");
     res.end();
   })
-  .listen(UNIX_SOCKET); // Server object listens on unix socket
-console.log(`Node.js web server at ${UNIX_SOCKET} is running..`);
+  .listen(PORT);
+console.log(`Node.js web server at localhost:${PORT} is running..`);
 
 // setup ngrok
 const ngrok = require("@ngrok/ngrok");
 ngrok.consoleLog("INFO"); // turn on info logging
 
+// Most of what used to be discrete config fields (basic auth, OAuth/OIDC, webhook
+// verification, circuit breaker, compression, IP restrictions, header add/remove,
+// mutual TLS, ...) are now expressed as a Traffic Policy document evaluated at the
+// ngrok edge. See https://ngrok.com/docs/traffic-policy/ for the full action list.
+const trafficPolicy = `
+on_http_request:
+  - actions:
+      - type: basic-auth
+        config:
+          credentials:
+            - ngrok:online1line
+      - type: restrict-ips
+        config:
+          enforce: true
+          allow:
+            - 0.0.0.0/0
+          deny:
+            - 10.1.1.1/32
+      - type: add-headers
+        config:
+          headers:
+            x-req-yup: "true"
+`;
+
 (async function () {
-  const listener = await ngrok.forward({
-    // session configuration
-    addr: `unix:${UNIX_SOCKET}`,
-    // addr: `localhost:8080`,
-    // app_protocol: "http2",
+  const endpoint = await ngrok.forward({
+    // agent configuration
+    addr: `localhost:${PORT}`,
     // authtoken: "<authtoken>",
     authtoken_from_env: true,
-    on_status_change: (addr, error) => {
-      console.log(`disconnected, addr ${addr} error: ${error}`);
+    onStatusChange: (status) => {
+      console.log(`agent connection status: ${status}`);
     },
     session_metadata: "Online in One Line",
-    // listener configuration
-    // allow_user_agent: "^mozilla.*",
-    basic_auth: ["ngrok:online1line"],
-    circuit_breaker: 0.1,
-    compression: true,
-    // deny_user_agent: "^curl.*",
+    // endpoint configuration
     // domain: "<domain>",
-    ip_restriction_allow_cidrs: ["0.0.0.0/0"],
-    ip_restriction_deny_cidrs: ["10.1.1.1/32"],
-    metadata: "example listener metadata from nodejs",
-    // mutual_tls_cas: [fs.readFileSync('ca.crt', 'utf8')],
-    // oauth_provider: "google",
-    // oauth_allow_domains: ["<domain>"],
-    // oauth_allow_emails: ["<email>"],
-    // oauth_scopes: ["<scope>"],
-    // oauth_client_id: "<id>",
-    // oauth_client_secret: "<secret>",
-    // oidc_issuer_url: "<url>",
-    // oidc_client_id: "<id>",
-    // oidc_client_secret: "<secret>",
-    // oidc_allow_domains: ["<domain>"],
-    // oidc_allow_emails: ["<email>"],
-    // oidc_scopes": ["<scope>"],
-    proxy_proto: "", // One of: "", "1", "2"
-    request_header_remove: ["X-Req-Nope"],
-    response_header_remove: ["X-Res-Nope"],
-    request_header_add: ["X-Req-Yup:true"],
-    response_header_add: ["X-Res-Yup:true"],
-    schemes: ["HTTPS"],
-    // verify_upstream_tls: false,
-    // verify_webhook_provider: "twilio",
-    // verify_webhook_secret: "asdf",
-    // websocket_tcp_converter: true,
+    metadata: "example endpoint metadata from nodejs",
+    name: "ngrok-forward-full example",
+    traffic_policy: trafficPolicy,
+    // proxy_proto: "", // One of: "", "1", "2" -- PROXY protocol from the agent to your upstream.
+    // upstream_protocol: "http2",
+    // verify_upstream_tls: false, // set false to skip cert verification for self-signed local HTTPS backends
   });
-  console.log(`Ingress established at: ${listener.url()}`);
+  console.log(`Ingress established at: ${endpoint.url()}`);
 })();

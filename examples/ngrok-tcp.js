@@ -1,8 +1,4 @@
-const UNIX_SOCKET = "/tmp/http.socket";
-const fs = require("fs");
-try {
-  fs.unlinkSync(UNIX_SOCKET);
-} catch {}
+const PORT = 8080;
 
 // make webserver
 const http = require("http");
@@ -12,26 +8,22 @@ http
     res.write("Congrats you have a created an ngrok web server");
     res.end();
   })
-  .listen(UNIX_SOCKET); // Server object listens on unix socket
-console.log("Node.js web server at", UNIX_SOCKET, "is running...");
+  .listen(PORT);
+console.log("Node.js web server at localhost:" + PORT + " is running...");
 
 // setup ngrok
 const ngrok = require("@ngrok/ngrok");
-builder = new ngrok.SessionBuilder();
+builder = new ngrok.AgentBuilder();
 builder.authtokenFromEnv().metadata("Online in One Line");
 
-builder.connect().then((session) => {
-  session
+builder.connect().then((agent) => {
+  agent
     .tcpEndpoint()
-    // .allowCidr("0.0.0.0/0")
-    // .denyCidr("10.1.1.1/32")
-    // .forwardsTo("example nodejs")
-    // .proxyProto("") // One of: "", "1", "2"
     // .remoteAddr("<n>.tcp.ngrok.io:<p>")
-    .metadata("example listener metadata from nodejs")
-    .listen()
-    .then((listener) => {
-      console.log("Ingress established at:", listener.url());
-      listener.forward(UNIX_SOCKET);
+    // .trafficPolicy(myPolicyYaml) // e.g. a restrict-ips action on on_tcp_connect
+    .metadata("example endpoint metadata from nodejs")
+    .forward(`localhost:${PORT}`)
+    .then((endpoint) => {
+      console.log("Ingress established at:", endpoint.url());
     });
 });

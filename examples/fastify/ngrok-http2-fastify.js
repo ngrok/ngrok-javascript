@@ -16,10 +16,11 @@ const start = async () => {
     await fastify.listen({ port: port });
 
     // Establish ingress
-    const session = await new ngrok.SessionBuilder().authtokenFromEnv().connect();
-    const listener = await session.httpEndpoint().appProtocol("http2").listen();
-    listener.forward(`localhost:${port}`);
-    fastify.log.info(`Ingress established at: ${listener.url()}`);
+    // NOTE: setting the edge-facing L7 app protocol to http2 (previously
+    // `.appProtocol("http2")`) is not currently exposed by this package.
+    const agent = await new ngrok.AgentBuilder().authtokenFromEnv().connect();
+    const endpoint = await agent.httpEndpoint().forward(`localhost:${port}`);
+    fastify.log.info(`Ingress established at: ${endpoint.url()}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
