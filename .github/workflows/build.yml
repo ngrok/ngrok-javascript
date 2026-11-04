@@ -39,11 +39,10 @@ jobs:
           node-version: 18
           cache: yarn
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@stable
         if: ${{ !inputs.docker }}
-        with:
-          toolchain: stable
-          targets: ${{ inputs.target }}
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add ${{ inputs.target }}
       - name: Cache cargo
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
