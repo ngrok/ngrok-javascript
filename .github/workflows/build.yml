@@ -31,9 +31,9 @@ jobs:
     runs-on: ${{ inputs.host }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: ${{ !inputs.docker }}
         with:
           node-version: 18
@@ -44,7 +44,7 @@ jobs:
           rustup toolchain install stable --profile minimal
           rustup target add ${{ inputs.target }}
       - name: Cache cargo
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry/index/
@@ -57,7 +57,7 @@ jobs:
         run: |
           cargo install --force --locked bindgen-cli
       - name: Install zig
-        uses: mlugg/setup-zig@53fc45b17fe98b52f92ee5ea08ff48a85a3e7eb7 # v1.2.2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
           version: 0.10.0
@@ -75,7 +75,7 @@ jobs:
       - name: Install js dependencies
         run: yarn install
       - name: Setup node x86
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: inputs.target == 'i686-pc-windows-msvc'
         with:
           node-version: 18
@@ -92,7 +92,7 @@ jobs:
         run: ${{ inputs.build }}
         if: ${{ !inputs.docker }}
       - name: Upload bindings artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: bindings-${{ inputs.target }}
           path: ${{ inputs.app-name }}.*.node
