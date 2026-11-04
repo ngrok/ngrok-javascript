@@ -31,21 +31,20 @@ jobs:
     runs-on: ${{ inputs.host }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         if: ${{ !inputs.docker }}
         with:
           node-version: 18
           cache: yarn
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@stable
         if: ${{ !inputs.docker }}
-        with:
-          toolchain: stable
-          targets: ${{ inputs.target }}
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add ${{ inputs.target }}
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ~/.cargo/registry/index/
@@ -58,7 +57,7 @@ jobs:
         run: |
           cargo install --force --locked bindgen-cli
       - name: Install zig
-        uses: mlugg/setup-zig@v1
+        uses: mlugg/setup-zig@53fc45b17fe98b52f92ee5ea08ff48a85a3e7eb7 # v1.2.2
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
           version: 0.10.0
@@ -67,7 +66,7 @@ jobs:
         if: ${{ inputs.setup }}
         shell: bash
       - name: Install nasm
-        uses: ilammy/setup-nasm@v1
+        uses: ilammy/setup-nasm@72793074d3c8cdda771dba85f6deafe00623038b # v1.5.2
         if: inputs.target == 'i686-pc-windows-msvc'
       - name: Setup node x86
         if: inputs.target == 'i686-pc-windows-msvc'
@@ -76,14 +75,14 @@ jobs:
       - name: Install js dependencies
         run: yarn install
       - name: Setup node x86
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         if: inputs.target == 'i686-pc-windows-msvc'
         with:
           node-version: 18
           cache: yarn
           architecture: x86
       - name: Build in docker
-        uses: addnab/docker-run-action@v3
+        uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
         if: ${{ inputs.docker}}
         with:
           image: ${{ inputs.docker }}
@@ -93,7 +92,7 @@ jobs:
         run: ${{ inputs.build }}
         if: ${{ !inputs.docker }}
       - name: Upload bindings artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: bindings-${{ inputs.target }}
           path: ${{ inputs.app-name }}.*.node
