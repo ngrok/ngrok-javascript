@@ -415,7 +415,7 @@ jobs:
       - name: Setup and run tests
         uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
         with:
-          image: node:lts-alpine
+          image: node:${{ matrix.node }}-alpine
           options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
           run: |
             set -e
