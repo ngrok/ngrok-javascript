@@ -318,7 +318,7 @@ impl SessionBuilder {
                             .clone()
                             .lock()
                             .await
-                            .call_async(args)
+                            .call_async::<()>(args)
                             .await
                             .map_err(|_e| ConnectError::Canceled)?;
                     }
