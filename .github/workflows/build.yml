@@ -87,7 +87,12 @@ jobs:
         with:
           image: ${{ inputs.docker }}
           options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-          run: ${{ inputs.build }}
+          # The images' stable toolchain dates from when they were built (Rust
+          # 1.82), too old for edition 2024 dependencies; update it first.
+          run: |
+            rustup update stable --no-self-update
+            rustup target add ${{ inputs.target }}
+            ${{ inputs.build }}
       - name: Build
         run: ${{ inputs.build }}
         if: ${{ !inputs.docker }}
