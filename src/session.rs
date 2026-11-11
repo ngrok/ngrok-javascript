@@ -313,12 +313,14 @@ impl SessionBuilder {
                             Ok(_) => vec!["connected".to_string()],
                             Err(err) => vec!["closed".to_string(), err.to_string()],
                         };
-                        // call javascript handler
+                        // call javascript handler; the return value is unused, so
+                        // name the type explicitly rather than relying on
+                        // never-type fallback (which newer rustc resolves to `!`)
                         handler
                             .clone()
                             .lock()
                             .await
-                            .call_async(args)
+                            .call_async::<()>(args)
                             .await
                             .map_err(|_e| ConnectError::Canceled)?;
                     }
