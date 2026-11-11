@@ -1,5 +1,6 @@
 use std::{
     env,
+    num::NonZeroU32,
     sync::Arc,
     time::Duration,
 };
@@ -179,6 +180,94 @@ impl SessionBuilder {
         builder
             .heartbeat_tolerance(Duration::new(heartbeat_tolerance.into(), 0))
             .map_err(|e| napi_err(format!("{e}")))?;
+        Ok(self)
+    }
+
+    /// Configures how long the session waits between attempts to reconnect
+    /// after it loses its connection to the ngrok service, in milliseconds.
+    ///
+    /// The first attempt is immediate. After it, the session waits `initialMs`,
+    /// then twice as long before each attempt, up to `maxMs`. Each wait is
+    /// scaled by a random factor in [0, 1) unless
+    /// [SessionBuilder::reconnectJitter] turns that off. The defaults are
+    /// 50 ms and 30 s. For a fixed wait between every attempt, pass the same
+    /// value for both and turn jitter off.
+    ///
+    /// These waits never stop the session from reconnecting on their own:
+    /// [SessionBuilder::reconnectMaxAttempts], or closing the session, does.
+    ///
+    /// A value that is not a whole number of milliseconds of at least 0 (a
+    /// fraction, a negative number, NaN or Infinity) is refused with an error
+    /// naming the argument. The ngrok Rust SDK then checks the range: it
+    /// rejects an `initialMs` below 1 or above `maxMs`, and a `maxMs` above one
+    /// day (86400000), with an error that starts with the call and its
+    /// arguments, as in "reconnectBackoff(initialMs: 2000, maxMs: 1000): ",
+    /// and names the rule broken. A refused call leaves the builder unchanged.
+    #[napi]
+    pub fn reconnect_backoff(&mut self, initial_ms: f64, max_ms: f64) -> Result<&Self> {
+        let millis = |name: &str, ms: f64| {
+            whole_number(ms).map(Duration::from_millis).ok_or_else(|| {
+                napi_err(format!(
+                    "{name} must be a whole number of milliseconds, at least 0, got {}",
+                    js_number(ms)
+                ))
+            })
+        };
+        let initial = millis("initialMs", initial_ms)?;
+        let max = millis("maxMs", max_ms)?;
+        let mut builder = self.raw_builder.lock();
+        builder.reconnect_backoff(initial, max).map_err(|e| {
+            napi_err(format!(
+                "reconnectBackoff(initialMs: {}, maxMs: {}): {e}",
+                js_number(initial_ms),
+                js_number(max_ms)
+            ))
+        })?;
+        Ok(self)
+    }
+
+    /// Configures whether each wait between reconnect attempts is scaled by a
+    /// random factor in [0, 1). On by default, so that sessions that lose
+    /// their connections together don't all reconnect at the same moment.
+    #[napi]
+    pub fn reconnect_jitter(&mut self, enabled: bool) -> &Self {
+        let mut builder = self.raw_builder.lock();
+        builder.reconnect_jitter(enabled);
+        self
+    }
+
+    /// Configures the session to stop reconnecting after `attempts` failed
+    /// attempts in one outage, counting the immediate first attempt. Each new
+    /// outage starts the count again. By default the session never stops on
+    /// its own.
+    ///
+    /// When the session stops, every listener stops forwarding with the last
+    /// attempt's error: [Listener::forward] rejects with an error whose message
+    /// starts "error forwarding:", and [Listener::join] with one that starts
+    /// "error on join:". Nothing rejects for the forwarding that `ngrok.forward`
+    /// starts. `listenAndServe` does not await the forwarding it starts, so its
+    /// rejection is unhandled, which ends the process under Node's default
+    /// `--unhandled-rejections=throw`. The
+    /// [SessionBuilder::handleDisconnection] handler is called before each
+    /// attempt, and not again once the session stops.
+    ///
+    /// `attempts` must be a whole number from 1 to 4294967295; anything else,
+    /// a fraction, NaN or Infinity included, is refused with an error naming
+    /// the argument.
+    #[napi]
+    pub fn reconnect_max_attempts(&mut self, attempts: f64) -> Result<&Self> {
+        let attempts = whole_number(attempts)
+            .and_then(|n| u32::try_from(n).ok())
+            .and_then(NonZeroU32::new)
+            .ok_or_else(|| {
+                napi_err(format!(
+                    "attempts must be a whole number from 1 to {}, got {}",
+                    u32::MAX,
+                    js_number(attempts)
+                ))
+            })?;
+        let mut builder = self.raw_builder.lock();
+        builder.reconnect_max_attempts(attempts);
         Ok(self)
     }
 
@@ -524,6 +613,25 @@ impl ObjectFinalize for Session {
     fn finalize(self, mut _env: Env) -> Result<()> {
         debug!("Session finalize");
         Ok(())
+    }
+}
+
+/// `n` as a u64 if it is a whole number from 0 to u64::MAX, else None.
+fn whole_number(n: f64) -> Option<u64> {
+    // 2^64 itself is exactly representable, and the first value out of range.
+    (n.fract() == 0.0 && (0.0..18_446_744_073_709_551_616.0).contains(&n)).then_some(n as u64)
+}
+
+/// `n` for error messages: NaN and Infinity spelled as JavaScript spells them,
+/// other values as Rust prints them, which differs from JavaScript for -0 and
+/// for values JavaScript writes with an exponent.
+fn js_number(n: f64) -> String {
+    if n.is_nan() {
+        "NaN".to_string()
+    } else if n.is_infinite() {
+        if n > 0.0 { "Infinity" } else { "-Infinity" }.to_string()
+    } else {
+        n.to_string()
     }
 }
 
