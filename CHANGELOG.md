@@ -1,4 +1,4 @@
-## Unreleased
+## 1.8.0
 
 - Change how a session waits between reconnect attempts after it loses its connection, for every session: the wait starts at 50 ms and doubles up to 30 s, each wait scaled by a random factor in [0, 1). Before, the wait grew 50-fold per attempt with no cap and no random factor: about 2 minutes before the fourth attempt and 1 h 44 min before the fifth.
 - Add `SessionBuilder.reconnectBackoff(initialMs, maxMs)`, which sets the first wait between reconnect attempts and the cap the doubling waits stop at, and `SessionBuilder.reconnectJitter(enabled)`, which turns off or on the random scaling of each wait. The defaults are 50 ms, 30 s and jitter on. `reconnectBackoff` refuses a value that is not a whole number of milliseconds, such as a fraction, NaN or Infinity, with an error naming the argument.
