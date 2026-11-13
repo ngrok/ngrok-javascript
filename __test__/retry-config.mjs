@@ -5,6 +5,11 @@ export const retryConfig = {
     return retryCount * 2000; // time interval between retries
   },
   retryCondition: (error) => {
+    // A TCP endpoint refuses connections until ngrok routes it, as an HTTP
+    // endpoint answers 404 until then.
+    if (error.code === "ECONNREFUSED") {
+      return true;
+    }
     // if retry condition is not specified, by default idempotent requests are retried
     if (!error.hasOwnProperty("response")) {
       return false;

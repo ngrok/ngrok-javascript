@@ -506,6 +506,130 @@ test("connect heartbeat callbacks", async () => {
   expect(undefined).toBe(disconn_addr);
 });
 
+// The limits are ngrok-rust's; the binding passes its error through, after
+// the call and its arguments.
+test.each([
+  ["a start of 0 ms", 0, 1000, "the start must be at least 1 ms"],
+  ["a start above the cap", 2000, 1000, "the start must not be above the cap"],
+  ["a cap above one day", 1, 86_400_001, "the cap must be at most one day"],
+  // Above 2**32, so a u32 argument would wrap these to 50 ms and accept them.
+  ["a start of 2**32 + 50 ms", 2 ** 32 + 50, 1000, "the start must not be above the cap"],
+  ["a cap of 2**32 + 50 ms", 1, 2 ** 32 + 50, "the cap must be at most one day"],
+])("session reconnect backoff rejects %s", (_, initialMs, maxMs, rule) => {
+  const builder = new ngrok.SessionBuilder();
+  expect(() => builder.reconnectBackoff(initialMs, maxMs)).toThrow(
+    new RegExp(`^reconnectBackoff\\(initialMs: ${initialMs}, maxMs: ${maxMs}\\): .*${rule}$`),
+  );
+});
+
+// The binding refuses what is not a whole number of milliseconds, naming the
+// argument, before ngrok-rust sees it.
+test.each([
+  ["a negative start", -1, 1000, "initialMs", "-1"],
+  ["a negative cap", 1, -1, "maxMs", "-1"],
+  ["a fractional start", 0.5, 1000, "initialMs", "0.5"],
+  ["a fractional cap", 1, 1000.5, "maxMs", "1000.5"],
+  ["a NaN start", NaN, 1000, "initialMs", "NaN"],
+  ["an infinite cap", 1, Infinity, "maxMs", "Infinity"],
+])("session reconnect backoff rejects %s", (_, initialMs, maxMs, name, shown) => {
+  const builder = new ngrok.SessionBuilder();
+  expect(() => builder.reconnectBackoff(initialMs, maxMs)).toThrow(
+    `${name} must be a whole number of milliseconds, at least 0, got ${shown}`,
+  );
+});
+
+test("session reconnect backoff accepts 1 ms to one day", () => {
+  const builder = new ngrok.SessionBuilder();
+  expect(builder.reconnectBackoff(1, 86_400_000)).toBe(builder);
+});
+
+test.each([
+  ["0", 0, "0"],
+  ["-1", -1, "-1"],
+  ["2**32 + 1", 2 ** 32 + 1, "4294967297"],
+  ["2.5", 2.5, "2.5"],
+  ["NaN", NaN, "NaN"],
+  ["Infinity", Infinity, "Infinity"],
+])("session reconnect max attempts rejects %s", (_, attempts, shown) => {
+  const builder = new ngrok.SessionBuilder();
+  expect(() => builder.reconnectMaxAttempts(attempts)).toThrow(
+    `attempts must be a whole number from 1 to 4294967295, got ${shown}`,
+  );
+});
+
+test("session reconnect max attempts accepts 3", () => {
+  const builder = new ngrok.SessionBuilder();
+  expect(builder.reconnectMaxAttempts(3)).toBe(builder);
+});
+
+test("session reconnect options connect", async () => {
+  const session = await new ngrok.SessionBuilder()
+    .authtoken(process.env["NGROK_AUTHTOKEN"])
+    .reconnectBackoff(100, 5000)
+    .reconnectJitter(false)
+    .reconnectMaxAttempts(5)
+    .connect();
+  const httpServer = await makeHttp();
+  const listener = await session.httpEndpoint().listen();
+  expect(listener.url().startsWith("https://")).toBeTruthy();
+  await forwardValidateShutdown(httpServer, listener, listener.url());
+  await session.close();
+});
+
+// A listener's forward() rejects once its session stops reconnecting, which no
+// test here can bring about, so a fake builder and listener stand in for the
+// native ones.
+function givenUpBuilder() {
+  const listener = {
+    id: () => "given-up-" + Math.floor(Math.random() * 1000000),
+    forward: () => Promise.reject(new Error("error forwarding: session gave up")),
+  };
+  return { _listen: async () => listener };
+}
+
+async function errorsLoggedDuring(run) {
+  const logged = [];
+  const consoleError = console.error;
+  console.error = (message) => logged.push(String(message));
+  try {
+    await run();
+    // let the rejection's handler run
+    await new Promise((resolve) => setImmediate(resolve));
+  } finally {
+    console.error = consoleError;
+  }
+  return logged;
+}
+
+test("listenAndServe logs forwarding that ends with an error", async () => {
+  const server = createHttpServer();
+  const logged = await errorsLoggedDuring(() =>
+    ngrok.HttpListenerBuilder.prototype.listenAndServe.call(givenUpBuilder(), server),
+  );
+  server.close();
+  expect(logged).toEqual([
+    expect.stringMatching(
+      /^ngrok listener stopped forwarding to \S+: Error: error forwarding: session gave up$/,
+    ),
+  ]);
+});
+
+test("net.Server.listen(listener) logs forwarding that ends with an error", async () => {
+  const server = createHttpServer();
+  let listener;
+  const logged = await errorsLoggedDuring(async () => {
+    listener = await ngrok.HttpListenerBuilder.prototype.listen.call(givenUpBuilder());
+    server.listen(listener);
+  });
+  server.close();
+  listener.socket.close();
+  expect(logged).toEqual([
+    expect.stringMatching(
+      /^ngrok listener stopped forwarding to localhost:\d+: Error: error forwarding: session gave up$/,
+    ),
+  ]);
+});
+
 test("session ca_cert", async () => {
   const builder = new ngrok.SessionBuilder();
   try {

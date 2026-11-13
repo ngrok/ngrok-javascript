@@ -460,7 +460,7 @@ pub(crate) async fn search_listeners(
     url: Option<String>,
 ) -> Vec<Listener> {
     let mut listeners: Vec<Listener> = vec![];
-    for (_, storage) in GLOBAL_LISTENERS.lock().await.iter() {
+    for storage in GLOBAL_LISTENERS.lock().await.values() {
         // filter by session_id, if provided
         if let Some(session_id) = session_id.as_ref() {
             if session_id.ne(&storage.session.id()) {

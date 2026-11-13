@@ -844,6 +844,56 @@ export declare class SessionBuilder {
    */
   heartbeatTolerance(heartbeatTolerance: number): this
   /**
+   * Configures how long the session waits between attempts to reconnect
+   * after it loses its connection to the ngrok service, in milliseconds.
+   *
+   * The first attempt is immediate. After it, the session waits `initialMs`,
+   * then twice as long before each attempt, up to `maxMs`. Each wait is
+   * scaled by a random factor in [0, 1) unless
+   * [SessionBuilder::reconnectJitter] turns that off. The defaults are
+   * 50 ms and 30 s. For a fixed wait between every attempt, pass the same
+   * value for both and turn jitter off.
+   *
+   * These waits never stop the session from reconnecting on their own:
+   * [SessionBuilder::reconnectMaxAttempts], or closing the session, does.
+   *
+   * A value that is not a whole number of milliseconds of at least 0 (a
+   * fraction, a negative number, NaN or Infinity) is refused with an error
+   * naming the argument. The ngrok Rust SDK then checks the range: it
+   * rejects an `initialMs` below 1 or above `maxMs`, and a `maxMs` above one
+   * day (86400000), with an error that starts with the call and its
+   * arguments, as in "reconnectBackoff(initialMs: 2000, maxMs: 1000): ",
+   * and names the rule broken. A refused call leaves the builder unchanged.
+   */
+  reconnectBackoff(initialMs: number, maxMs: number): this
+  /**
+   * Configures whether each wait between reconnect attempts is scaled by a
+   * random factor in [0, 1). On by default, so that sessions that lose
+   * their connections together don't all reconnect at the same moment.
+   */
+  reconnectJitter(enabled: boolean): this
+  /**
+   * Configures the session to stop reconnecting after `attempts` failed
+   * attempts in one outage, counting the immediate first attempt. Each new
+   * outage starts the count again. By default the session never stops on
+   * its own.
+   *
+   * When the session stops, every listener stops forwarding with the last
+   * attempt's error: [Listener::forward] rejects with an error whose message
+   * starts "error forwarding:", and [Listener::join] with one that starts
+   * "error on join:". Nothing rejects for the forwarding that `ngrok.forward`
+   * starts. The forwarding that `listenAndServe`, `ngrok.listen` and
+   * `net.Server.listen(listener)` start logs the error with `console.error`
+   * and leaves the process running. The
+   * [SessionBuilder::handleDisconnection] handler is called before each
+   * attempt, and not again once the session stops.
+   *
+   * `attempts` must be a whole number from 1 to 4294967295; anything else,
+   * a fraction, NaN or Infinity included, is refused with an error naming
+   * the argument.
+   */
+  reconnectMaxAttempts(attempts: number): this
+  /**
    * Configures the opaque, machine-readable metadata string for this session.
    * Metadata is made available to you in the ngrok dashboard and the Agents API
    * resource. It is a useful way to allow you to uniquely identify sessions. We
