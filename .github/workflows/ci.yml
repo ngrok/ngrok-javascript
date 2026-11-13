@@ -336,7 +336,8 @@ jobs:
       matrix:
         node:
           - '18'
-    runs-on: ubuntu-latest
+    # Native arm64: Node under QEMU emulation crashes now and then (SIGSEGV).
+    runs-on: ubuntu-24.04-arm
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -351,23 +352,22 @@ jobs:
         run: ls -R .
         shell: bash
 
+      - name: Setup node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+
       - name: Install dependencies
         run: |
           yarn config set supportedArchitectures.cpu "arm64"
           yarn config set supportedArchitectures.libc "glibc"
           yarn install
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-        with:
-          platforms: arm64
-      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-     
       - name: Setup and run tests
         uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
         with:
           image: node:${{ matrix.node }}-slim
-          options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
+          options: '-v ${{ github.workspace }}:/build -w /build'
           run: |
             set -e
             NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
@@ -383,7 +383,8 @@ jobs:
       matrix:
         node:
           - '18'
-    runs-on: ubuntu-latest
+    # Native arm64: Node under QEMU emulation crashes now and then (SIGSEGV).
+    runs-on: ubuntu-24.04-arm
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -393,10 +394,15 @@ jobs:
         with:
           name: bindings-aarch64-unknown-linux-musl
           path: .
-      
+
       - name: List packages
         run: ls -R .
         shell: bash
+
+      - name: Setup node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
 
       - name: Install dependencies
         run: |
@@ -404,17 +410,11 @@ jobs:
           yarn config set supportedArchitectures.libc "musl"
           yarn install
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-        with:
-          platforms: arm64
-      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-      
       - name: Setup and run tests
         uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
         with:
           image: node:${{ matrix.node }}-alpine
-          options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
+          options: '-v ${{ github.workspace }}:/build -w /build'
           run: |
             set -e
             NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
@@ -453,8 +453,7 @@ jobs:
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
         with:
           platforms: arm
-      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-      
+
       - name: Setup and run tests
         uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
         with:
