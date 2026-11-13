@@ -882,9 +882,9 @@ export declare class SessionBuilder {
    * attempt's error: [Listener::forward] rejects with an error whose message
    * starts "error forwarding:", and [Listener::join] with one that starts
    * "error on join:". Nothing rejects for the forwarding that `ngrok.forward`
-   * starts. `listenAndServe` does not await the forwarding it starts, so its
-   * rejection is unhandled, which ends the process under Node's default
-   * `--unhandled-rejections=throw`. The
+   * starts. The forwarding that `listenAndServe`, `ngrok.listen` and
+   * `net.Server.listen(listener)` start logs the error with `console.error`
+   * and leaves the process running. The
    * [SessionBuilder::handleDisconnection] handler is called before each
    * attempt, and not again once the session stops.
    *

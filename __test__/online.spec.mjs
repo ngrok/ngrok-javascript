@@ -576,6 +576,60 @@ test("session reconnect options connect", async () => {
   await session.close();
 });
 
+// A listener's forward() rejects once its session stops reconnecting, which no
+// test here can bring about, so a fake builder and listener stand in for the
+// native ones.
+function givenUpBuilder() {
+  const listener = {
+    id: () => "given-up-" + Math.floor(Math.random() * 1000000),
+    forward: () => Promise.reject(new Error("error forwarding: session gave up")),
+  };
+  return { _listen: async () => listener };
+}
+
+async function errorsLoggedDuring(run) {
+  const logged = [];
+  const consoleError = console.error;
+  console.error = (message) => logged.push(String(message));
+  try {
+    await run();
+    // let the rejection's handler run
+    await new Promise((resolve) => setImmediate(resolve));
+  } finally {
+    console.error = consoleError;
+  }
+  return logged;
+}
+
+test("listenAndServe logs forwarding that ends with an error", async () => {
+  const server = createHttpServer();
+  const logged = await errorsLoggedDuring(() =>
+    ngrok.HttpListenerBuilder.prototype.listenAndServe.call(givenUpBuilder(), server),
+  );
+  server.close();
+  expect(logged).toEqual([
+    expect.stringMatching(
+      /^ngrok listener stopped forwarding to \S+: Error: error forwarding: session gave up$/,
+    ),
+  ]);
+});
+
+test("net.Server.listen(listener) logs forwarding that ends with an error", async () => {
+  const server = createHttpServer();
+  let listener;
+  const logged = await errorsLoggedDuring(async () => {
+    listener = await ngrok.HttpListenerBuilder.prototype.listen.call(givenUpBuilder());
+    server.listen(listener);
+  });
+  server.close();
+  listener.socket.close();
+  expect(logged).toEqual([
+    expect.stringMatching(
+      /^ngrok listener stopped forwarding to localhost:\d+: Error: error forwarding: session gave up$/,
+    ),
+  ]);
+});
+
 test("session ca_cert", async () => {
   const builder = new ngrok.SessionBuilder();
   try {

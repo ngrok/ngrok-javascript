@@ -2,7 +2,7 @@
 
 - Change how a session waits between reconnect attempts after it loses its connection, for every session: the wait starts at 50 ms and doubles up to 30 s, each wait scaled by a random factor in [0, 1). Before, the wait grew 50-fold per attempt with no cap and no random factor: about 2 minutes before the fourth attempt and 1 h 44 min before the fifth.
 - Add `SessionBuilder.reconnectBackoff(initialMs, maxMs)`, which sets the first wait between reconnect attempts and the cap the doubling waits stop at, and `SessionBuilder.reconnectJitter(enabled)`, which turns off or on the random scaling of each wait. The defaults are 50 ms, 30 s and jitter on. `reconnectBackoff` refuses a value that is not a whole number of milliseconds, such as a fraction, NaN or Infinity, with an error naming the argument.
-- Add `SessionBuilder.reconnectMaxAttempts(attempts)`, which stops a session reconnecting after that many failed attempts in one outage; every listener then stops forwarding, and its `forward()` and `join()` reject with the last attempt's error. It refuses anything but a whole number from 1 to 4294967295. By default a session never stops reconnecting on its own.
+- Add `SessionBuilder.reconnectMaxAttempts(attempts)`, which stops a session reconnecting after that many failed attempts in one outage; every listener then stops forwarding, and its `forward()` and `join()` reject with the last attempt's error. `listenAndServe`, `ngrok.listen` and `net.Server.listen(listener)` log that error with `console.error` and leave the process running. It refuses anything but a whole number from 1 to 4294967295. By default a session never stops reconnecting on its own.
 
 ## 1.7.0 
 

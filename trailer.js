@@ -80,7 +80,7 @@ function defineListenerHandle(listener, socket) {
   Object.defineProperty(listener, "handle", {
     get: function () {
       // turn on forwarding now that it has been requested
-      listener.forward("localhost:" + socket.address().port);
+      forwardInBackground(listener, "localhost:" + socket.address().port);
       return socket._handle;
     },
   });
@@ -155,8 +155,17 @@ async function ngrokLinkTcp(listener, server) {
   // random local port
   const socket = await asyncListen(server, { host: "localhost", port: 0 });
   // forward to socket
-  listener.forward("localhost:" + socket.address().port);
+  forwardInBackground(listener, "localhost:" + socket.address().port);
   return socket;
+}
+
+// Start forwarding without waiting for it to end. Forwarding ends with an error
+// when the session stops reconnecting (SessionBuilder.reconnectMaxAttempts);
+// that error is logged, since a rejection left unhandled ends the process.
+function forwardInBackground(listener, addr) {
+  listener.forward(addr).catch((err) => {
+    console.error(`ngrok listener stopped forwarding to ${addr}: ${err}`);
+  });
 }
 
 function generatePipeFilename(listener, server) {
@@ -221,7 +230,7 @@ async function ngrokLinkPipe(listener, server) {
     // convert pipe path to url
     addr = "pipe:" + filename.replace("\\\\.\\pipe\\", "//./");
   }
-  listener.forward(addr);
+  forwardInBackground(listener, addr);
   socket.path = filename; // surface to caller
 
   return socket;
