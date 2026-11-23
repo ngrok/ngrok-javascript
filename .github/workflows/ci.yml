@@ -29,10 +29,10 @@ jobs:
     name: Udeps
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: jrobsonchase/direnv-action@57d5101f123f9106acdd8797515c262b565ec7a5 # v0.7
-      - uses: ./.github/workflows/rust-cache
-      - uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
+      - uses: actions/checkout@v7.0.1
+      - uses: jrobsonchase/direnv-action@v0.7
+      - uses: $/.github/workflows/rust-cache
+      - uses: actions-rs/cargo@v1.0.3
         with:
           command: udeps
           args: '--workspace --all-targets --all-features'
@@ -40,9 +40,9 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: jrobsonchase/direnv-action@57d5101f123f9106acdd8797515c262b565ec7a5 # v0.7
-      - uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
+      - uses: actions/checkout@v7.0.1
+      - uses: jrobsonchase/direnv-action@v0.7
+      - uses: actions-rs/cargo@v1.0.3
         with:
           command: fmt
           args: '--all -- --check'
@@ -50,13 +50,26 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: jrobsonchase/direnv-action@57d5101f123f9106acdd8797515c262b565ec7a5 # v0.7
-      - uses: ./.github/workflows/rust-cache
-      - uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
+      - uses: actions/checkout@v7.0.1
+      - uses: jrobsonchase/direnv-action@v0.7
+      - uses: $/.github/workflows/rust-cache
+      - uses: actions-rs/cargo@v1.0.3
         with:
           command: clippy
           args: '--all-targets --all-features --workspace -- -D warnings'
+  actions-lock:
+    name: Verify actions lockfile
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install gh-actions-lock
+        run: gh extension install github/gh-actions-lock --pin v0.5.1
+      - name: Verify .github/workflows/actions.lock is complete and current
+        run: gh actions-lock --verify --fail-on-warning
   build:
     uses: ./.github/workflows/build.yml
     with:
@@ -142,10 +155,10 @@ jobs:
     timeout-minutes: 30
     name: Build FreeBSD
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
       - name: Build
         id: build
-        uses: vmactions/freebsd-vm@c46abacb49f09938ca4e1702d15d836285d694cc # v1.5.9
+        uses: vmactions/freebsd-vm@v1.5.9
         env:
           DEBUG: napi:*
           RUSTUP_HOME: /usr/local/rustup
@@ -187,7 +200,7 @@ jobs:
             rm -rf target
             rm -rf .yarn/cache
       - name: Upload artifact
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: bindings-freebsd
           path: ${{ env.APP_NAME }}.*.node
@@ -210,16 +223,16 @@ jobs:
           - '18'
     runs-on: ${{ matrix.settings.host }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
       - name: Setup node x86_64
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7.1.0
         if: matrix.settings.target == 'x86_64-pc-windows-msvc'
         with:
           node-version: ${{ matrix.node }}
           check-latest: true
           cache: yarn
       - name: Setup node x86
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7.1.0
         if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
           node-version: 18
@@ -233,7 +246,7 @@ jobs:
       - name: Install dependencies
         run: yarn install
       - name: Download artifacts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bindings-${{ matrix.settings.target }}
           path: .
@@ -259,10 +272,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Setup node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: ${{ matrix.node }}
           cache: yarn
@@ -271,7 +284,7 @@ jobs:
         run: yarn install
 
       - name: Download artifacts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bindings-x86_64-unknown-linux-gnu
           path: .
@@ -300,10 +313,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Setup node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: ${{ matrix.node }}
           cache: yarn
@@ -314,7 +327,7 @@ jobs:
           yarn install
 
       - name: Download artifacts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bindings-x86_64-unknown-linux-musl
           path: .
@@ -340,10 +353,10 @@ jobs:
     runs-on: ubuntu-24.04-arm
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Download artifacts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bindings-aarch64-unknown-linux-gnu
           path: .
@@ -353,7 +366,7 @@ jobs:
         shell: bash
 
       - name: Setup node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: ${{ matrix.node }}
 
@@ -364,14 +377,15 @@ jobs:
           yarn install
 
       - name: Setup and run tests
-        uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
-        with:
-          image: node:${{ matrix.node }}-slim
-          options: '-v ${{ github.workspace }}:/build -w /build'
-          run: |
-            set -e
-            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
-            ls -la
+        env:
+          NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/build" -w /build -e NGROK_AUTHTOKEN \
+            --entrypoint sh node:${{ matrix.node }}-slim -c '
+              set -e
+              yarn test -t smoke
+              ls -la
+            '
 
   test-linux-aarch64-musl-binding:
     if: true
@@ -387,10 +401,10 @@ jobs:
     runs-on: ubuntu-24.04-arm
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Download artifacts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bindings-aarch64-unknown-linux-musl
           path: .
@@ -400,7 +414,7 @@ jobs:
         shell: bash
 
       - name: Setup node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: ${{ matrix.node }}
 
@@ -411,13 +425,14 @@ jobs:
           yarn install
 
       - name: Setup and run tests
-        uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
-        with:
-          image: node:${{ matrix.node }}-alpine
-          options: '-v ${{ github.workspace }}:/build -w /build'
-          run: |
-            set -e
-            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
+        env:
+          NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/build" -w /build -e NGROK_AUTHTOKEN \
+            --entrypoint sh node:${{ matrix.node }}-alpine -c '
+              set -e
+              yarn test -t smoke
+            '
 
   test-linux-arm-gnueabihf-binding:
     if: true
@@ -432,10 +447,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Download artifacts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bindings-armv7-unknown-linux-gnueabihf
           path: .
@@ -450,19 +465,20 @@ jobs:
           yarn install
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        uses: docker/setup-qemu-action@v4.4.0
         with:
           platforms: arm
 
       - name: Setup and run tests
-        uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
-        with:
-          image: node:${{matrix.node}}-bullseye-slim
-          options: '--platform linux/arm/v7 -v ${{ github.workspace }}:/build -w /build'
-          run: |
-            set -e
-            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
-            ls -la
+        env:
+          NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        run: |
+          docker run --rm --platform linux/arm/v7 -v "$GITHUB_WORKSPACE:/build" -w /build -e NGROK_AUTHTOKEN \
+            --entrypoint sh node:${{ matrix.node }}-bullseye-slim -c '
+              set -e
+              yarn test -t smoke
+              ls -la
+            '
 
   universal-macOS:
     if: true
@@ -476,10 +492,10 @@ jobs:
           - '18'
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
 
       - name: Setup node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: 18
           cache: yarn
@@ -488,12 +504,12 @@ jobs:
         run: yarn install
         
       - name: Download macOS x64 artifact
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bindings-x86_64-apple-darwin
           path: artifacts
       - name: Download macOS arm64 artifact
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@v8.0.2
         with:
           name: bindings-aarch64-apple-darwin
           path: artifacts
@@ -502,7 +518,7 @@ jobs:
         run: yarn universal
 
       - name: Upload artifact
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: bindings-universal-apple-darwin
           path: ${{ env.APP_NAME }}.*.node
