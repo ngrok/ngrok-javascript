@@ -1163,7 +1163,7 @@ dependencies = [
 
 [[package]]
 name = "ngrok-javascript"
-version = "1.8.1-rc.0"
+version = "1.8.1"
 dependencies = [
  "async-trait",
  "aws-lc-rs",
