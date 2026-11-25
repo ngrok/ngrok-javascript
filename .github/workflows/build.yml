@@ -31,9 +31,9 @@ jobs:
     runs-on: ${{ inputs.host }}
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
       - name: Setup node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7.1.0
         if: ${{ !inputs.docker }}
         with:
           node-version: 18
@@ -44,7 +44,7 @@ jobs:
           rustup toolchain install stable --profile minimal
           rustup target add ${{ inputs.target }}
       - name: Cache cargo
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache@v6.1.0
         with:
           path: |
             ~/.cargo/registry/index/
@@ -57,7 +57,7 @@ jobs:
         run: |
           cargo install --force --locked bindgen-cli
       - name: Install zig
-        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        uses: mlugg/setup-zig@v2.2.1
         if: ${{ inputs.target == 'armv7-unknown-linux-gnueabihf' }}
         with:
           version: 0.10.0
@@ -66,7 +66,7 @@ jobs:
         if: ${{ inputs.setup }}
         shell: bash
       - name: Install nasm
-        uses: ilammy/setup-nasm@72793074d3c8cdda771dba85f6deafe00623038b # v1.5.2
+        uses: ilammy/setup-nasm@v1.5.2
         if: inputs.target == 'i686-pc-windows-msvc'
       - name: Setup node x86
         if: inputs.target == 'i686-pc-windows-msvc'
@@ -75,29 +75,37 @@ jobs:
       - name: Install js dependencies
         run: yarn install
       - name: Setup node x86
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7.1.0
         if: inputs.target == 'i686-pc-windows-msvc'
         with:
           node-version: 18
           cache: yarn
           architecture: x86
       - name: Build in docker
-        uses: addnab/docker-run-action@4f65fabd2431ebc8d299f8e5a018d79a769ae185 # v3
         if: ${{ inputs.docker}}
-        with:
-          image: ${{ inputs.docker }}
-          options: '--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build'
-          # The images' stable toolchain dates from when they were built (Rust
-          # 1.82), too old for edition 2024 dependencies; update it first.
-          run: |
-            rustup update stable --no-self-update
-            rustup target add ${{ inputs.target }}
-            ${{ inputs.build }}
+        env:
+          IMAGE: ${{ inputs.docker }}
+          NAPI_BUILD_TARGET: ${{ inputs.target }}
+          NAPI_BUILD_CMD: ${{ inputs.build }}
+        # The images' stable toolchain dates from when they were built (Rust
+        # 1.82), too old for edition 2024 dependencies; update it first.
+        run: |
+          docker run --rm --user 0:0 \
+            -v "$GITHUB_WORKSPACE/.cargo-cache/git/db:/usr/local/cargo/git/db" \
+            -v "$GITHUB_WORKSPACE/.cargo/registry/cache:/usr/local/cargo/registry/cache" \
+            -v "$GITHUB_WORKSPACE/.cargo/registry/index:/usr/local/cargo/registry/index" \
+            -v "$GITHUB_WORKSPACE:/build" -w /build \
+            -e NAPI_BUILD_TARGET -e NAPI_BUILD_CMD \
+            --entrypoint sh "$IMAGE" -c '
+              rustup update stable --no-self-update
+              rustup target add "$NAPI_BUILD_TARGET"
+              eval "$NAPI_BUILD_CMD"
+            '
       - name: Build
         run: ${{ inputs.build }}
         if: ${{ !inputs.docker }}
       - name: Upload bindings artifact
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: bindings-${{ inputs.target }}
           path: ${{ inputs.app-name }}.*.node
