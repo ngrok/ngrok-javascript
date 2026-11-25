@@ -70,6 +70,34 @@ jobs:
         run: gh extension install github/gh-actions-lock --pin v0.5.1
       - name: Verify .github/workflows/actions.lock is complete and current
         run: gh actions-lock --verify --fail-on-warning
+  online-tests-gate:
+    # Online tests need NGROK_AUTHTOKEN. Forks, PRs from forks and Dependabot
+    # runs don't have it, so their online test jobs show as skipped. In this
+    # repo a missing token is an error instead, so a lost secret can never
+    # silently skip the tests (and skipped jobs would count as passing if they
+    # were ever made required status checks).
+    name: Check online test credentials
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          HAS_TOKEN: ${{ secrets.NGROK_AUTHTOKEN != '' }}
+          IS_UPSTREAM: ${{ github.repository == 'ngrok/ngrok-javascript' }}
+          IS_DEPENDABOT: ${{ github.actor == 'dependabot[bot]' && github.ref != 'refs/heads/main' }}
+          IS_FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          if [ "$HAS_TOKEN" = true ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          elif [ "$IS_UPSTREAM" = true ] && [ "$IS_DEPENDABOT" != true ] && [ "$IS_FORK_PR" != true ]; then
+            echo "::error::NGROK_AUTHTOKEN secret is missing or empty; online tests are required in this repository."
+            exit 1
+          else
+            echo "::notice::NGROK_AUTHTOKEN is not available to this run (fork or Dependabot); skipping online tests."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
   build:
     uses: ./.github/workflows/build.yml
     with:
@@ -150,7 +178,9 @@ jobs:
             target: aarch64-pc-windows-msvc
             build: yarn build --target aarch64-pc-windows-msvc
   build-freebsd:
-    if: true
+    # Build even if the gate fails; only the smoke test below depends on it.
+    if: ${{ !cancelled() }}
+    needs: online-tests-gate
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     name: Build FreeBSD
@@ -193,7 +223,11 @@ jobs:
             yarn install
             yarn build
             strip -x *.node
-            NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
+            if [ "${{ needs.online-tests-gate.outputs.enabled }}" = true ]; then
+              NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} yarn test -t smoke
+            else
+              echo "Skipping online smoke tests: NGROK_AUTHTOKEN is not available to this run"
+            fi
             rm -rf examples
             rm -rf node.core
             rm -rf node_modules
@@ -207,10 +241,11 @@ jobs:
           if-no-files-found: error
 
   test-windows-msvc-binding:
-    if: true
+    if: needs.online-tests-gate.outputs.enabled == 'true'
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
     needs:
       - build
+      - online-tests-gate
     strategy:
       fail-fast: false
       matrix:
@@ -260,10 +295,11 @@ jobs:
           yarn test -t smoke
 
   test-linux-x64-gnu-binding:
-    if: true
+    if: needs.online-tests-gate.outputs.enabled == 'true'
     name: Test bindings on Linux-x64-gnu - node@${{ matrix.node }}
     needs:
       - build
+      - online-tests-gate
     strategy:
       fail-fast: false
       matrix:
@@ -301,10 +337,11 @@ jobs:
         run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
 
   test-linux-x64-musl-binding:
-    if: true
+    if: needs.online-tests-gate.outputs.enabled == 'true'
     name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
+      - online-tests-gate
     strategy:
       fail-fast: false
       matrix:
@@ -340,10 +377,11 @@ jobs:
         run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -t smoke
 
   test-linux-aarch64-gnu-binding:
-    if: true
+    if: needs.online-tests-gate.outputs.enabled == 'true'
     name: Test bindings on aarch64-unknown-linux-gnu - node@${{ matrix.node }}
     needs:
       - build
+      - online-tests-gate
     strategy:
       fail-fast: false
       matrix:
@@ -388,10 +426,11 @@ jobs:
             '
 
   test-linux-aarch64-musl-binding:
-    if: true
+    if: needs.online-tests-gate.outputs.enabled == 'true'
     name: Test bindings on aarch64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
+      - online-tests-gate
     strategy:
       fail-fast: false
       matrix:
@@ -435,10 +474,11 @@ jobs:
             '
 
   test-linux-arm-gnueabihf-binding:
-    if: true
+    if: needs.online-tests-gate.outputs.enabled == 'true'
     name: Test bindings on armv7-unknown-linux-gnueabihf - node@${{ matrix.node }}
     needs:
       - build
+      - online-tests-gate
     strategy:
       fail-fast: false
       matrix:
