@@ -1,3 +1,7 @@
+## 1.8.1
+
+- Publish to npm through npm trusted publishing from GitHub Actions instead of a long-lived npm token. `@ngrok/ngrok` and each platform package (`@ngrok/ngrok-<platform>`) now carry an npm provenance attestation that links the package to the commit and workflow run that built it. No code changes.
+
 ## 1.8.0
 
 - Change how a session waits between reconnect attempts after it loses its connection, for every session: the wait starts at 50 ms and doubles up to 30 s, each wait scaled by a random factor in [0, 1). Before, the wait grew 50-fold per attempt with no cap and no random factor: about 2 minutes before the fourth attempt and 1 h 44 min before the fifth.
