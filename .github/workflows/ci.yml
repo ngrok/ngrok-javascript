@@ -330,11 +330,15 @@ jobs:
         shell: bash
 
       - name: Test bindings
-        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test -t smoke
+        env:
+          NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        run: docker run -e NGROK_AUTHTOKEN --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test -t smoke
 
       - name: Full Test Suite
         # run full suite of online tests
-        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
+        env:
+          NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        run: docker run -e NGROK_AUTHTOKEN --mount type=bind,src=/etc/ssl,dst=/etc/ssl --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
 
   test-linux-x64-musl-binding:
     if: needs.online-tests-gate.outputs.enabled == 'true'
@@ -374,7 +378,9 @@ jobs:
         shell: bash
 
       - name: Test bindings
-        run: docker run -e NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }} --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -t smoke
+        env:
+          NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+        run: docker run -e NGROK_AUTHTOKEN --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test -t smoke
 
   test-linux-aarch64-gnu-binding:
     if: needs.online-tests-gate.outputs.enabled == 'true'
