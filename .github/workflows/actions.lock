@@ -20,7 +20,7 @@ workflows:
         - 'actions/upload-artifact@v7.0.2'
         - 'docker/setup-qemu-action@v4.4.0'
         - 'jrobsonchase/direnv-action@v0.7'
-        - 'vmactions/freebsd-vm@v1.5.9'
+        - 'vmactions/freebsd-vm@v1.6.0'
     '.github/workflows/publish.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/download-artifact@v8.0.2'
@@ -94,8 +94,8 @@ dependencies:
         commit: 'sha1-d1434d08867e3ee9daa34448df10607b98908d29'
         owner_id: 7289241
         repo_id: 812112570
-    'vmactions/freebsd-vm@v1.5.9':
-        ref: 'v1.5.9'
-        commit: 'sha1-c46abacb49f09938ca4e1702d15d836285d694cc'
+    'vmactions/freebsd-vm@v1.6.0':
+        ref: 'v1.6.0'
+        commit: 'sha1-811efaaac0668df8bfb8308c3ec997b5ab50037b'
         owner_id: 71690866
         repo_id: 300290246
